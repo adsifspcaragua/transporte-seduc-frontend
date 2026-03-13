@@ -1,4 +1,4 @@
-# transporte-seduc-frontend
+# Projeto Transporte SEDUC - FRONTEND
 
 Projeto frontend para a gestão de transporte da Secretaria de Educação. Aplicação web desenvolvida com foco em performance, tipagem estática e estilização utilitária.
 
