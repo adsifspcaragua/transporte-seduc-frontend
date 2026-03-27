@@ -1,10 +1,15 @@
+'use client';
+
 import Image from "next/image";
+import { IoIosMail, IoIosLock } from "react-icons/io";
 import LoginCarousel from "@/components/auth/LoginCarousel";
+import Input from "@/components/ui/Input";
 
 export default function Login() {
+
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <div className="flex h-full w-[575px] shrink-0 flex-col justify-between bg-brand-600 p-6 text-white">
+      <div className="flex h-full w-143.75 shrink-0 flex-col justify-between bg-brand-600 p-6 text-white">
         <div className="w-full">
           <Image
             src="/logo_educacao_w.svg"
@@ -14,7 +19,7 @@ export default function Login() {
           />
         </div>
 
-        <div className="mx-auto flex w-full max-w-[450px] flex-col gap-6">
+        <div className="mx-auto flex w-full max-w-112.5 flex-col gap-6">
           <div className="flex flex-col gap-3">
             {/* Logo do sistema virá aqui */}
             <h1 className="text-2xl font-semibold text-center">
@@ -27,8 +32,24 @@ export default function Login() {
           </div>
 
           <div>
-            <form method="post">
-              {/* Campos virão aqui */}
+            <form method="post" className="flex flex-col gap-6">
+              <Input
+                label="E-mail ou CPF"
+                name="email"
+                type="email"
+                icon={IoIosMail}
+                required
+              />
+
+              <Input
+                label="Senha"
+                name="password"
+                type="password"
+                icon={IoIosLock}
+                required
+              />
+
+              
             </form>
           </div>
         </div>
