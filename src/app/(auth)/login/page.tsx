@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import { IoIosMail, IoIosLock } from "react-icons/io";
+import { BiLogIn } from "react-icons/bi";
 import LoginCarousel from "@/components/auth/LoginCarousel";
 import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button"
 
 export default function Login() {
 
@@ -49,7 +51,8 @@ export default function Login() {
                 required
               />
 
-              
+            <Button type="button" icon={BiLogIn}>Entrar</Button>
+
             </form>
           </div>
         </div>
