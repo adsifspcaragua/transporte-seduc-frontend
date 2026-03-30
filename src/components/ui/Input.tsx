@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
 import { forwardRef, useId } from "react";
 import type { IconType } from "react-icons";
 
@@ -7,6 +7,7 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
     error?: string;
     hint?: string;
     icon?: IconType;
+    rightElement?: ReactNode;
     containerClassName?: string;
     labelClassName?: string;
 };
@@ -18,6 +19,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             error,
             hint,
             icon: Icon,
+            rightElement,
             className = "",
             containerClassName = "",
             labelClassName = "",
@@ -39,12 +41,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                         required={required}
                         placeholder=" "
                         className={`peer w-full rounded-full border-2 bg-brand-700 px-8 pb-1 pt-6 text-white outline-none transition-all duration-200 placeholder:text-transparent
-                            ${error
-                                ? "border-red-500 focus:border-red-500"
-                                : "border-brand-700 focus:border-brand-100"
+                            ${rightElement ? "pr-14" : ""}
+                            ${
+                                error
+                                    ? "border-red-500 focus:border-red-500"
+                                    : "border-brand-700 focus:border-brand-100"
                             }
                             ${className}
-                            `}
+                        `}
                         {...props}
                     />
 
@@ -69,6 +73,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                             {label}
                             {required && <span className="ml-1 text-red-400">*</span>}
                         </label>
+                    )}
+
+                    {rightElement && (
+                        <div className="absolute right-5 top-1/2 z-10 -translate-y-1/2">
+                            {rightElement}
+                        </div>
                     )}
                 </div>
 

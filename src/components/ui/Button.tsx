@@ -1,68 +1,51 @@
-import type { ButtonHTMLAttributes } from "react";
-import { forwardRef } from "react";
-import type { IconType } from "react-icons";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-/**
- * Props do botão:
- * - herda todas as props nativas de um <button>
- * - adiciona suporte a ícone e estados extras
- */
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  icon?: IconType;
+  children: ReactNode;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
+  fullWidth?: boolean;
   loading?: boolean;
-  containerClassName?: string;
 };
 
-const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      children,
-      icon: Icon,
-      loading,
-      className = "",
-      containerClassName = "",
-      disabled,
-      ...props
-    },
-    ref
-  ) => {
-    return (
-      <div className={`w-full ${containerClassName}`}>
-        <button
-          ref={ref}
-          disabled={disabled || loading}
-          className={`
-            flex w-full items-center justify-center gap-2
-            rounded-full
-            px-4 py-[14px]
-
-            bg-[#C4E6F0]
-            shadow-[2px_2px_4px_2px_rgba(0,0,0,0.15)]
-
-            text-black font-medium
-            transition-all duration-200
-
-            hover:brightness-95
-            active:scale-[0.98]
-            disabled:opacity-50 disabled:cursor-not-allowed
-
-            ${className}
-          `}
-          {...props}
-        >
-          {/* Ícone */}
-          {Icon && !loading && <Icon className="text-lg" />}
-
-          {/* Texto */}
-          <span>
-            {loading ? "Carregando..." : children}
-          </span>
-        </button>
-      </div>
-    );
-  }
-);
-
-Button.displayName = "Button";
-
-export default Button;
+export default function Button(
+  {
+    children,
+    leftIcon,
+    rightIcon,
+    fullWidth = true,
+    loading = false,
+    className = "",
+    disabled,
+    type = "button",
+    ...props
+  }: ButtonProps) {
+  return (
+    <button
+      type={type}
+      disabled={disabled || loading}
+      className={`
+        inline-flex items-center justify-center gap-2 rounded-full
+        bg-brand-100 px-8 py-3 cursor-pointer font-semibold uppercase tracking-wide
+        text-brand-700 shadow-[0_10px_25px_rgba(0,0,0,0.18)]
+        transition-all duration-200
+        hover:brightness-95
+        active:scale-[0.99]
+        disabled:cursor-not-allowed disabled:opacity-60
+        ${fullWidth ? "w-full" : ""}
+        ${className}
+      `}
+      {...props}
+    >
+      {loading ? (
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-brand-700 border-t-transparent" />
+      ) : (
+        <>
+          {leftIcon && <span className="flex items-center justify-center">{leftIcon}</span>}
+          <span>{children}</span>
+          {rightIcon && <span className="flex items-center justify-center">{rightIcon}</span>}
+        </>
+      )}
+    </button>
+  );
+}
