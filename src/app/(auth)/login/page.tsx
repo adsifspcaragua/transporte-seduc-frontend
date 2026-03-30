@@ -1,13 +1,92 @@
-'use client';
+"use client";
 
+import { useState } from "react";
 import Image from "next/image";
-import { IoIosMail, IoIosLock } from "react-icons/io";
+import Link from "next/link";
+import { IoIosMail } from "react-icons/io";
 import { BiLogIn } from "react-icons/bi";
+
 import LoginCarousel from "@/components/auth/LoginCarousel";
 import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button"
+import PasswordInput from "@/components/ui/PasswordInput";
+import Checkbox from "@/components/ui/Checkbox";
+import Button from "@/components/ui/Button";
+
+type LoginFormData = {
+  login: string;
+  password: string;
+  remember: boolean;
+};
+
+type LoginFormErrors = {
+  login?: string;
+  password?: string;
+};
 
 export default function Login() {
+  const [form, setForm] = useState<LoginFormData>({
+    login: "",
+    password: "",
+    remember: false,
+  });
+
+  const [errors, setErrors] = useState<LoginFormErrors>({});
+  const [loading, setLoading] = useState(false);
+
+  function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value, type, checked } = event.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: undefined,
+    }));
+  }
+
+  function validateForm() {
+    const newErrors: LoginFormErrors = {};
+
+    if (!form.login.trim()) {
+      newErrors.login = "Informe seu e-mail ou CPF.";
+    }
+
+    if (!form.password.trim()) {
+      newErrors.password = "Informe sua senha.";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!validateForm()) return;
+
+    try {
+      setLoading(true);
+
+      // depois você troca isso pela chamada da API
+      console.log("Dados do login:", form);
+
+      // exemplo futuro:
+      // const response = await fetch("/api/login", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify(form),
+      // });
+
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
@@ -23,8 +102,7 @@ export default function Login() {
 
         <div className="mx-auto flex w-full max-w-112.5 flex-col gap-6">
           <div className="flex flex-col gap-3">
-            {/* Logo do sistema virá aqui */}
-            <h1 className="text-2xl font-semibold text-center">
+            <h1 className="text-center text-2xl font-semibold">
               Acesso ao sistema
             </h1>
 
@@ -34,25 +112,46 @@ export default function Login() {
           </div>
 
           <div>
-            <form method="post" className="flex flex-col gap-6">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               <Input
                 label="E-mail ou CPF"
-                name="email"
-                type="email"
+                name="login"
+                type="text"
                 icon={IoIosMail}
                 required
+                value={form.login}
+                onChange={handleInputChange}
+                error={errors.login}
               />
 
-              <Input
+              <PasswordInput
                 label="Senha"
                 name="password"
-                type="password"
-                icon={IoIosLock}
+                autoComplete="current-password"
                 required
+                value={form.password}
+                onChange={handleInputChange}
+                error={errors.password}
               />
 
-            <Button type="button" icon={BiLogIn}>Entrar</Button>
+              <div className="flex items-center justify-between">
+                <Checkbox
+                  name="remember"
+                  label="Lembrar usuário"
+                  checked={form.remember}
+                  onChange={handleInputChange}
+                />
 
+                <Link href="/">Esqueceu a senha?</Link>
+              </div>
+
+              <Button
+                type="submit"
+                leftIcon={<BiLogIn className="size-5" />}
+                loading={loading}
+              >
+                Entrar
+              </Button>
             </form>
           </div>
         </div>
