@@ -10,6 +10,14 @@
   --color-brand-600: #084E80;
   --color-brand-100: #C4E6F0;
   --color-brand-050: #CFEAFE;
+
+  --color-action-primary: #084E80;
+  --color-action-primary-hover: #063B61;
+  --color-action-primary-pressed: #042C49;
+
+  --color-danger-600: #D32F2F;
+  --color-danger-700: #B91C1C;
+  --color-danger-800: #991B1B;
 }
 
 @theme inline {
