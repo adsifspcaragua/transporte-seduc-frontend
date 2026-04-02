@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Montserrat } from "next/font/google";
+
+import AuthProvider from "@/providers/auth-provider";
+
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -9,18 +13,19 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: "Transporte 2026 - SEDUC",
-  description: "Sistema de Transporte Universitário - Secretária de Educação de Caraguatatuba",
+  description:
+    "Sistema de Transporte Universitário - Secretaria de Educação de Caraguatatuba",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="pt-BR">
       <body className={`${montserrat.variable} antialiased`}>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
