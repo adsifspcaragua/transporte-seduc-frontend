@@ -11,12 +11,13 @@ export function useAuth() {
 
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
+  const rememberMe = useAuthStore((state) => state.rememberMe);
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
-  async function signIn(credentials: LoginRequest) {
+  async function signIn(credentials: LoginRequest, remember = false) {
     const data = await authService.login(credentials);
-    setAuth(data.token, data.user);
+    setAuth(data.token, data.user, remember);
     return data;
   }
 
@@ -32,6 +33,7 @@ export function useAuth() {
   return {
     token,
     user,
+    rememberMe,
     isAuthenticated: Boolean(token),
     signIn,
     signOut,
