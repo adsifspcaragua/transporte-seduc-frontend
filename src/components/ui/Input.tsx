@@ -83,7 +83,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                 </div>
 
                 {error ? (
-                    <span className="text-sm text-red-400">{error}</span>
+                    <span className="text-sm font-semibold text-red-400">{error}</span>
                 ) : hint ? (
                     <span className="text-sm text-white/60">{hint}</span>
                 ) : null}
