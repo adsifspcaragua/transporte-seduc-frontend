@@ -109,10 +109,13 @@ export default function Login() {
     try {
       setLoading(true);
 
-      await signIn({
-        login: form.login.trim(),
-        password: form.password,
-      });
+      await signIn(
+        {
+          login: form.login.trim(),
+          password: form.password,
+        },
+        form.remember
+      );
 
       router.replace("/");
     } catch (error) {
