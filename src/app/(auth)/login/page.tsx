@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 import { IoIosMail } from "react-icons/io";
 import { BiLogIn } from "react-icons/bi";
 
@@ -11,6 +13,8 @@ import Input from "@/components/ui/Input";
 import PasswordInput from "@/components/ui/PasswordInput";
 import Checkbox from "@/components/ui/Checkbox";
 import Button from "@/components/ui/Button";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import { formatCpf, isCpfLike, isValidCpf } from "@/lib/utils/cpf";
 
 type LoginFormData = {
   login: string;
@@ -21,9 +25,25 @@ type LoginFormData = {
 type LoginFormErrors = {
   login?: string;
   password?: string;
+  form?: string;
 };
 
+type ApiErrorResponse = {
+  message?: string;
+  errors?: {
+    login?: string[];
+    password?: string[];
+  };
+};
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 export default function Login() {
+  const router = useRouter();
+  const { signIn } = useAuth();
+
   const [form, setForm] = useState<LoginFormData>({
     login: "",
     password: "",
@@ -36,22 +56,40 @@ export default function Login() {
   function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { name, value, type, checked } = event.target;
 
+    let nextValue = value;
+
+    if (name === "login") {
+      const looksLikeCpf = /^[\d.\-]*$/.test(value);
+
+      if (looksLikeCpf) {
+        nextValue = formatCpf(value);
+      }
+    }
+
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : nextValue,
     }));
 
     setErrors((prev) => ({
       ...prev,
       [name]: undefined,
+      form: undefined,
     }));
   }
 
   function validateForm() {
     const newErrors: LoginFormErrors = {};
+    const loginValue = form.login.trim();
 
-    if (!form.login.trim()) {
+    if (!loginValue) {
       newErrors.login = "Informe seu e-mail ou CPF.";
+    } else if (isCpfLike(loginValue)) {
+      if (!isValidCpf(loginValue)) {
+        newErrors.login = "Informe um CPF válido.";
+      }
+    } else if (!isValidEmail(loginValue)) {
+      newErrors.login = "Informe um e-mail válido ou CPF válido.";
     }
 
     if (!form.password.trim()) {
@@ -71,18 +109,40 @@ export default function Login() {
     try {
       setLoading(true);
 
-      // depois você troca isso pela chamada da API
-      console.log("Dados do login:", form);
+      await signIn({
+        login: form.login.trim(),
+        password: form.password,
+      });
 
-      // exemplo futuro:
-      // const response = await fetch("/api/login", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(form),
-      // });
-
+      router.replace("/");
     } catch (error) {
-      console.error(error);
+      if (axios.isAxiosError<ApiErrorResponse>(error)) {
+        const apiErrors = error.response?.data?.errors;
+
+        if (apiErrors?.login?.[0] || apiErrors?.password?.[0]) {
+          setErrors({
+            login: apiErrors.login?.[0],
+            password: apiErrors.password?.[0],
+            form: error.response?.data?.message,
+          });
+        } else if (error.response?.status === 401) {
+          setErrors({
+            form: "E-mail/CPF ou senha inválidos.",
+          });
+        } else if (error.response?.status === 422) {
+          setErrors({
+            form: error.response?.data?.message ?? "Dados inválidos.",
+          });
+        } else {
+          setErrors({
+            form: "Não foi possível entrar no sistema agora.",
+          });
+        }
+      } else {
+        setErrors({
+          form: "Não foi possível entrar no sistema agora.",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -122,6 +182,7 @@ export default function Login() {
                 value={form.login}
                 onChange={handleInputChange}
                 error={errors.login}
+                autoComplete="username"
               />
 
               <PasswordInput
@@ -134,6 +195,10 @@ export default function Login() {
                 error={errors.password}
               />
 
+              {errors.form && (
+                <span className="text-sm text-red-300">{errors.form}</span>
+              )}
+
               <div className="flex items-center justify-between">
                 <Checkbox
                   name="remember"
@@ -142,7 +207,7 @@ export default function Login() {
                   onChange={handleInputChange}
                 />
 
-                <Link href="/">Esqueceu a senha?</Link>
+                <Link href="/recuperar-senha">Esqueceu a senha?</Link>
               </div>
 
               <Button
