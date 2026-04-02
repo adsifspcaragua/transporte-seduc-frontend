@@ -28,6 +28,11 @@ type LoginFormErrors = {
   form?: string;
 };
 
+type TouchedFields = {
+  login: boolean;
+  password: boolean;
+};
+
 type ApiErrorResponse = {
   message?: string;
   errors?: {
@@ -38,6 +43,42 @@ type ApiErrorResponse = {
 
 function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function validateLoginField(value: string) {
+  const loginValue = value.trim();
+
+  if (!loginValue) {
+    return "Este campo é obrigatório.";
+  }
+
+  if (isCpfLike(loginValue)) {
+    if (!isValidCpf(loginValue)) {
+      return "Informe um CPF válido.";
+    }
+
+    return undefined;
+  }
+
+  if (!isValidEmail(loginValue)) {
+    return "Informe um e-mail válido.";
+  }
+
+  return undefined;
+}
+
+function validatePasswordField(value: string) {
+  const passwordValue = value.trim();
+
+  if (!passwordValue) {
+    return "Este campo é obrigatório.";
+  }
+
+  if (passwordValue.length < 4) {
+    return "A senha deve ter no mínimo 4 caracteres.";
+  }
+
+  return undefined;
 }
 
 export default function Login() {
@@ -51,6 +92,10 @@ export default function Login() {
   });
 
   const [errors, setErrors] = useState<LoginFormErrors>({});
+  const [touched, setTouched] = useState<TouchedFields>({
+    login: false,
+    password: false,
+  });
   const [loading, setLoading] = useState(false);
 
   function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -71,34 +116,65 @@ export default function Login() {
       [name]: type === "checkbox" ? checked : nextValue,
     }));
 
-    setErrors((prev) => ({
-      ...prev,
-      [name]: undefined,
-      form: undefined,
-    }));
+    setErrors((prev) => {
+      const nextErrors = {
+        ...prev,
+        form: undefined,
+      };
+
+      if (name === "login") {
+        nextErrors.login = touched.login
+          ? validateLoginField(nextValue)
+          : undefined;
+      }
+
+      if (name === "password") {
+        nextErrors.password = touched.password
+          ? validatePasswordField(nextValue)
+          : undefined;
+      }
+
+      return nextErrors;
+    });
+  }
+
+  function handleFieldBlur(event: React.FocusEvent<HTMLInputElement>) {
+    const { name, value } = event.target;
+
+    if (name === "login") {
+      setTouched((prev) => ({ ...prev, login: true }));
+      setErrors((prev) => ({
+        ...prev,
+        login: validateLoginField(value),
+      }));
+    }
+
+    if (name === "password") {
+      setTouched((prev) => ({ ...prev, password: true }));
+      setErrors((prev) => ({
+        ...prev,
+        password: validatePasswordField(value),
+      }));
+    }
   }
 
   function validateForm() {
-    const newErrors: LoginFormErrors = {};
-    const loginValue = form.login.trim();
+    const loginError = validateLoginField(form.login);
+    const passwordError = validatePasswordField(form.password);
 
-    if (!loginValue) {
-      newErrors.login = "Informe seu e-mail ou CPF.";
-    } else if (isCpfLike(loginValue)) {
-      if (!isValidCpf(loginValue)) {
-        newErrors.login = "Informe um CPF válido.";
-      }
-    } else if (!isValidEmail(loginValue)) {
-      newErrors.login = "Informe um e-mail válido ou CPF válido.";
-    }
+    setTouched({
+      login: true,
+      password: true,
+    });
 
-    if (!form.password.trim()) {
-      newErrors.password = "Informe sua senha.";
-    }
+    setErrors((prev) => ({
+      ...prev,
+      login: loginError,
+      password: passwordError,
+      form: undefined,
+    }));
 
-    setErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
+    return !loginError && !passwordError;
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -123,28 +199,33 @@ export default function Login() {
         const apiErrors = error.response?.data?.errors;
 
         if (apiErrors?.login?.[0] || apiErrors?.password?.[0]) {
-          setErrors({
-            login: apiErrors.login?.[0],
-            password: apiErrors.password?.[0],
+          setErrors((prev) => ({
+            ...prev,
+            login: apiErrors.login?.[0] ?? prev.login,
+            password: apiErrors.password?.[0] ?? prev.password,
             form: error.response?.data?.message,
-          });
+          }));
         } else if (error.response?.status === 401) {
-          setErrors({
-            form: "E-mail/CPF ou senha inválidos.",
-          });
+          setErrors((prev) => ({
+            ...prev,
+            form: "Credenciais inválidas.",
+          }));
         } else if (error.response?.status === 422) {
-          setErrors({
+          setErrors((prev) => ({
+            ...prev,
             form: error.response?.data?.message ?? "Dados inválidos.",
-          });
+          }));
         } else {
-          setErrors({
+          setErrors((prev) => ({
+            ...prev,
             form: "Não foi possível entrar no sistema agora.",
-          });
+          }));
         }
       } else {
-        setErrors({
+        setErrors((prev) => ({
+          ...prev,
           form: "Não foi possível entrar no sistema agora.",
-        });
+        }));
       }
     } finally {
       setLoading(false);
@@ -175,7 +256,7 @@ export default function Login() {
           </div>
 
           <div>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
               <Input
                 label="E-mail ou CPF"
                 name="login"
@@ -184,6 +265,7 @@ export default function Login() {
                 required
                 value={form.login}
                 onChange={handleInputChange}
+                onBlur={handleFieldBlur}
                 error={errors.login}
                 autoComplete="username"
               />
@@ -195,11 +277,12 @@ export default function Login() {
                 required
                 value={form.password}
                 onChange={handleInputChange}
+                onBlur={handleFieldBlur}
                 error={errors.password}
               />
 
               {errors.form && (
-                <span className="text-sm text-red-300">{errors.form}</span>
+                <span className="text-sm font-semibold text-red-400">{errors.form}</span>
               )}
 
               <div className="flex items-center justify-between">
@@ -215,6 +298,8 @@ export default function Login() {
 
               <Button
                 type="submit"
+                variant="light"
+                size="md"
                 leftIcon={<BiLogIn className="size-5" />}
                 loading={loading}
               >
