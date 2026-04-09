@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { authService } from "@/features/auth/services/auth.service";
@@ -23,34 +23,69 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     const clearAuth = useAuthStore((state) => state.clearAuth);
     const setUser = useAuthStore((state) => state.setUser);
 
-    const isPublicRoute = publicRoutes.includes(pathname);
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+    const isPublicRoute = useMemo(
+        () => publicRoutes.includes(pathname),
+        [pathname]
+    );
 
     useEffect(() => {
         if (!hasHydrated) return;
 
-        if (!token && !isPublicRoute) {
-            router.replace("/login");
-            return;
-        }
+        async function checkAuth() {
+            if (!token) {
+                setIsCheckingAuth(false);
 
-        if (token && isPublicRoute) {
-            router.replace("/");
-        }
-    }, [hasHydrated, token, isPublicRoute, router]);
+                if (!isPublicRoute) {
+                    router.replace("/login");
+                }
 
-    useEffect(() => {
-        if (!hasHydrated || !token || user) return;
+                return;
+            }
 
-        authService
-            .me()
-            .then(setUser)
-            .catch(() => {
+            if (user) {
+                setIsCheckingAuth(false);
+
+                if (isPublicRoute) {
+                    router.replace("/");
+                }
+
+                return;
+            }
+
+            try {
+                const me = await authService.me();
+                setUser(me);
+
+                if (isPublicRoute) {
+                    router.replace("/");
+                }
+            } catch {
                 clearAuth();
-                router.replace("/login");
-            });
-    }, [hasHydrated, token, user, setUser, clearAuth, router]);
 
-    if (!hasHydrated) return null;
+                if (!isPublicRoute) {
+                    router.replace("/login");
+                }
+            } finally {
+                setIsCheckingAuth(false);
+            }
+        }
+
+        void checkAuth();
+    }, [hasHydrated, token, user, isPublicRoute, router, setUser, clearAuth]);
+
+    if (!hasHydrated) {
+        return null;
+    }
+
+    if (!isPublicRoute && (!token || isCheckingAuth)) {
+        return null;
+    }
+
+    if (isPublicRoute && token) {
+        return null;
+    }
 
     return children;
 }
