@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { FiLogOut } from "react-icons/fi";
 
-import Button from '@/components/ui/Button';
-import { useAuth } from '@/features/auth/hooks/use-auth';
+import Button from "@/components/ui/Button";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 
 export default function Dashboard() {
   const { signOut } = useAuth();

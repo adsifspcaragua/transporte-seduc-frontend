@@ -6,18 +6,18 @@
 }
 
 @theme {
-  --color-brand-700: #063E66;
-  --color-brand-600: #084E80;
-  --color-brand-100: #C4E6F0;
-  --color-brand-050: #CFEAFE;
+  --color-brand-700: #063e66;
+  --color-brand-600: #084e80;
+  --color-brand-100: #c4e6f0;
+  --color-brand-050: #cfeafe;
 
-  --color-action-primary: #084E80;
-  --color-action-primary-hover: #063B61;
-  --color-action-primary-pressed: #042C49;
+  --color-action-primary: #084e80;
+  --color-action-primary-hover: #063b61;
+  --color-action-primary-pressed: #042c49;
 
-  --color-danger-600: #D32F2F;
-  --color-danger-700: #B91C1C;
-  --color-danger-800: #991B1B;
+  --color-danger-600: #d32f2f;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
 }
 
 @theme inline {
@@ -47,7 +47,7 @@ input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
   -webkit-text-fill-color: #ffffff;
   caret-color: #ffffff;
-  -webkit-box-shadow: 0 0 0 1000px #063E66 inset;
-  box-shadow: 0 0 0 1000px #063E66 inset;
+  -webkit-box-shadow: 0 0 0 1000px #063e66 inset;
+  box-shadow: 0 0 0 1000px #063e66 inset;
   transition: background-color 9999s ease-in-out 0s;
 }

@@ -190,7 +190,7 @@ export default function Login() {
           login: form.login.trim(),
           password: form.password,
         },
-        form.remember
+        form.remember,
       );
 
       router.replace("/");
@@ -251,12 +251,17 @@ export default function Login() {
             </h1>
 
             <span className="text-lg leading-relaxed text-white">
-              Gerencie e acompanhe o transporte universitário de forma simples e segura.
+              Gerencie e acompanhe o transporte universitário de forma simples e
+              segura.
             </span>
           </div>
 
           <div>
-            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+            <form
+              onSubmit={handleSubmit}
+              noValidate
+              className="flex flex-col gap-5"
+            >
               <Input
                 label="E-mail ou CPF"
                 name="login"
@@ -282,7 +287,9 @@ export default function Login() {
               />
 
               {errors.form && (
-                <span className="text-sm font-semibold text-red-400">{errors.form}</span>
+                <span className="text-sm font-semibold text-red-400">
+                  {errors.form}
+                </span>
               )}
 
               <div className="flex items-center justify-between">

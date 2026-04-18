@@ -22,7 +22,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       id,
       ...props
     },
-    ref
+    ref,
   ) => {
     const generatedId = useId();
     const inputId = id ?? generatedId;
@@ -54,11 +54,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             <FaCheck />
           </span>
 
-          {label && (
-            <span className="leading-none text-white">
-              {label}
-            </span>
-          )}
+          {label && <span className="leading-none text-white">{label}</span>}
         </label>
 
         {error ? (
@@ -68,7 +64,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         ) : null}
       </div>
     );
-  }
+  },
 );
 
 Checkbox.displayName = "Checkbox";
