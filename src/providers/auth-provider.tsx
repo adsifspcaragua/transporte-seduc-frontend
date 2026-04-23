@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { authService } from "@/features/auth/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 
-const publicRoutes = ["/login", "/recuperar-senha", "/registro"];
+const publicRoutes = ["/login", "/recuperar-senha"];
 
 type AuthProviderProps = {
   children: ReactNode;
