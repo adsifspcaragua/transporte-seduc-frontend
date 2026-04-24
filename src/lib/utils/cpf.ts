@@ -15,7 +15,7 @@ export function formatCpf(value: string) {
 }
 
 export function isCpfLike(value: string) {
-  return /^[\d.\-]+$/.test(value);
+  return /^[\d.-]+$/.test(value);
 }
 
 export function isValidCpf(value: string) {
