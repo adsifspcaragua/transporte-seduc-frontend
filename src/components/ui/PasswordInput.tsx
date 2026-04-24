@@ -1,20 +1,10 @@
 "use client";
 
-import type { InputHTMLAttributes } from "react";
 import { forwardRef, useState } from "react";
 import { IoIosEye, IoIosEyeOff, IoIosLock } from "react-icons/io";
-import Input from "./Input";
+import Input, { type InputProps } from "./Input";
 
-type PasswordInputProps = Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "type"
-> & {
-  label?: string;
-  error?: string;
-  hint?: string;
-  containerClassName?: string;
-  labelClassName?: string;
-};
+type PasswordInputProps = Omit<InputProps, "icon" | "rightElement" | "type">;
 
 const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
   (
