@@ -1,14 +1,23 @@
-import { api } from "@/lib/api/client";
-import { API_ENDPOINTS } from "@/lib/api/endpoints";
-
 import type {
   AuthUser,
   LoginRequest,
   LoginResponse,
 } from "@/features/auth/types/auth.types";
+import { api, csrfClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
+
+async function ensureCsrfCookie() {
+  await csrfClient.get(API_ENDPOINTS.AUTH.CSRF_COOKIE);
+}
 
 export const authService = {
+  async csrfCookie() {
+    await ensureCsrfCookie();
+  },
+
   async login(payload: LoginRequest) {
+    await ensureCsrfCookie();
+
     const { data } = await api.post<LoginResponse>(
       API_ENDPOINTS.AUTH.LOGIN,
       payload,
