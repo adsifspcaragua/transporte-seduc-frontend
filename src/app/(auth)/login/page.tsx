@@ -1,25 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
-import axios from "axios";
 import { useRouter } from "next/navigation";
-import { IoIosMail } from "react-icons/io";
+import { useEffect, useState } from "react";
 import { BiLogIn } from "react-icons/bi";
+import { IoIosMail } from "react-icons/io";
 
 import LoginCarousel from "@/components/auth/LoginCarousel";
+import Button from "@/components/ui/Button";
+import Checkbox from "@/components/ui/Checkbox";
 import Input from "@/components/ui/Input";
 import PasswordInput from "@/components/ui/PasswordInput";
-import Checkbox from "@/components/ui/Checkbox";
-import Button from "@/components/ui/Button";
 import { useAuth } from "@/features/auth/hooks/use-auth";
-import { formatCpf, isCpfLike, isValidCpf } from "@/lib/utils/cpf";
+import { cleanCpf, formatCpf, isCpfLike, isValidCpf } from "@/lib/utils/cpf";
 
 type LoginFormData = {
   login: string;
   password: string;
-  remember: boolean;
 };
 
 type LoginFormErrors = {
@@ -41,41 +40,142 @@ type ApiErrorResponse = {
   };
 };
 
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+type ValidationOptions = {
+  showRequired?: boolean;
+  showFormat?: boolean;
+};
+
+type FormatValidationState = {
+  login: boolean;
+  password: boolean;
+};
+
+const REMEMBERED_LOGIN_STORAGE_KEY = "remembered-login";
+
+function parseRetryAfterSeconds(value?: string | null) {
+  if (!value) return 60;
+
+  const seconds = Number(value);
+
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.max(1, Math.ceil(seconds));
+  }
+
+  const retryDate = Date.parse(value);
+
+  if (!Number.isNaN(retryDate)) {
+    return Math.max(1, Math.ceil((retryDate - Date.now()) / 1000));
+  }
+
+  return 60;
 }
 
-function validateLoginField(value: string) {
-  const loginValue = value.trim();
+function isValidEmail(value: string) {
+  if (!/^[a-z0-9._+-]+@[a-z0-9.-]+$/.test(value)) {
+    return false;
+  }
+
+  const [localPart, domain, ...rest] = value.split("@");
+
+  if (!localPart || !domain || rest.length > 0) {
+    return false;
+  }
+
+  if (
+    localPart.startsWith(".") ||
+    localPart.endsWith(".") ||
+    localPart.includes("..")
+  ) {
+    return false;
+  }
+
+  const labels = domain.split(".");
+
+  if (labels.length < 2) {
+    return false;
+  }
+
+  return labels.every((label) =>
+    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label),
+  );
+}
+
+function sanitizeEmailInput(value: string) {
+  return value
+    .replace(/\s+/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9@._+-]/g, "");
+}
+
+function sanitizeLoginInput(value: string) {
+  const compactValue = value.replace(/\s+/g, "");
+
+  if (!compactValue) {
+    return "";
+  }
+
+  const looksLikeEmail = /[a-zA-Z@_+]/.test(compactValue);
+
+  if (!looksLikeEmail) {
+    return formatCpf(compactValue);
+  }
+
+  return sanitizeEmailInput(compactValue);
+}
+
+function getLoginPayload(value: string) {
+  const normalizedValue = sanitizeLoginInput(value).trim();
+
+  if (isCpfLike(normalizedValue)) {
+    return cleanCpf(normalizedValue);
+  }
+
+  return normalizedValue;
+}
+
+function validateLoginField(
+  value: string,
+  { showRequired = false, showFormat = false }: ValidationOptions = {},
+) {
+  const loginValue = sanitizeLoginInput(value).trim();
 
   if (!loginValue) {
-    return "Este campo é obrigatório.";
+    return showRequired ? "Este campo é obrigatório." : undefined;
   }
 
   if (isCpfLike(loginValue)) {
+    const cpf = cleanCpf(loginValue);
+
+    if (cpf.length < 11) {
+      return showFormat ? "Informe um CPF completo." : undefined;
+    }
+
     if (!isValidCpf(loginValue)) {
-      return "Informe um CPF válido.";
+      return showFormat ? "Informe um CPF válido." : undefined;
     }
 
     return undefined;
   }
 
   if (!isValidEmail(loginValue)) {
-    return "Informe um e-mail válido.";
+    return showFormat ? "Informe um e-mail válido." : undefined;
   }
 
   return undefined;
 }
 
-function validatePasswordField(value: string) {
-  const passwordValue = value.trim();
+function validatePasswordField(
+  value: string,
+  { showRequired = false, showFormat = false }: ValidationOptions = {},
+) {
+  const passwordValue = value;
 
-  if (!passwordValue) {
-    return "Este campo é obrigatório.";
+  if (!passwordValue.trim()) {
+    return showRequired ? "Este campo é obrigatório." : undefined;
   }
 
   if (passwordValue.length < 4) {
-    return "A senha deve ter no mínimo 4 caracteres.";
+    return showFormat ? "A senha deve ter no mínimo 4 caracteres." : undefined;
   }
 
   return undefined;
@@ -88,7 +188,6 @@ export default function Login() {
   const [form, setForm] = useState<LoginFormData>({
     login: "",
     password: "",
-    remember: false,
   });
 
   const [errors, setErrors] = useState<LoginFormErrors>({});
@@ -96,24 +195,93 @@ export default function Login() {
     login: false,
     password: false,
   });
+  const [formatValidationEnabled, setFormatValidationEnabled] =
+    useState<FormatValidationState>({
+      login: false,
+      password: false,
+    });
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [rememberLogin, setRememberLogin] = useState(false);
+  const [rememberedLoginHydrated, setRememberedLoginHydrated] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loginBlockedUntil, setLoginBlockedUntil] = useState<number | null>(
+    null,
+  );
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
 
-  function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value, type, checked } = event.target;
+  const isRateLimited = retryAfterSeconds > 0;
+  const isSubmitDisabled = loading || isRateLimited;
 
-    let nextValue = value;
+  useEffect(() => {
+    const rememberedLogin = window.localStorage.getItem(
+      REMEMBERED_LOGIN_STORAGE_KEY,
+    );
 
-    if (name === "login") {
-      const looksLikeCpf = /^[\d.\-]*$/.test(value);
+    if (rememberedLogin) {
+      setForm((prev) => ({
+        ...prev,
+        login: sanitizeLoginInput(rememberedLogin),
+      }));
+      setRememberLogin(true);
+    }
 
-      if (looksLikeCpf) {
-        nextValue = formatCpf(value);
+    setRememberedLoginHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!rememberedLoginHydrated) return;
+
+    if (!rememberLogin) {
+      window.localStorage.removeItem(REMEMBERED_LOGIN_STORAGE_KEY);
+      return;
+    }
+
+    const loginValue = sanitizeLoginInput(form.login).trim();
+
+    if (!loginValue) {
+      window.localStorage.removeItem(REMEMBERED_LOGIN_STORAGE_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(REMEMBERED_LOGIN_STORAGE_KEY, loginValue);
+  }, [form.login, rememberLogin, rememberedLoginHydrated]);
+
+  useEffect(() => {
+    if (!loginBlockedUntil) {
+      setRetryAfterSeconds(0);
+      return;
+    }
+
+    const blockedUntil = loginBlockedUntil;
+
+    function updateCountdown() {
+      const remaining = Math.max(
+        0,
+        Math.ceil((blockedUntil - Date.now()) / 1000),
+      );
+
+      setRetryAfterSeconds(remaining);
+
+      if (remaining === 0) {
+        setLoginBlockedUntil(null);
       }
     }
 
+    updateCountdown();
+
+    const interval = window.setInterval(updateCountdown, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [loginBlockedUntil]);
+
+  function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = event.target;
+
+    const nextValue = name === "login" ? sanitizeLoginInput(value) : value;
+
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : nextValue,
+      [name]: nextValue,
     }));
 
     setErrors((prev) => {
@@ -123,48 +291,85 @@ export default function Login() {
       };
 
       if (name === "login") {
-        nextErrors.login = touched.login
-          ? validateLoginField(nextValue)
-          : undefined;
+        nextErrors.login = validateLoginField(nextValue, {
+          showRequired: touched.login || hasSubmitted,
+          showFormat: formatValidationEnabled.login || hasSubmitted,
+        });
       }
 
       if (name === "password") {
-        nextErrors.password = touched.password
-          ? validatePasswordField(nextValue)
-          : undefined;
+        nextErrors.password = validatePasswordField(nextValue, {
+          showRequired: touched.password || hasSubmitted,
+          showFormat: formatValidationEnabled.password || hasSubmitted,
+        });
       }
 
       return nextErrors;
     });
   }
 
+  function handleRememberLoginChange(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    setRememberLogin(event.target.checked);
+  }
+
   function handleFieldBlur(event: React.FocusEvent<HTMLInputElement>) {
     const { name, value } = event.target;
 
     if (name === "login") {
+      const loginError = validateLoginField(value, {
+        showRequired: true,
+        showFormat: true,
+      });
+
       setTouched((prev) => ({ ...prev, login: true }));
+      setFormatValidationEnabled((prev) => ({
+        ...prev,
+        login: Boolean(loginError && sanitizeLoginInput(value).trim()),
+      }));
       setErrors((prev) => ({
         ...prev,
-        login: validateLoginField(value),
+        login: loginError,
       }));
     }
 
     if (name === "password") {
+      const passwordError = validatePasswordField(value, {
+        showRequired: true,
+        showFormat: true,
+      });
+
       setTouched((prev) => ({ ...prev, password: true }));
+      setFormatValidationEnabled((prev) => ({
+        ...prev,
+        password: Boolean(passwordError && value.trim()),
+      }));
       setErrors((prev) => ({
         ...prev,
-        password: validatePasswordField(value),
+        password: passwordError,
       }));
     }
   }
 
   function validateForm() {
-    const loginError = validateLoginField(form.login);
-    const passwordError = validatePasswordField(form.password);
+    const loginError = validateLoginField(form.login, {
+      showRequired: true,
+      showFormat: true,
+    });
+    const passwordError = validatePasswordField(form.password, {
+      showRequired: true,
+      showFormat: true,
+    });
 
+    setHasSubmitted(true);
     setTouched({
       login: true,
       password: true,
+    });
+    setFormatValidationEnabled({
+      login: Boolean(loginError && sanitizeLoginInput(form.login).trim()),
+      password: Boolean(passwordError && form.password.trim()),
     });
 
     setErrors((prev) => ({
@@ -180,18 +385,20 @@ export default function Login() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (isSubmitDisabled) return;
     if (!validateForm()) return;
 
     try {
       setLoading(true);
+      setErrors((prev) => ({
+        ...prev,
+        form: undefined,
+      }));
 
-      await signIn(
-        {
-          login: form.login.trim(),
-          password: form.password,
-        },
-        form.remember,
-      );
+      await signIn({
+        login: getLoginPayload(form.login),
+        password: form.password,
+      });
 
       router.replace("/");
     } catch (error) {
@@ -210,6 +417,24 @@ export default function Login() {
             ...prev,
             form: "Credenciais inválidas.",
           }));
+        } else if (error.response?.status === 419) {
+          setErrors((prev) => ({
+            ...prev,
+            form: "Sua sessão expirou. Tente novamente.",
+          }));
+        } else if (error.response?.status === 429) {
+          const retryAfterHeader = error.response?.headers["retry-after"];
+          const retryAfterValue = Array.isArray(retryAfterHeader)
+            ? retryAfterHeader[0]
+            : retryAfterHeader;
+          const retryAfter = parseRetryAfterSeconds(retryAfterValue);
+
+          setErrors((prev) => ({
+            ...prev,
+            form: undefined,
+          }));
+          setLoginBlockedUntil(Date.now() + retryAfter * 1000);
+          setRetryAfterSeconds(retryAfter);
         } else if (error.response?.status === 422) {
           setErrors((prev) => ({
             ...prev,
@@ -286,22 +511,28 @@ export default function Login() {
                 error={errors.password}
               />
 
+              <div className="flex items-center justify-between gap-4">
+                <Checkbox
+                  name="rememberLogin"
+                  label="Lembrar login"
+                  checked={rememberLogin}
+                  onChange={handleRememberLoginChange}
+                />
+
+                <Link href="/recuperar-senha">Esqueceu a senha?</Link>
+              </div>
+
               {errors.form && (
                 <span className="text-sm font-semibold text-red-400">
                   {errors.form}
                 </span>
               )}
 
-              <div className="flex items-center justify-between">
-                <Checkbox
-                  name="remember"
-                  label="Lembrar usuário"
-                  checked={form.remember}
-                  onChange={handleInputChange}
-                />
-
-                <Link href="/recuperar-senha">Esqueceu a senha?</Link>
-              </div>
+              {isRateLimited && (
+                <span className="text-sm font-semibold text-amber-200">
+                  Muitas tentativas. Tente novamente em {retryAfterSeconds}s.
+                </span>
+              )}
 
               <Button
                 type="submit"
@@ -309,8 +540,11 @@ export default function Login() {
                 size="md"
                 leftIcon={<BiLogIn className="size-5" />}
                 loading={loading}
+                disabled={isRateLimited}
               >
-                Entrar
+                {isRateLimited
+                  ? `Tente novamente em ${retryAfterSeconds}s`
+                  : "Entrar"}
               </Button>
             </form>
           </div>
