@@ -9,16 +9,18 @@ import { useAuthStore } from "@/store/auth.store";
 export function useAuth() {
   const router = useRouter();
 
-  const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
-  const rememberMe = useAuthStore((state) => state.rememberMe);
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const status = useAuthStore((state) => state.status);
+  const setUser = useAuthStore((state) => state.setUser);
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
-  async function signIn(credentials: LoginRequest, remember = false) {
-    const data = await authService.login(credentials);
-    setAuth(data.token, data.user, remember);
-    return data;
+  async function signIn(credentials: LoginRequest) {
+    await authService.login(credentials);
+
+    const authenticatedUser = await authService.me();
+    setUser(authenticatedUser);
+
+    return authenticatedUser;
   }
 
   async function signOut() {
@@ -31,10 +33,8 @@ export function useAuth() {
   }
 
   return {
-    token,
     user,
-    rememberMe,
-    isAuthenticated: Boolean(token),
+    isAuthenticated: status === "authenticated",
     signIn,
     signOut,
   };
