@@ -1,13 +1,14 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import type { ReactNode } from "react";
+import { useEffect, useMemo } from "react";
 
 import { authService } from "@/features/auth/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 
-const publicRoutes = ["/login", "/recuperar-senha"];
+const guestOnlyRoutes = ["/login", "/recuperar-senha"];
+const publicRoutes = ["/registro", ...guestOnlyRoutes];
 
 type AuthProviderProps = {
   children: ReactNode;
@@ -17,73 +18,67 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const token = useAuthStore((state) => state.token);
-  const user = useAuthStore((state) => state.user);
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const status = useAuthStore((state) => state.status);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const setUser = useAuthStore((state) => state.setUser);
-
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const isPublicRoute = useMemo(
     () => publicRoutes.includes(pathname),
     [pathname],
   );
+  const isGuestOnlyRoute = useMemo(
+    () => guestOnlyRoutes.includes(pathname),
+    [pathname],
+  );
 
   useEffect(() => {
-    if (!hasHydrated) return;
+    if (status !== "unknown") return;
 
-    async function checkAuth() {
-      if (!token) {
-        setIsCheckingAuth(false);
+    let isActive = true;
 
-        if (!isPublicRoute) {
-          router.replace("/login");
-        }
-
-        return;
-      }
-
-      if (user) {
-        setIsCheckingAuth(false);
-
-        if (isPublicRoute) {
-          router.replace("/");
-        }
-
-        return;
-      }
-
+    async function restoreSession() {
       try {
         const me = await authService.me();
+
+        if (!isActive) return;
+
         setUser(me);
-
-        if (isPublicRoute) {
-          router.replace("/");
-        }
       } catch {
-        clearAuth();
+        if (!isActive) return;
 
-        if (!isPublicRoute) {
-          router.replace("/login");
-        }
-      } finally {
-        setIsCheckingAuth(false);
+        clearAuth();
       }
     }
 
-    void checkAuth();
-  }, [hasHydrated, token, user, isPublicRoute, router, setUser, clearAuth]);
+    void restoreSession();
 
-  if (!hasHydrated) {
+    return () => {
+      isActive = false;
+    };
+  }, [status, setUser, clearAuth]);
+
+  useEffect(() => {
+    if (status === "unknown") return;
+
+    if (!isPublicRoute && status === "guest") {
+      router.replace("/login");
+      return;
+    }
+
+    if (isGuestOnlyRoute && status === "authenticated") {
+      router.replace("/");
+    }
+  }, [status, isPublicRoute, isGuestOnlyRoute, router]);
+
+  if (status === "unknown") {
     return null;
   }
 
-  if (!isPublicRoute && (!token || isCheckingAuth)) {
+  if (!isPublicRoute && status === "guest") {
     return null;
   }
 
-  if (isPublicRoute && token) {
+  if (isGuestOnlyRoute && status === "authenticated") {
     return null;
   }
 
