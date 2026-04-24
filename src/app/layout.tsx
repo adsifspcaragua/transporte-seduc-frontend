@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import { Montserrat } from "next/font/google";
+import type { ReactNode } from "react";
 
 import AuthProvider from "@/providers/auth-provider";
 
