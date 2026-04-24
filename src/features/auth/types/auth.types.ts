@@ -9,12 +9,13 @@ export type AuthUser = {
   updated_at?: string;
 };
 
+export type AuthStatus = "unknown" | "authenticated" | "guest";
+
 export type LoginRequest = {
   login: string;
   password: string;
 };
 
 export type LoginResponse = {
-  token: string;
   user: AuthUser;
 };
