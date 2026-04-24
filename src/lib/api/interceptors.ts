@@ -1,19 +1,28 @@
 import type {
-  AxiosInstance,
   AxiosError,
+  AxiosInstance,
   InternalAxiosRequestConfig,
 } from "axios";
 
 import { useAuthStore } from "@/store/auth.store";
 
-export function setupInterceptors(api: AxiosInstance) {
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retryAfterCsrfRefresh?: boolean;
+};
+
+type SetupInterceptorsOptions = {
+  refreshCsrfCookie: () => Promise<unknown>;
+};
+
+function isCsrfCookieRequest(url?: string) {
+  return url?.includes("/sanctum/csrf-cookie") ?? false;
+}
+
+export function setupInterceptors(
+  api: AxiosInstance,
+  { refreshCsrfCookie }: SetupInterceptorsOptions,
+) {
   api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    const token = useAuthStore.getState().token;
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     config.headers.Accept = "application/json";
 
     return config;
@@ -21,7 +30,23 @@ export function setupInterceptors(api: AxiosInstance) {
 
   api.interceptors.response.use(
     (response) => response,
-    (error: AxiosError) => {
+    async (error: AxiosError) => {
+      const status = error.response?.status;
+      const originalRequest = error.config as
+        | RetryableRequestConfig
+        | undefined;
+
+      if (
+        status === 419 &&
+        originalRequest &&
+        !originalRequest._retryAfterCsrfRefresh &&
+        !isCsrfCookieRequest(originalRequest.url)
+      ) {
+        originalRequest._retryAfterCsrfRefresh = true;
+        await refreshCsrfCookie();
+        return api(originalRequest);
+      }
+
       if (error.response?.status === 401) {
         useAuthStore.getState().clearAuth();
       }
