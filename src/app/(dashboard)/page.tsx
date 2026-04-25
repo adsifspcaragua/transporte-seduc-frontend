@@ -1,7 +1,7 @@
 "use client";
 
+import { LogOut } from "lucide-react";
 import { useState } from "react";
-import { FiLogOut } from "react-icons/fi";
 
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -29,7 +29,7 @@ export default function Dashboard() {
         uppercase={false}
         fullWidth={false}
         loading={loading}
-        leftIcon={<FiLogOut />}
+        leftIcon={<LogOut />}
         onClick={handleLogout}
       >
         Sair
