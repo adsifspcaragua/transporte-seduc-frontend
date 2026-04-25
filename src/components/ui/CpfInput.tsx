@@ -1,8 +1,8 @@
 "use client";
 
+import { IdCard } from "lucide-react";
 import type { ChangeEvent, FocusEvent, InputHTMLAttributes } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
-import { BiIdCard } from "react-icons/bi";
 
 import type { InputProps } from "@/components/ui/Input";
 import Input from "@/components/ui/Input";
@@ -102,7 +102,7 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
         required={required}
         inputMode="numeric"
         autoComplete="off"
-        icon={BiIdCard}
+        icon={IdCard}
         maxLength={14}
         value={formattedValue}
         onChange={handleChange}
