@@ -1,14 +1,22 @@
 "use client";
 
+import { FileText, IdCard, UsersRound } from "lucide-react";
 import { useState } from "react";
-import RegisterLayout from "@/components/layouts/Register";
-import Input from "@/components/ui/Input";
 import Register from "@/components/layouts/Register";
-import { BiIdCard, BiSolidFileDoc } from "react-icons/bi";
-import { FaPeopleRoof } from "react-icons/fa6";
+import DateInput from "@/components/ui/DateInput";
+import Input from "@/components/ui/Input";
+
+function formatLocalIsoDate(date: Date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
 
 export default function RegistroPage() {
   const [step, setStep] = useState(0);
+  const today = new Date();
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -33,7 +41,7 @@ export default function RegistroPage() {
             {/* DADOS PESSOAIS */}
             <div className="mb-8">
               <h2 className="mb-4 text-lg font-semibold text-brand-600 flex gap-3 ">
-                <BiIdCard size={36} />
+                <IdCard size={36} />
                 <span className="self-center">Dados pessoais</span>
               </h2>
 
@@ -48,10 +56,14 @@ export default function RegistroPage() {
                   }
                 />
 
-                <Input
+                <DateInput
                   className="rounded-2xl"
                   variant="white"
                   label="Data de nascimento"
+                  min="1900-01-01"
+                  max={formatLocalIsoDate(today)}
+                  minYear={1900}
+                  maxYear={today.getFullYear()}
                   value={formData.nascimento}
                   onChange={(e) =>
                     setFormData({ ...formData, nascimento: e.target.value })
@@ -66,7 +78,7 @@ export default function RegistroPage() {
             {/* FILIAÇÃO */}
             <div className="mb-8">
               <h2 className="mb-4 text-lg font-semibold text-brand-600 flex gap-3">
-                <FaPeopleRoof size={36} />
+                <UsersRound size={36} />
                 <span className="self-center">Filiação</span>
               </h2>
 
@@ -99,7 +111,7 @@ export default function RegistroPage() {
             {/* DOCUMENTO */}
             <div>
               <h2 className="mb-4 text-lg font-semibold text-brand-600 flex gap-3">
-                <BiSolidFileDoc size={36} />
+                <FileText size={36} />
                 <span className="self-center">Documento de identificação</span>
               </h2>
 
@@ -138,25 +150,10 @@ export default function RegistroPage() {
           </div>
         )}
 
-        {/* STEP 2 */}
-        {step === 1 && (
-          <></>
-        )}
-
-        {/* STEP 3 */}
-        {step === 2 && (
-          <></>
-        )}
-
-        {/* STEP 4 */}
-        {step === 3 && (
-          <></>
-        )}
-
         <div className="flex justify-between">
           {/* BOTÃO - Voltar*/}
           <div className="flex justify-end">
-            <button type="button" onClick={handleNext}> 
+            <button type="button" onClick={handleNext}>
               Voltar
             </button>
           </div>
@@ -167,9 +164,7 @@ export default function RegistroPage() {
               Avançar
             </button>
           </div>
-
         </div>
-        
       </form>
     </Register>
   );
