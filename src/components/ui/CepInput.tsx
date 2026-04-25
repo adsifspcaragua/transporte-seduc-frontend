@@ -1,8 +1,8 @@
 "use client";
 
+import { MapPin } from "lucide-react";
 import type { ChangeEvent, FocusEvent, InputHTMLAttributes } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
-import { BiMap } from "react-icons/bi";
 
 import type { InputProps } from "@/components/ui/Input";
 import Input from "@/components/ui/Input";
@@ -96,7 +96,7 @@ const CepInput = forwardRef<HTMLInputElement, CepInputProps>(
         required={required}
         inputMode="numeric"
         autoComplete="postal-code"
-        icon={BiMap}
+        icon={MapPin}
         maxLength={9}
         value={formattedValue}
         onChange={handleChange}
