@@ -1,7 +1,6 @@
+import { ChevronDown, type LucideIcon } from "lucide-react";
 import type { ReactNode, SelectHTMLAttributes } from "react";
 import { forwardRef, useId } from "react";
-import type { IconType } from "react-icons";
-import { BiChevronDown } from "react-icons/bi";
 
 import type { InputVariant } from "@/components/ui/Input";
 import { cn } from "@/lib/utils/cn";
@@ -16,7 +15,7 @@ type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   label?: string;
   error?: string;
   hint?: string;
-  icon?: IconType;
+  icon?: LucideIcon;
   containerClassName?: string;
   labelClassName?: string;
   variant?: InputVariant;
@@ -82,7 +81,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             id={selectId}
             required={required}
             value={value}
-            defaultValue={value === undefined ? (defaultValue ?? "") : undefined}
+            defaultValue={
+              value === undefined ? (defaultValue ?? "") : undefined
+            }
             className={cn(
               "peer w-full appearance-none rounded-full border-2 px-8 pb-1 pt-6 outline-none transition-all duration-200",
               error
@@ -129,7 +130,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               variantClasses[variant].icon,
             )}
           >
-            {rightElement ?? <BiChevronDown className="size-5" />}
+            {rightElement ?? <ChevronDown className="size-5" />}
           </div>
         </div>
 
