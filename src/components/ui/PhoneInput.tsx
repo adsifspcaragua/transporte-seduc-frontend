@@ -1,8 +1,8 @@
 "use client";
 
+import { Phone } from "lucide-react";
 import type { ChangeEvent, FocusEvent, InputHTMLAttributes } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
-import { BiPhone } from "react-icons/bi";
 
 import type { InputProps } from "@/components/ui/Input";
 import Input from "@/components/ui/Input";
@@ -101,7 +101,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
         required={required}
         inputMode="tel"
         autoComplete="tel-national"
-        icon={BiPhone}
+        icon={Phone}
         maxLength={15}
         value={formattedValue}
         onChange={handleChange}
