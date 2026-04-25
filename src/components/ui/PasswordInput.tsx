@@ -1,7 +1,7 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import { forwardRef, useState } from "react";
-import { IoIosEye, IoIosEyeOff, IoIosLock } from "react-icons/io";
 import Input, { type InputProps } from "./Input";
 
 type PasswordInputProps = Omit<InputProps, "icon" | "rightElement" | "type">;
@@ -27,7 +27,6 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         label={label}
         error={error}
         hint={hint}
-        icon={IoIosLock}
         containerClassName={containerClassName}
         labelClassName={labelClassName}
         rightElement={
@@ -38,9 +37,9 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
           >
             {showPassword ? (
-              <IoIosEyeOff className="size-6" />
+              <EyeOff className="size-6" />
             ) : (
-              <IoIosEye className="size-6" />
+              <Eye className="size-6" />
             )}
           </button>
         }
