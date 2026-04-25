@@ -1,12 +1,11 @@
 "use client";
 
 import axios from "axios";
+import { LogIn } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BiLogIn } from "react-icons/bi";
-import { IoIosMail } from "react-icons/io";
 
 import LoginCarousel from "@/components/auth/LoginCarousel";
 import Button from "@/components/ui/Button";
@@ -491,7 +490,6 @@ export default function Login() {
                 label="E-mail ou CPF"
                 name="login"
                 type="text"
-                icon={IoIosMail}
                 required
                 value={form.login}
                 onChange={handleInputChange}
@@ -538,7 +536,7 @@ export default function Login() {
                 type="submit"
                 variant="light"
                 size="md"
-                leftIcon={<BiLogIn className="size-5" />}
+                leftIcon={<LogIn className="size-5" />}
                 loading={loading}
                 disabled={isRateLimited}
               >
@@ -550,13 +548,11 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="text-center text-sm text-white">
-          <span>
-            © 2026 Prefeitura Municipal de Caraguatatuba.
-            <br />
-            Todos os direitos reservados.
-          </span>
-        </div>
+        <p className="text-center text-sm text-white">
+          © 2026 Prefeitura Municipal de Caraguatatuba.
+          <br />
+          Todos os direitos reservados.
+        </p>
       </div>
 
       <div className="h-full w-full">
