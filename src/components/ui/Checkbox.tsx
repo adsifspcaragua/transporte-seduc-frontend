@@ -1,6 +1,6 @@
+import { Check } from "lucide-react";
 import type { InputHTMLAttributes } from "react";
 import { forwardRef, useId } from "react";
-import { FaCheck } from "react-icons/fa";
 
 type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label?: string;
@@ -51,7 +51,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               peer-checked:[&>svg]:opacity-100
             "
           >
-            <FaCheck />
+            <Check />
           </span>
 
           {label && <span className="leading-none text-white">{label}</span>}
