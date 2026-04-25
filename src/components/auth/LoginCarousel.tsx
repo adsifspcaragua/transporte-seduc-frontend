@@ -1,9 +1,9 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BiRightArrowAlt } from "react-icons/bi";
 
 const slides = [
   {
@@ -61,7 +61,7 @@ export default function LoginCarousel() {
         >
           <span>Solicitar transporte universitário</span>
           <span className="flex size-6 items-center justify-center rounded-full border border-brand-700/30 bg-white/35">
-            <BiRightArrowAlt className="size-4" />
+            <ArrowRight className="size-4" />
           </span>
         </Link>
       </div>
