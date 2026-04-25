@@ -1,80 +1,89 @@
+import { Check } from "lucide-react";
+import Image from "next/image";
+import type { ReactNode } from "react";
+
+import { cn } from "@/lib/utils/cn";
+import Link from "next/link";
+
 type Props = {
-  children: React.ReactNode;
+  children: ReactNode;
   step: number;
 };
 
+const steps = [
+  "Identidade Civil",
+  "Endereço e Contato",
+  "Dados Institucionais",
+  "Upload de Documentos",
+  "Revisão e Confirmação",
+];
+
 export default function Register({ children, step }: Props) {
-  const steps = [
-    "Identidade Civil",
-    "Endereço e Contato",
-    "Dados Institucionais",
-    "Upload de Documentos",
-    "Revisão e Confirmação",
-  ];
-
   return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
-      <div className="w-1/3 bg-brand-600 text-white p-8 flex flex-col">
-        <h2 className="mb-10 text-lg font-semibold">Realize seu cadastro</h2>
-
-        <div className="relative">
-          {/* Linha vertical */}
-          <div className="absolute left-4 top-0 h-full w-1 bg-white/30" />
-
-          {steps.map((item, index) => {
-            const isActive = index === step;
-            const isCompleted = index < step;
-
-            return (
-              <div key={index} className="flex items-center mb-10 relative">
-                {/* Círculo */}
-                <div
-                  className={`
-                    z-10 w-8 h-8 rounded-full flex items-center justify-center
-                    border-2
-                    ${
-                      isActive
-                        ? "bg-white border-white"
-                        : isCompleted
-                          ? "bg-white/80 border-white"
-                          : "bg-transparent border-white/40"
-                    }
-                  `}
-                >
-                  {isCompleted ? (
-                    <div className="w-3 h-3 bg-brand-600 rounded-full" />
-                  ) : (
-                    <div
-                      className={`w-3 h-3 rounded-full ${
-                        isActive ? "bg-brand-600" : "bg-transparent"
-                      }`}
-                    />
-                  )}
-                </div>
-
-                {/* Texto */}
-                <span
-                  className={`ml-4 ${
-                    isActive ? "font-semibold text-white" : "text-white/70"
-                  }`}
-                >
-                  {item}
-                </span>
-              </div>
-            );
-          })}
+    <div className="flex min-h-screen bg-gray-100">
+      <aside className="flex min-h-screen w-143.75 shrink-0 flex-col bg-brand-600 p-6 text-white">
+        <div className="w-full">
+          <Link href="/login">
+            <Image
+              src="/logo_educacao_w.svg"
+              alt="Logo da Prefeitura Municipal de Caraguatatuba"
+              width={240}
+              height={90}
+              priority
+            />
+          </Link>
         </div>
 
-        <div className="mt-auto text-xs text-white/60">
+        <div className="ml-8 mt-24">
+          <h2 className="text-xl font-bold">Realize seu cadastro</h2>
+
+          <div className="relative mt-10">
+            <div className="absolute left-[1.375rem] top-7 h-[calc(100%-3.5rem)] w-3 rounded-full bg-white" />
+
+            <ol className="relative flex flex-col gap-8">
+              {steps.map((item, index) => {
+                const isActive = index === step;
+                const isCompleted = index < step;
+
+                return (
+                  <li key={item} className="relative flex items-center gap-5">
+                    <div
+                      className={cn(
+                        "relative z-10 flex size-14 shrink-0 items-center justify-center rounded-full bg-white",
+                        isActive && "border-[9px] border-white bg-brand-600",
+                      )}
+                    >
+                      {isCompleted && (
+                        <div className="flex size-[2.375rem] items-center justify-center rounded-full bg-brand-600">
+                          <Check className="size-7 text-white" />
+                        </div>
+                      )}
+                    </div>
+
+                    <span
+                      className={cn(
+                        "text-sm font-medium text-white/62 transition-colors duration-200",
+                        isActive && "text-base font-bold text-white",
+                        isCompleted && "text-white",
+                      )}
+                    >
+                      {item}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        </div>
+
+        <p className="mt-auto text-center text-sm text-white">
           © 2026 Prefeitura Municipal de Caraguatatuba.
           <br />
           Todos os direitos reservados.
-        </div>
-      </div>
+        </p>
+      </aside>
 
-      {/* Conteúdo */}
-      <div className="flex-1 p-8 bg-gray-100">{children}</div>
+      <main className="min-w-0 flex-1 p-8">{children}</main>
     </div>
   );
 }
