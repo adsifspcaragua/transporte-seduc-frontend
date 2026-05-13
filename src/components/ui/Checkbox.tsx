@@ -2,12 +2,15 @@ import { Check } from "lucide-react";
 import type { InputHTMLAttributes } from "react";
 import { forwardRef, useId } from "react";
 
+import { cn } from "@/lib/utils/cn";
+
 type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label?: string;
   error?: string;
   hint?: string;
   containerClassName?: string;
   labelClassName?: string;
+  variant?: "dark" | "white";
 };
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
@@ -20,6 +23,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       containerClassName = "",
       labelClassName = "",
       id,
+      variant = "dark",
       ...props
     },
     ref,
@@ -28,10 +32,13 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     const inputId = id ?? generatedId;
 
     return (
-      <div className={`flex flex-col gap-2 ${containerClassName}`}>
+      <div className={cn("flex flex-col gap-2", containerClassName)}>
         <label
           htmlFor={inputId}
-          className={`inline-flex w-fit cursor-pointer items-center gap-2 ${labelClassName}`}
+          className={cn(
+            "inline-flex w-fit cursor-pointer items-center gap-2",
+            labelClassName,
+          )}
         >
           <input
             ref={ref}
@@ -42,25 +49,44 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           />
 
           <span
-            className="
+            className={cn(
+              `
               flex size-5 items-center justify-center rounded-md
-              bg-brand-700 transition-all duration-200
+              transition-all duration-200
               [&>svg]:size-3 [&>svg]:text-brand-700 [&>svg]:opacity-0 [&>svg]:transition-all [&>svg]:duration-200
               peer-focus:ring-2 peer-focus:ring-brand-100/50
               peer-checked:bg-brand-100
               peer-checked:[&>svg]:opacity-100
-            "
+            `,
+              variant === "dark" ? "bg-brand-700" : "border border-brand-600",
+            )}
           >
             <Check />
           </span>
 
-          {label && <span className="leading-none text-white">{label}</span>}
+          {label && (
+            <span
+              className={cn(
+                "leading-none",
+                variant === "dark" ? "text-white" : "text-brand-700",
+              )}
+            >
+              {label}
+            </span>
+          )}
         </label>
 
         {error ? (
           <span className="text-sm text-red-400">{error}</span>
         ) : hint ? (
-          <span className="text-sm text-white/60">{hint}</span>
+          <span
+            className={cn(
+              "text-sm",
+              variant === "dark" ? "text-white/60" : "text-brand-600/70",
+            )}
+          >
+            {hint}
+          </span>
         ) : null}
       </div>
     );
