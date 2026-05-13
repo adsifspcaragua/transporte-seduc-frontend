@@ -34,6 +34,11 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     if (status !== "unknown") return;
 
+    if (isPublicRoute) {
+      clearAuth();
+      return;
+    }
+
     let isActive = true;
 
     async function restoreSession() {
@@ -55,7 +60,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       isActive = false;
     };
-  }, [status, setUser, clearAuth]);
+  }, [status, isPublicRoute, setUser, clearAuth]);
 
   useEffect(() => {
     if (status === "unknown") return;
