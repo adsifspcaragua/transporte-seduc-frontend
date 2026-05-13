@@ -16,11 +16,11 @@ type CepInputProps = Omit<
   onCepValidityChange?: (isValid: boolean) => void;
 };
 
-function getCepValidationError(value: string, required?: boolean) {
+function getCepValidationError(value: string) {
   const cep = cleanCep(value);
 
   if (!cep.length) {
-    return required ? "Este campo é obrigatório." : undefined;
+    return undefined;
   }
 
   if (!isValidCep(cep)) {
@@ -76,7 +76,7 @@ const CepInput = forwardRef<HTMLInputElement, CepInputProps>(
       }
 
       if (touched) {
-        setInternalError(getCepValidationError(nextFormattedValue, required));
+        setInternalError(getCepValidationError(nextFormattedValue));
       }
 
       onChange?.(event);
@@ -84,7 +84,7 @@ const CepInput = forwardRef<HTMLInputElement, CepInputProps>(
 
     function handleBlur(event: FocusEvent<HTMLInputElement>) {
       setTouched(true);
-      setInternalError(getCepValidationError(event.target.value, required));
+      setInternalError(getCepValidationError(event.target.value));
       onBlur?.(event);
     }
 
