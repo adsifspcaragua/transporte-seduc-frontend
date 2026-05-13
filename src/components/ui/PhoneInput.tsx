@@ -16,11 +16,11 @@ type PhoneInputProps = Omit<
   onPhoneValidityChange?: (isValid: boolean) => void;
 };
 
-function getPhoneValidationError(value: string, required?: boolean) {
+function getPhoneValidationError(value: string) {
   const phone = cleanPhone(value);
 
   if (!phone.length) {
-    return required ? "Este campo é obrigatório." : undefined;
+    return undefined;
   }
 
   if (phone.length < 11) {
@@ -81,7 +81,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
       }
 
       if (touched) {
-        setInternalError(getPhoneValidationError(nextFormattedValue, required));
+        setInternalError(getPhoneValidationError(nextFormattedValue));
       }
 
       onChange?.(event);
@@ -89,7 +89,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
 
     function handleBlur(event: FocusEvent<HTMLInputElement>) {
       setTouched(true);
-      setInternalError(getPhoneValidationError(event.target.value, required));
+      setInternalError(getPhoneValidationError(event.target.value));
       onBlur?.(event);
     }
 
