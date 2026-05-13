@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type ButtonVariant = "light" | "primary" | "danger" | "ghost";
+type ButtonVariant = "light" | "primary" | "success" | "danger" | "ghost";
 type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -19,19 +19,25 @@ const variantClasses: Record<ButtonVariant, string> = {
     bg-brand-100 text-brand-700
     hover:bg-brand-050
     active:bg-brand-050
-    shadow-[0_10px_25px_rgba(0,0,0,0.18)]
+    shadow-[0_8px_18px_rgba(0,0,0,0.14)]
   `,
   primary: `
     bg-action-primary text-white
     hover:bg-action-primary-hover
     active:bg-action-primary-pressed
-    shadow-[0_10px_25px_rgba(0,0,0,0.18)]
+    shadow-[0_8px_18px_rgba(0,0,0,0.14)]
+  `,
+  success: `
+    bg-emerald-600 text-white
+    hover:bg-emerald-700
+    active:bg-emerald-800
+    shadow-[0_8px_18px_rgba(0,0,0,0.14)]
   `,
   danger: `
     bg-danger-600 text-white
     hover:bg-danger-700
     active:bg-danger-800
-    shadow-[0_10px_25px_rgba(0,0,0,0.18)]
+    shadow-[0_8px_18px_rgba(0,0,0,0.14)]
   `,
   ghost: `
     bg-transparent text-brand-600
@@ -42,15 +48,16 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "min-h-10 px-4 py-2 text-sm",
-  md: "min-h-12 px-6 py-3 text-base",
-  lg: "min-h-14 px-8 py-3.5 text-lg",
-  icon: "size-12 p-0",
+  sm: "min-h-9 px-3.5 py-2 text-sm",
+  md: "min-h-11 px-5 py-2.5 text-base",
+  lg: "min-h-12 px-6 py-3 text-lg",
+  icon: "size-10 p-0",
 };
 
 const spinnerClasses: Record<ButtonVariant, string> = {
   light: "border-brand-700 border-t-transparent",
   primary: "border-white border-t-transparent",
+  success: "border-white border-t-transparent",
   danger: "border-white border-t-transparent",
   ghost: "border-brand-600 border-t-transparent",
 };
@@ -76,11 +83,12 @@ export default function Button({
       type={type}
       disabled={disabled || loading}
       className={`
-        inline-flex items-center justify-center gap-2 rounded-full
+        inline-flex items-center justify-center gap-2 rounded-lg
         font-semibold transition-all duration-200
         disabled:cursor-not-allowed disabled:opacity-60
         ${uppercase ? "uppercase tracking-wide" : "normal-case tracking-normal"}
         ${fullWidth && !isIconOnly ? "w-full" : ""}
+        ${!fullWidth ? "self-center" : ""}
         ${variantClasses[variant]}
         ${sizeClasses[size]}
         ${loading ? "" : "cursor-pointer active:scale-[0.99]"}
