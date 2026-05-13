@@ -5,4 +5,23 @@ export const API_ENDPOINTS = {
     LOGOUT: "/logout",
     ME: "/me",
   },
+  INSCRICOES: {
+    BASE: "/inscricoes",
+    BY_ID: (id: number | string) => `/inscricoes/${id}`,
+    DOCUMENTOS: (inscricaoId: number | string) =>
+      `/inscricoes/${inscricaoId}/documentos`,
+    DOCUMENTO_BY_ID: (
+      inscricaoId: number | string,
+      documentoId: number | string,
+    ) => `/inscricoes/${inscricaoId}/documentos/${documentoId}`,
+    INSTITUICOES: (inscricaoId: number | string) =>
+      `/inscricoes/${inscricaoId}/instituicoes`,
+    INSTITUICAO_BY_ID: (
+      inscricaoId: number | string,
+      instituicaoId: number | string,
+    ) => `/inscricoes/${inscricaoId}/instituicoes/${instituicaoId}`,
+  },
+  INSTITUICOES: {
+    BASE: "/instituicao",
+  },
 } as const;
