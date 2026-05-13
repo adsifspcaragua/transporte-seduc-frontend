@@ -16,11 +16,11 @@ type CpfInputProps = Omit<
   onCpfValidityChange?: (isValid: boolean) => void;
 };
 
-function getCpfValidationError(value: string, required?: boolean) {
+function getCpfValidationError(value: string) {
   const cpf = cleanCpf(value);
 
   if (!cpf.length) {
-    return required ? "Este campo é obrigatório." : undefined;
+    return undefined;
   }
 
   if (cpf.length < 11) {
@@ -82,7 +82,7 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
       }
 
       if (touched) {
-        setInternalError(getCpfValidationError(nextFormattedValue, required));
+        setInternalError(getCpfValidationError(nextFormattedValue));
       }
 
       onChange?.(event);
@@ -90,7 +90,7 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
 
     function handleBlur(event: FocusEvent<HTMLInputElement>) {
       setTouched(true);
-      setInternalError(getCpfValidationError(event.target.value, required));
+      setInternalError(getCpfValidationError(event.target.value));
       onBlur?.(event);
     }
 
