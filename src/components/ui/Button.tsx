@@ -1,5 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
+import { cn } from "@/lib/utils/cn";
+
 type ButtonVariant = "light" | "primary" | "success" | "danger" | "ghost";
 type ButtonSize = "sm" | "md" | "lg" | "icon";
 
@@ -82,23 +84,24 @@ export default function Button({
     <button
       type={type}
       disabled={disabled || loading}
-      className={`
-        inline-flex items-center justify-center gap-2 rounded-lg
-        font-semibold transition-all duration-200
-        disabled:cursor-not-allowed disabled:opacity-60
-        ${uppercase ? "uppercase tracking-wide" : "normal-case tracking-normal"}
-        ${fullWidth && !isIconOnly ? "w-full" : ""}
-        ${!fullWidth ? "self-center" : ""}
-        ${variantClasses[variant]}
-        ${sizeClasses[size]}
-        ${loading ? "" : "cursor-pointer active:scale-[0.99]"}
-        ${className}
-      `}
+      className={cn(
+        "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60",
+        uppercase ? "uppercase tracking-wide" : "normal-case tracking-normal",
+        fullWidth && !isIconOnly && "w-full",
+        !fullWidth && "self-center",
+        variantClasses[variant],
+        sizeClasses[size],
+        !loading && "cursor-pointer active:scale-[0.99]",
+        className,
+      )}
       {...props}
     >
       {loading ? (
         <span
-          className={`h-5 w-5 animate-spin rounded-full border-2 ${spinnerClasses[variant]}`}
+          className={cn(
+            "h-5 w-5 animate-spin rounded-full border-2",
+            spinnerClasses[variant],
+          )}
         />
       ) : (
         <>

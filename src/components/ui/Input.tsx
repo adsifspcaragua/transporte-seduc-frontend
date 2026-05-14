@@ -13,7 +13,10 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   icon?: LucideIcon;
   rightElement?: ReactNode;
   containerClassName?: string;
+  errorClassName?: string;
+  hintClassName?: string;
   labelClassName?: string;
+  rightElementClassName?: string;
   variant?: InputVariant;
 };
 
@@ -59,7 +62,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       rightElement,
       className = "",
       containerClassName = "",
+      errorClassName = "",
+      hintClassName = "",
       labelClassName = "",
+      rightElementClassName = "",
       variant = "white",
       id,
       required,
@@ -107,16 +113,29 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
 
           {rightElement && (
-            <div className="absolute right-6 top-1/2 z-10 -translate-y-1/2">
+            <div
+              className={cn(
+                "absolute right-6 top-1/2 z-10 -translate-y-1/2",
+                rightElementClassName,
+              )}
+            >
               {rightElement}
             </div>
           )}
         </div>
 
         {error ? (
-          <span className="text-sm text-red-400">{error}</span>
+          <span className={cn("text-sm text-red-400", errorClassName)}>
+            {error}
+          </span>
         ) : hint ? (
-          <span className={cn("text-sm", variantClasses[variant].hint)}>
+          <span
+            className={cn(
+              "text-sm",
+              variantClasses[variant].hint,
+              hintClassName,
+            )}
+          >
             {hint}
           </span>
         ) : null}

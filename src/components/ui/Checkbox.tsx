@@ -44,7 +44,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             ref={ref}
             id={inputId}
             type="checkbox"
-            className={`peer sr-only ${className}`}
+            className="peer sr-only"
             {...props}
           />
 
@@ -59,6 +59,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               peer-checked:[&>svg]:opacity-100
             `,
               variant === "dark" ? "bg-brand-700" : "border border-brand-600",
+              className,
             )}
           >
             <Check />

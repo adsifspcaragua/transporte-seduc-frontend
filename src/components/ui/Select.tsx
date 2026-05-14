@@ -32,7 +32,12 @@ type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   hint?: string;
   icon?: LucideIcon;
   containerClassName?: string;
+  errorClassName?: string;
   labelClassName?: string;
+  hintClassName?: string;
+  listboxClassName?: string;
+  optionClassName?: string;
+  rightElementClassName?: string;
   variant?: InputVariant;
   options?: SelectOption[];
   placeholder?: string;
@@ -141,7 +146,12 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       hint,
       icon: Icon,
       containerClassName = "",
+      errorClassName = "",
       labelClassName = "",
+      hintClassName = "",
+      listboxClassName = "",
+      optionClassName = "",
+      rightElementClassName = "",
       className = "",
       variant = "white",
       id,
@@ -395,6 +405,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               "pointer-events-none absolute right-6 top-1/2 z-10 -translate-y-1/2 transition-transform duration-200",
               isOpen && "rotate-180",
               variantClasses[variant].icon,
+              rightElementClassName,
             )}
           >
             {rightElement ?? <ChevronDown className="size-5" />}
@@ -405,7 +416,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               id={listboxId}
               role="listbox"
               aria-labelledby={selectId}
-              className="absolute left-0 top-full z-[60] mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 text-sm text-slate-900 shadow-xl shadow-slate-900/10"
+              className={cn(
+                "absolute left-0 top-full z-[60] mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 text-sm text-slate-900 shadow-xl shadow-slate-900/10",
+                listboxClassName,
+              )}
             >
               {allOptions.map((option, index) => {
                 const isSelected = option.value === selectedValue;
@@ -431,6 +445,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         "text-slate-700 hover:bg-brand-100/60 hover:text-brand-700",
                       option.disabled &&
                         "cursor-not-allowed bg-transparent text-slate-400 hover:bg-transparent hover:text-slate-400",
+                      optionClassName,
                     )}
                   >
                     <span className="min-w-0 truncate">{option.label}</span>
@@ -442,9 +457,17 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </div>
 
         {error ? (
-          <span className="text-sm text-red-400">{error}</span>
+          <span className={cn("text-sm text-red-400", errorClassName)}>
+            {error}
+          </span>
         ) : hint ? (
-          <span className={cn("text-sm", variantClasses[variant].hint)}>
+          <span
+            className={cn(
+              "text-sm",
+              variantClasses[variant].hint,
+              hintClassName,
+            )}
+          >
             {hint}
           </span>
         ) : null}
