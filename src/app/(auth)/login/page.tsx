@@ -542,6 +542,7 @@ export default function Login() {
                 leftIcon={<LogIn className="size-5" />}
                 loading={loading}
                 disabled={isRateLimited}
+                className="rounded-full"
               >
                 {isRateLimited
                   ? `Tente novamente em ${retryAfterSeconds}s`
