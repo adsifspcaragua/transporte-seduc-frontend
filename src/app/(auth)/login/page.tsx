@@ -488,6 +488,7 @@ export default function Login() {
               className="flex flex-col gap-5"
             >
               <Input
+                variant="dark"
                 label="E-mail ou CPF"
                 name="login"
                 type="text"
@@ -500,6 +501,7 @@ export default function Login() {
               />
 
               <PasswordInput
+                variant="dark"
                 label="Senha"
                 name="password"
                 autoComplete="current-password"

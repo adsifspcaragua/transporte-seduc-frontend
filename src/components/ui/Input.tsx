@@ -21,12 +21,14 @@ const variantClasses: Record<
   InputVariant,
   {
     input: string;
+    state: string;
     label: string;
     hint: string;
   }
 > = {
   dark: {
-    input: "bg-brand-700 text-white",
+    input: "rounded-full border-2 bg-brand-700 text-white",
+    state: "border-brand-700 focus:border-brand-100",
     label: `
       text-white/50
       peer-focus:text-white/70
@@ -35,13 +37,15 @@ const variantClasses: Record<
     hint: "text-white/60",
   },
   white: {
-    input: "bg-white text-brand-700",
+    input: "rounded-lg border bg-white text-slate-900",
+    state:
+      "border-slate-300 focus:border-brand-600 focus:ring-1 focus:ring-brand-600",
     label: `
-      text-brand-600/60
+      text-slate-500
       peer-focus:text-brand-600
       peer-[:not(:placeholder-shown)]:text-brand-600
     `,
-    hint: "text-brand-600/70",
+    hint: "text-slate-500",
   },
 };
 
@@ -56,7 +60,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       className = "",
       containerClassName = "",
       labelClassName = "",
-      variant = "dark",
+      variant = "white",
       id,
       required,
       ...props
@@ -74,13 +78,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             required={required}
             placeholder=" "
+            data-input-variant={variant}
             className={cn(
-              "peer w-full rounded-full border-2 px-8 pb-1 pt-6 outline-none transition-all duration-200 placeholder:text-transparent",
-              error
-                ? "border-red-500 focus:border-red-500"
-                : "border-brand-700 focus:border-brand-100",
-              Boolean(rightElement) && "pr-16",
+              "peer w-full px-8 pb-1 pt-6 outline-none transition-all duration-200 placeholder:text-transparent disabled:cursor-not-allowed disabled:opacity-60",
               variantClasses[variant].input,
+              error
+                ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                : variantClasses[variant].state,
+              Boolean(rightElement) && "pr-16",
               className,
             )}
             {...props}

@@ -14,6 +14,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
       hint,
       containerClassName = "",
       labelClassName = "",
+      variant = "white",
       ...props
     },
     ref,
@@ -29,11 +30,16 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         hint={hint}
         containerClassName={containerClassName}
         labelClassName={labelClassName}
+        variant={variant}
         rightElement={
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
-            className="flex items-center justify-center text-white/70 transition hover:text-white"
+            className={
+              variant === "dark"
+                ? "flex items-center justify-center text-white/70 transition hover:text-white"
+                : "flex items-center justify-center text-slate-500 transition hover:text-brand-600"
+            }
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
           >
             {showPassword ? (

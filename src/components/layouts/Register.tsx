@@ -30,7 +30,7 @@ const statusLabels: Record<RegisterStepStatus, string> = {
 export default function Register({ children, step, stepStatuses = [] }: Props) {
   return (
     <div className="flex min-h-screen bg-slate-100">
-      <aside className="sticky top-0 hidden h-screen w-[24rem] shrink-0 flex-col bg-brand-600 p-8 text-white lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-143.75 shrink-0 flex-col bg-brand-600 p-6 text-white lg:flex">
         <div className="w-full">
           <Link href="/login">
             <Image

@@ -1359,7 +1359,8 @@ export default function RegistroPage() {
                     { value: "50%", label: "50%" },
                     { value: "25%", label: "25%" },
                   ]}
-                  className={cn(fieldClassName(), "mt-4")}
+                  containerClassName="mt-4"
+                  className={fieldClassName()}
                 />
               )}
             </div>

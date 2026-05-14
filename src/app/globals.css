@@ -41,13 +41,35 @@ body {
   font-family: var(--font-montserrat), Arial, Helvetica, sans-serif;
 }
 
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
+input[data-input-variant="dark"]:-webkit-autofill,
+input[data-input-variant="dark"]:-webkit-autofill:hover,
+input[data-input-variant="dark"]:-webkit-autofill:focus,
+input[data-input-variant="dark"]:-webkit-autofill:active {
   -webkit-text-fill-color: #ffffff;
   caret-color: #ffffff;
   -webkit-box-shadow: 0 0 0 1000px #063e66 inset;
   box-shadow: 0 0 0 1000px #063e66 inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+input[data-input-variant="white"]:-webkit-autofill,
+input[data-input-variant="white"]:-webkit-autofill:hover,
+input[data-input-variant="white"]:-webkit-autofill:active {
+  -webkit-text-fill-color: #0f172a;
+  caret-color: #084e80;
+  -webkit-box-shadow: 0 0 0 1000px #e8f0fe inset;
+  box-shadow: 0 0 0 1000px #e8f0fe inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+input[data-input-variant="white"]:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a;
+  caret-color: #084e80;
+  -webkit-box-shadow:
+    0 0 0 1000px #e8f0fe inset,
+    0 0 0 1px #084e80;
+  box-shadow:
+    0 0 0 1000px #e8f0fe inset,
+    0 0 0 1px #084e80;
   transition: background-color 9999s ease-in-out 0s;
 }
