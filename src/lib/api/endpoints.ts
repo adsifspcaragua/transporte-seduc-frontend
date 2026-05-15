@@ -24,4 +24,9 @@ export const API_ENDPOINTS = {
   INSTITUICOES: {
     BASE: "/instituicao",
   },
+  ESTUDANTES: {
+    BASE: "/estudantes",
+    COUNT: "/contar-estudantes",
+    BY_ID: (id: number | string) => `/estudantes/${id}`,
+  },
 } as const;
