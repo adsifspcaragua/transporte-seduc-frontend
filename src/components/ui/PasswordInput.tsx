@@ -2,9 +2,10 @@
 
 import { Eye, EyeOff } from "lucide-react";
 import { forwardRef, useState } from "react";
+import { cn } from "@/lib/utils/cn";
 import Input, { type InputProps } from "./Input";
 
-type PasswordInputProps = Omit<InputProps, "icon" | "rightElement" | "type">;
+type PasswordInputProps = Omit<InputProps, "rightElement" | "type">;
 
 const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
   (
@@ -12,8 +13,10 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
       label = "Senha",
       error,
       hint,
+      className = "",
       containerClassName = "",
       labelClassName = "",
+      rightElementClassName = "",
       variant = "white",
       ...props
     },
@@ -28,8 +31,13 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         label={label}
         error={error}
         hint={hint}
+        className={cn(variant === "dark" && "pr-16", className)}
         containerClassName={containerClassName}
         labelClassName={labelClassName}
+        rightElementClassName={cn(
+          variant === "dark" && "right-6",
+          rightElementClassName,
+        )}
         variant={variant}
         rightElement={
           <button

@@ -241,13 +241,6 @@ export default function Dashboard() {
                   {studentsLoading ? "..." : totalStudents}
                 </p>
               </div>
-              <Link
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-action-primary px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(0,0,0,0.14)] transition-colors hover:bg-action-primary-hover"
-                href="/registro"
-              >
-                <Plus className="size-4" />
-                Novo cadastro
-              </Link>
             </div>
           </div>
 

@@ -12,7 +12,6 @@ import {
   GraduationCap,
   Home,
   IdCard,
-  Loader2,
   MapPin,
   Phone,
   ShieldCheck,
@@ -545,7 +544,7 @@ function buildInstituicaoPayload(
 }
 
 function fieldClassName() {
-  return "min-h-14 rounded-lg";
+  return "h-12 rounded-lg";
 }
 
 export default function RegistroPage() {
@@ -568,7 +567,6 @@ export default function RegistroPage() {
   const [documentDraftError, setDocumentDraftError] = useState("");
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [cepLoading, setCepLoading] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
@@ -598,7 +596,6 @@ export default function RegistroPage() {
 
     lastCepLookupRef.current = cepDigits;
 
-    setCepLoading(true);
     setFeedback(null);
 
     try {
@@ -618,8 +615,6 @@ export default function RegistroPage() {
         message: getErrorMessage(error),
       });
       lastCepLookupRef.current = "";
-    } finally {
-      setCepLoading(false);
     }
   }, []);
 
@@ -1106,11 +1101,6 @@ export default function RegistroPage() {
               value={form.cep}
               onChange={(event) => setField("cep", event.target.value)}
               error={shouldShowError("cep", 1)}
-              rightElement={
-                cepLoading ? (
-                  <Loader2 className="size-5 animate-spin text-brand-600" />
-                ) : null
-              }
               className={fieldClassName()}
             />
 

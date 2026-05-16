@@ -1,6 +1,5 @@
 "use client";
 
-import { MapPin } from "lucide-react";
 import type { ChangeEvent, FocusEvent, InputHTMLAttributes } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
@@ -10,7 +9,7 @@ import { cleanCep, formatCep, isValidCep } from "@/lib/utils/cep";
 
 type CepInputProps = Omit<
   InputProps,
-  "icon" | "inputMode" | "maxLength" | "onChange" | "type"
+  "inputMode" | "maxLength" | "onChange" | "type"
 > & {
   onChange?: InputHTMLAttributes<HTMLInputElement>["onChange"];
   onCepValidityChange?: (isValid: boolean) => void;
@@ -28,6 +27,12 @@ function getCepValidationError(value: string) {
   }
 
   return undefined;
+}
+
+function isDeleting(event: ChangeEvent<HTMLInputElement>) {
+  const inputType = (event.nativeEvent as InputEvent).inputType;
+
+  return typeof inputType === "string" && inputType.startsWith("delete");
 }
 
 const CepInput = forwardRef<HTMLInputElement, CepInputProps>(
@@ -49,26 +54,36 @@ const CepInput = forwardRef<HTMLInputElement, CepInputProps>(
     const [internalValue, setInternalValue] = useState(() =>
       formatCep(defaultValue?.toString() ?? ""),
     );
+    const [eagerFormatting, setEagerFormatting] = useState(true);
     const [touched, setTouched] = useState(false);
     const [internalError, setInternalError] = useState<string | undefined>();
 
     const formattedValue = useMemo(
-      () => formatCep(isControlled ? (value?.toString() ?? "") : internalValue),
-      [internalValue, isControlled, value],
+      () =>
+        formatCep(isControlled ? (value?.toString() ?? "") : internalValue, {
+          eager: eagerFormatting,
+        }),
+      [eagerFormatting, internalValue, isControlled, value],
     );
 
     useEffect(() => {
       if (!isControlled) return;
-      setInternalValue(formatCep(value?.toString() ?? ""));
-    }, [isControlled, value]);
+      setInternalValue(
+        formatCep(value?.toString() ?? "", { eager: eagerFormatting }),
+      );
+    }, [eagerFormatting, isControlled, value]);
 
     useEffect(() => {
       onCepValidityChange?.(isValidCep(formattedValue));
     }, [formattedValue, onCepValidityChange]);
 
     function handleChange(event: ChangeEvent<HTMLInputElement>) {
-      const nextFormattedValue = formatCep(event.target.value);
+      const shouldFormatEagerly = !isDeleting(event);
+      const nextFormattedValue = formatCep(event.target.value, {
+        eager: shouldFormatEagerly,
+      });
 
+      setEagerFormatting(shouldFormatEagerly);
       event.target.value = nextFormattedValue;
 
       if (!isControlled) {
@@ -96,7 +111,6 @@ const CepInput = forwardRef<HTMLInputElement, CepInputProps>(
         required={required}
         inputMode="numeric"
         autoComplete="postal-code"
-        icon={MapPin}
         maxLength={9}
         value={formattedValue}
         onChange={handleChange}

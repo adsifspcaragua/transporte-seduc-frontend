@@ -1,6 +1,5 @@
 "use client";
 
-import { Phone } from "lucide-react";
 import type { ChangeEvent, FocusEvent, InputHTMLAttributes } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
@@ -10,7 +9,7 @@ import { cleanPhone, formatPhone, isValidPhone } from "@/lib/utils/phone";
 
 type PhoneInputProps = Omit<
   InputProps,
-  "icon" | "inputMode" | "maxLength" | "onChange" | "type"
+  "inputMode" | "maxLength" | "onChange" | "type"
 > & {
   onChange?: InputHTMLAttributes<HTMLInputElement>["onChange"];
   onPhoneValidityChange?: (isValid: boolean) => void;
@@ -34,6 +33,12 @@ function getPhoneValidationError(value: string) {
   return undefined;
 }
 
+function isDeleting(event: ChangeEvent<HTMLInputElement>) {
+  const inputType = (event.nativeEvent as InputEvent).inputType;
+
+  return typeof inputType === "string" && inputType.startsWith("delete");
+}
+
 const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
   (
     {
@@ -53,27 +58,36 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
     const [internalValue, setInternalValue] = useState(() =>
       formatPhone(defaultValue?.toString() ?? ""),
     );
+    const [eagerFormatting, setEagerFormatting] = useState(true);
     const [touched, setTouched] = useState(false);
     const [internalError, setInternalError] = useState<string | undefined>();
 
     const formattedValue = useMemo(
       () =>
-        formatPhone(isControlled ? (value?.toString() ?? "") : internalValue),
-      [internalValue, isControlled, value],
+        formatPhone(isControlled ? (value?.toString() ?? "") : internalValue, {
+          eager: eagerFormatting,
+        }),
+      [eagerFormatting, internalValue, isControlled, value],
     );
 
     useEffect(() => {
       if (!isControlled) return;
-      setInternalValue(formatPhone(value?.toString() ?? ""));
-    }, [isControlled, value]);
+      setInternalValue(
+        formatPhone(value?.toString() ?? "", { eager: eagerFormatting }),
+      );
+    }, [eagerFormatting, isControlled, value]);
 
     useEffect(() => {
       onPhoneValidityChange?.(isValidPhone(formattedValue));
     }, [formattedValue, onPhoneValidityChange]);
 
     function handleChange(event: ChangeEvent<HTMLInputElement>) {
-      const nextFormattedValue = formatPhone(event.target.value);
+      const shouldFormatEagerly = !isDeleting(event);
+      const nextFormattedValue = formatPhone(event.target.value, {
+        eager: shouldFormatEagerly,
+      });
 
+      setEagerFormatting(shouldFormatEagerly);
       event.target.value = nextFormattedValue;
 
       if (!isControlled) {
@@ -101,7 +115,6 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
         required={required}
         inputMode="tel"
         autoComplete="tel-national"
-        icon={Phone}
         maxLength={15}
         value={formattedValue}
         onChange={handleChange}

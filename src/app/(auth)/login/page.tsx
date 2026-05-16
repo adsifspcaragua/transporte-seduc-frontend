@@ -49,6 +49,10 @@ type FormatValidationState = {
   password: boolean;
 };
 
+type FormatOptions = {
+  eager?: boolean;
+};
+
 const REMEMBERED_LOGIN_STORAGE_KEY = "remembered-login";
 
 function parseRetryAfterSeconds(value?: string | null) {
@@ -106,7 +110,7 @@ function sanitizeEmailInput(value: string) {
     .replace(/[^a-z0-9@._+-]/g, "");
 }
 
-function sanitizeLoginInput(value: string) {
+function sanitizeLoginInput(value: string, formatOptions?: FormatOptions) {
   const compactValue = value.replace(/\s+/g, "");
 
   if (!compactValue) {
@@ -116,10 +120,16 @@ function sanitizeLoginInput(value: string) {
   const looksLikeEmail = /[a-zA-Z@_+]/.test(compactValue);
 
   if (!looksLikeEmail) {
-    return formatCpf(compactValue);
+    return formatCpf(compactValue, formatOptions);
   }
 
   return sanitizeEmailInput(compactValue);
+}
+
+function isDeleting(event: React.ChangeEvent<HTMLInputElement>) {
+  const inputType = (event.nativeEvent as InputEvent).inputType;
+
+  return typeof inputType === "string" && inputType.startsWith("delete");
 }
 
 function getLoginPayload(value: string) {
@@ -276,7 +286,10 @@ export default function Login() {
   function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
 
-    const nextValue = name === "login" ? sanitizeLoginInput(value) : value;
+    const nextValue =
+      name === "login"
+        ? sanitizeLoginInput(value, { eager: !isDeleting(event) })
+        : value;
 
     setForm((prev) => ({
       ...prev,

@@ -73,3 +73,32 @@ input[data-input-variant="white"]:-webkit-autofill:focus {
     0 0 0 1px #084e80;
   transition: background-color 9999s ease-in-out 0s;
 }
+
+input[data-input-variant="white"]:-webkit-autofill + label,
+input[data-input-variant="white"]:-webkit-autofill:hover + label,
+input[data-input-variant="white"]:-webkit-autofill:focus + label,
+input[data-input-variant="white"]:-webkit-autofill:active + label {
+  top: 0;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+input[data-input-variant="dark"]:-webkit-autofill + label,
+input[data-input-variant="dark"]:-webkit-autofill:hover + label,
+input[data-input-variant="dark"]:-webkit-autofill:focus + label,
+input[data-input-variant="dark"]:-webkit-autofill:active + label {
+  top: 0.5rem;
+  transform: translateY(0);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: rgb(255 255 255 / 0.7);
+}
+
+input[data-input-variant="white"]:-webkit-autofill + label,
+input[data-input-variant="white"]:-webkit-autofill:hover + label,
+input[data-input-variant="white"]:-webkit-autofill:focus + label,
+input[data-input-variant="white"]:-webkit-autofill:active + label {
+  background-color: #ffffff;
+  color: #084e80;
+}

@@ -1,6 +1,5 @@
 "use client";
 
-import { IdCard } from "lucide-react";
 import type { ChangeEvent, FocusEvent, InputHTMLAttributes } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
 
@@ -10,7 +9,7 @@ import { cleanCpf, formatCpf, isValidCpf } from "@/lib/utils/cpf";
 
 type CpfInputProps = Omit<
   InputProps,
-  "icon" | "inputMode" | "maxLength" | "onChange" | "type"
+  "inputMode" | "maxLength" | "onChange" | "type"
 > & {
   onChange?: InputHTMLAttributes<HTMLInputElement>["onChange"];
   onCpfValidityChange?: (isValid: boolean) => void;
@@ -34,6 +33,12 @@ function getCpfValidationError(value: string) {
   return undefined;
 }
 
+function isDeleting(event: ChangeEvent<HTMLInputElement>) {
+  const inputType = (event.nativeEvent as InputEvent).inputType;
+
+  return typeof inputType === "string" && inputType.startsWith("delete");
+}
+
 const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
   (
     {
@@ -53,18 +58,24 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
     const [internalValue, setInternalValue] = useState(() =>
       formatCpf(defaultValue?.toString() ?? ""),
     );
+    const [eagerFormatting, setEagerFormatting] = useState(true);
     const [touched, setTouched] = useState(false);
     const [internalError, setInternalError] = useState<string | undefined>();
 
     const formattedValue = useMemo(
-      () => formatCpf(isControlled ? (value?.toString() ?? "") : internalValue),
-      [internalValue, isControlled, value],
+      () =>
+        formatCpf(isControlled ? (value?.toString() ?? "") : internalValue, {
+          eager: eagerFormatting,
+        }),
+      [eagerFormatting, internalValue, isControlled, value],
     );
 
     useEffect(() => {
       if (!isControlled) return;
-      setInternalValue(formatCpf(value?.toString() ?? ""));
-    }, [isControlled, value]);
+      setInternalValue(
+        formatCpf(value?.toString() ?? "", { eager: eagerFormatting }),
+      );
+    }, [eagerFormatting, isControlled, value]);
 
     useEffect(() => {
       const isValid =
@@ -73,8 +84,12 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
     }, [formattedValue, onCpfValidityChange]);
 
     function handleChange(event: ChangeEvent<HTMLInputElement>) {
-      const nextFormattedValue = formatCpf(event.target.value);
+      const shouldFormatEagerly = !isDeleting(event);
+      const nextFormattedValue = formatCpf(event.target.value, {
+        eager: shouldFormatEagerly,
+      });
 
+      setEagerFormatting(shouldFormatEagerly);
       event.target.value = nextFormattedValue;
 
       if (!isControlled) {
@@ -102,7 +117,6 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
         required={required}
         inputMode="numeric"
         autoComplete="off"
-        icon={IdCard}
         maxLength={14}
         value={formattedValue}
         onChange={handleChange}

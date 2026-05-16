@@ -18,7 +18,7 @@ type CalendarView = "days" | "months" | "years";
 
 type DateInputProps = Omit<
   InputProps,
-  "defaultValue" | "icon" | "onChange" | "type" | "value"
+  "defaultValue" | "onChange" | "type" | "value"
 > & {
   defaultValue?: string;
   maxYear?: number;
@@ -120,13 +120,26 @@ function formatDateValue(value?: string) {
   return formatDisplayDate(parseDateValue(value));
 }
 
-function formatTypedDate(value: string) {
+function formatTypedDate(value: string, { eager = true } = {}) {
   const digits = value.replace(/\D/g, "").slice(0, 8);
 
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  if (digits.length <= 2) {
+    return `${digits}${eager && digits.length === 2 ? "/" : ""}`;
+  }
+
+  if (digits.length <= 4) {
+    const formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+
+    return `${formatted}${eager && digits.length === 4 ? "/" : ""}`;
+  }
 
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function isDeleting(event: ChangeEvent<HTMLInputElement>) {
+  const inputType = (event.nativeEvent as InputEvent).inputType;
+
+  return typeof inputType === "string" && inputType.startsWith("delete");
 }
 
 function getComparableDate(date: Date) {
@@ -426,7 +439,9 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
     }
 
     function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
-      const nextDisplayValue = formatTypedDate(event.target.value);
+      const nextDisplayValue = formatTypedDate(event.target.value, {
+        eager: !isDeleting(event),
+      });
       const nextDate = parseDisplayDate(nextDisplayValue);
 
       setDisplayValue(nextDisplayValue);
