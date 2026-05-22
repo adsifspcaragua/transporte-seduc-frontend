@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  BookOpen,
   ChevronLeft,
   ChevronRight,
   ClipboardEdit,
@@ -13,13 +12,17 @@ import {
   Moon,
   MoreVertical,
   Pencil,
-  Plus,
   Search,
   Trash2,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -29,23 +32,18 @@ import { cn } from "@/lib/utils/cn";
 
 const sidebarGroups = [
   {
-    title: "ANALÍTICO",
+    title: "Principal",
     items: [
       { label: "Estudantes", icon: GraduationCap, active: true },
-      { label: "Linhas", icon: MapIcon },
-      { label: "Solicitações", icon: ClipboardEdit },
-    ],
-  },
-  {
-    title: "OPERACIONAL",
-    items: [
-      { label: "Estudantes", icon: GraduationCap },
       { label: "Linhas", icon: MapIcon },
       { label: "Solicitações", icon: ClipboardEdit },
       { label: "Recadastramento", icon: ClipboardEdit },
     ],
   },
 ];
+
+const SIDEBAR_COLLAPSED_WIDTH = 80;
+const SIDEBAR_EXPANDED_WIDTH = 220;
 
 function getLineLabel(estudante: Estudante) {
   return estudante.linha_id ? `Linha ${estudante.linha_id}` : "Sem linha";
@@ -65,6 +63,7 @@ export default function Dashboard() {
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [query, setQuery] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const filteredStudents = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -134,19 +133,41 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#f4f4f4] text-slate-950">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[220px] flex-col bg-brand-600 text-white shadow-xl lg:flex">
-        <div className="flex h-full flex-col px-7 py-10">
-          <div className="mb-12 flex items-center gap-4">
-            <span className="text-3xl font-bold tracking-wide">SIGTU</span>
-            <span className="flex size-11 items-center justify-center rounded-full bg-white text-brand-600">
-              <BookOpen className="size-6" />
+      <aside
+        className="fixed inset-y-0 left-0 z-20 hidden flex-col bg-brand-600 text-white shadow-xl transition-[width] duration-300 ease-in-out lg:flex"
+        style={{
+          width: isSidebarOpen
+            ? SIDEBAR_EXPANDED_WIDTH
+            : SIDEBAR_COLLAPSED_WIDTH,
+        }}
+      >
+        <div className="flex h-full flex-col px-4 py-10">
+          <div className="mb-12 flex h-10 items-center">
+            <button
+              aria-label={isSidebarOpen ? "Fechar menu" : "Abrir menu"}
+              className={cn(
+                "flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-md text-white transition-colors duration-300 hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+              )}
+              onClick={() => setIsSidebarOpen((current) => !current)}
+              type="button"
+            >
+              <Menu className="size-6" />
+            </button>
+            <span
+              className={cn(
+                "ml-3 overflow-hidden whitespace-nowrap text-3xl font-bold tracking-wide transition-all duration-300",
+                isSidebarOpen
+                  ? "max-w-[130px] translate-x-0 opacity-100"
+                  : "max-w-0 -translate-x-2 opacity-0",
+              )}
+            >
+              SIGTU
             </span>
           </div>
 
-          <nav className="space-y-8">
+          <nav>
             {sidebarGroups.map((group) => (
               <section key={group.title}>
-                <h2 className="mb-4 text-xl font-semibold">{group.title}</h2>
                 <div className="space-y-1">
                   {group.items.map((item) => {
                     const Icon = item.icon;
@@ -154,15 +175,30 @@ export default function Dashboard() {
                     return (
                       <button
                         className={cn(
-                          "flex h-11 w-full items-center gap-2 rounded-none px-3 text-left text-[15px] font-medium transition-colors hover:bg-brand-700",
-                          item.active &&
-                            "bg-brand-700 ring-2 ring-white/90 ring-inset",
+                          "group relative flex h-11 w-full cursor-pointer items-center overflow-hidden rounded-md px-3 text-left text-[15px] font-medium transition-colors hover:bg-brand-700",
+                          item.active && "bg-brand-700",
                         )}
                         key={`${group.title}-${item.label}`}
+                        title={isSidebarOpen ? undefined : item.label}
                         type="button"
                       >
                         <Icon className="size-5 shrink-0" />
-                        <span>{item.label}</span>
+                        <span
+                          className={cn(
+                            "ml-2 overflow-hidden whitespace-nowrap transition-all duration-300",
+                            isSidebarOpen
+                              ? "max-w-[140px] translate-x-0 opacity-100"
+                              : "max-w-0 -translate-x-2 opacity-0",
+                          )}
+                        >
+                          {item.label}
+                        </span>
+                        <span
+                          className={cn(
+                            "absolute inset-y-0 right-0 w-[6px] bg-white transition-opacity group-hover:opacity-100",
+                            item.active ? "opacity-100" : "opacity-0",
+                          )}
+                        />
                       </button>
                     );
                   })}
@@ -171,7 +207,14 @@ export default function Dashboard() {
             ))}
           </nav>
 
-          <div className="mt-auto">
+          <div
+            className={cn(
+              "mt-auto w-[180px] shrink-0 transition-all duration-300 ease-in-out will-change-transform",
+              isSidebarOpen
+                ? "translate-x-0 opacity-100"
+                : "-translate-x-8 opacity-0",
+            )}
+          >
             <Image
               alt="Governo Municipal de Caraguatatuba - Educação"
               className="h-auto w-full"
@@ -183,7 +226,16 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      <div className="lg:pl-[220px]">
+      <div
+        className="transition-[padding-left] duration-300 ease-in-out lg:pl-[var(--sidebar-width)]"
+        style={
+          {
+            "--sidebar-width": `${
+              isSidebarOpen ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH
+            }px`,
+          } as CSSProperties
+        }
+      >
         <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between bg-brand-100 px-5 shadow-sm lg:justify-end lg:px-8">
           <button
             aria-label="Abrir menu"
