@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import type { ReactNode } from "react";
 
-import AuthProvider from "@/providers/auth-provider";
+import AuthProvider from "@/contexts/auth-provider";
 
 import "./globals.css";
 
