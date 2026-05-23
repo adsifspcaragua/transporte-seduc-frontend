@@ -77,24 +77,24 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
             aria-expanded={isUserMenuOpen}
             aria-haspopup="menu"
             aria-label="Abrir menu do usuário"
-            className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 text-brand-600 transition-colors hover:bg-white/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            className="flex h-12 cursor-pointer items-center gap-2 rounded-md px-2 text-brand-600 transition-colors hover:bg-white/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
             onClick={() => setIsUserMenuOpen((current) => !current)}
             type="button"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white">
-              <UserCircle className="size-7" />
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/80 ring-1 ring-brand-600/15">
+              <UserCircle className="size-6" />
             </span>
-            <span className="hidden min-w-0 text-left sm:block">
-              <span className="block max-w-40 truncate text-sm font-semibold">
+            <span className="hidden min-w-0 flex-col justify-center text-left leading-none sm:flex">
+              <span className="block max-w-40 truncate text-sm font-bold leading-5">
                 {user?.name ?? "Gestor SIGTU"}
               </span>
-              <span className="block text-xs font-medium text-brand-600/80">
+              <span className="block text-xs font-medium leading-4 text-brand-600/75">
                 Admin
               </span>
             </span>
             <ChevronDown
               className={cn(
-                "hidden size-4 shrink-0 transition-transform sm:block",
+                "hidden size-4 shrink-0 text-brand-600/80 transition-transform sm:block",
                 isUserMenuOpen && "rotate-180",
               )}
             />

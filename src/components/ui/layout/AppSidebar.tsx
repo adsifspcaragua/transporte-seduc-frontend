@@ -3,11 +3,13 @@
 import {
   ClipboardEdit,
   GraduationCap,
+  LayoutDashboard,
   type LucideIcon,
   MapIcon,
   Menu,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/utils/cn";
@@ -22,7 +24,8 @@ type SidebarItem = {
 };
 
 const sidebarItems: SidebarItem[] = [
-  { label: "Estudantes", icon: GraduationCap, href: "/" },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/" },
+  { label: "Estudantes", icon: GraduationCap, href: "/estudantes" },
   { label: "Linhas", icon: MapIcon },
   { label: "Solicitações", icon: ClipboardEdit },
   { label: "Recadastramento", icon: ClipboardEdit },
@@ -77,17 +80,12 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
             {sidebarItems.map((item) => {
               const Icon = item.icon;
               const isActive = isPathActive(pathname, item.href);
-
-              return (
-                <button
-                  className={cn(
-                    "group relative flex h-11 w-full cursor-pointer items-center overflow-hidden rounded-md px-3 text-left text-[15px] font-medium transition-colors hover:bg-brand-700",
-                    isActive && "bg-brand-700",
-                  )}
-                  key={item.label}
-                  title={isOpen ? undefined : item.label}
-                  type="button"
-                >
+              const className = cn(
+                "group relative flex h-11 w-full cursor-pointer items-center overflow-hidden rounded-md px-3 text-left text-[15px] font-medium transition-colors hover:bg-brand-700",
+                isActive && "bg-brand-700",
+              );
+              const content = (
+                <>
                   <Icon className="size-5 shrink-0" />
                   <span
                     className={cn(
@@ -105,6 +103,30 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                       isActive ? "opacity-100" : "opacity-0",
                     )}
                   />
+                </>
+              );
+
+              if (item.href) {
+                return (
+                  <Link
+                    className={className}
+                    href={item.href}
+                    key={item.label}
+                    title={isOpen ? undefined : item.label}
+                  >
+                    {content}
+                  </Link>
+                );
+              }
+
+              return (
+                <button
+                  className={className}
+                  key={item.label}
+                  title={isOpen ? undefined : item.label}
+                  type="button"
+                >
+                  {content}
                 </button>
               );
             })}

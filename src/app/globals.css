@@ -41,6 +41,28 @@ body {
   font-family: var(--font-montserrat), Arial, Helvetica, sans-serif;
 }
 
+.animation-loading-skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150%;
+  height: 100%;
+  width: 150%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.48),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  to {
+    left: 150%;
+  }
+}
+
 input[data-input-variant="dark"]:-webkit-autofill,
 input[data-input-variant="dark"]:-webkit-autofill:hover,
 input[data-input-variant="dark"]:-webkit-autofill:focus,
