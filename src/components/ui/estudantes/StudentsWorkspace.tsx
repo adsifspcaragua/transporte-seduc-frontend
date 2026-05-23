@@ -57,7 +57,6 @@ export function StudentsWorkspace() {
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
   const [students, setStudents] = useState<Estudante[]>([]);
-  const [totalStudents, setTotalStudents] = useState(0);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [query, setQuery] = useState("");
@@ -84,13 +83,9 @@ export function StudentsWorkspace() {
       try {
         setStudentsLoading(true);
 
-        const [studentsResponse, countResponse] = await Promise.all([
-          estudanteService.list(currentPage),
-          estudanteService.count(),
-        ]);
+        const studentsResponse = await estudanteService.list(currentPage);
 
         setStudents(studentsResponse.data);
-        setTotalStudents(countResponse);
         setLastPage(studentsResponse.meta?.last_page ?? 1);
       } finally {
         setStudentsLoading(false);
@@ -121,29 +116,8 @@ export function StudentsWorkspace() {
 
   return (
     <>
-      <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-        <div>
-          <p className="mb-2 text-xs font-medium text-brand-600">
-            Home / <span className="font-semibold">Estudantes</span>
-          </p>
-          <h1 className="text-2xl font-bold text-brand-600">Estudantes</h1>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-[minmax(180px,240px)_auto]">
-          <div className="rounded-lg bg-white px-4 py-3 shadow-sm ring-1 ring-brand-600/15">
-            <p className="text-xs font-semibold text-slate-500">
-              Total de estudantes
-            </p>
-            <Skeleton
-              className="mt-1 h-8 w-16 rounded bg-[#d7d7d7]"
-              loading={studentsLoading}
-            >
-              <p className="text-2xl font-bold text-brand-600">
-                {totalStudents}
-              </p>
-            </Skeleton>
-          </div>
-        </div>
+      <div className="mb-5">
+        <h1 className="text-2xl font-bold text-brand-600">Estudantes</h1>
       </div>
 
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
