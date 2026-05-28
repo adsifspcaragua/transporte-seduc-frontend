@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/buttons";
 import { Skeleton } from "@/components/loading";
+import { Modal } from "@/components/modal";
 import { StudentsSearchInput } from "@/components/ui/estudantes/StudentsSearchInput";
 import { estudanteService } from "@/services/api/modules/estudante";
 import type { Estudante } from "@/types/estudante";
@@ -57,6 +58,9 @@ export function StudentsWorkspace() {
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
   const [students, setStudents] = useState<Estudante[]>([]);
+  const [studentToDelete, setStudentToDelete] = useState<Estudante | null>(
+    null,
+  );
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [query, setQuery] = useState("");
@@ -98,17 +102,24 @@ export function StudentsWorkspace() {
     void loadStudents(page);
   }, [loadStudents, page]);
 
-  async function handleDelete(student: Estudante) {
-    const shouldDelete = window.confirm(
-      `Deseja deletar o cadastro de ${student.name}?`,
-    );
+  function openDeleteModal(student: Estudante) {
+    setStudentToDelete(student);
+  }
 
-    if (!shouldDelete) return;
+  function closeDeleteModal() {
+    if (deleteLoadingId) return;
+
+    setStudentToDelete(null);
+  }
+
+  async function handleConfirmDelete() {
+    if (!studentToDelete) return;
 
     try {
-      setDeleteLoadingId(student.id);
-      await estudanteService.remove(student.id);
+      setDeleteLoadingId(studentToDelete.id);
+      await estudanteService.remove(studentToDelete.id);
       await loadStudents(page);
+      setStudentToDelete(null);
     } finally {
       setDeleteLoadingId(null);
     }
@@ -208,7 +219,7 @@ export function StudentsWorkspace() {
                       fullWidth={false}
                       leftIcon={<Trash2 />}
                       loading={deleteLoadingId === student.id}
-                      onClick={() => handleDelete(student)}
+                      onClick={() => openDeleteModal(student)}
                       size="sm"
                       uppercase={false}
                       variant="danger"
@@ -258,6 +269,27 @@ export function StudentsWorkspace() {
           <ChevronRight className="size-5" />
         </button>
       </div>
+
+      <Modal
+        cancelLabel="Cancelar"
+        contentClassName="space-y-3"
+        onClose={closeDeleteModal}
+        onSave={handleConfirmDelete}
+        open={Boolean(studentToDelete)}
+        saveLabel="Deletar estudante"
+        saveLoading={Boolean(
+          studentToDelete && deleteLoadingId === studentToDelete.id,
+        )}
+        saveVariant="danger"
+        title="Confirmar exclusão"
+      >
+        <p className="text-sm font-medium text-slate-900">
+          Deseja deletar o cadastro de {studentToDelete?.name}?
+        </p>
+        <p className="text-sm text-slate-600">
+          Essa ação não pode ser desfeita.
+        </p>
+      </Modal>
     </>
   );
 }

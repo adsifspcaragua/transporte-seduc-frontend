@@ -8,6 +8,8 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/buttons";
 import { cn } from "@/utils/cn";
 
+type ModalSaveVariant = "primary" | "danger";
+
 type ModalProps = {
   open: boolean;
   title: string;
@@ -16,6 +18,7 @@ type ModalProps = {
   onSave?: () => void;
   cancelLabel?: string;
   saveLabel?: string;
+  saveVariant?: ModalSaveVariant;
   saveLoading?: boolean;
   saveDisabled?: boolean;
   className?: string;
@@ -35,6 +38,7 @@ type ModalContentProps = {
 type ModalFooterProps = {
   cancelLabel: string;
   saveLabel: string;
+  saveVariant?: ModalSaveVariant;
   saveLoading?: boolean;
   saveDisabled?: boolean;
   onClose: () => void;
@@ -64,6 +68,7 @@ function ModalContent({ children, className }: ModalContentProps) {
 function ModalFooter({
   cancelLabel,
   saveLabel,
+  saveVariant = "primary",
   saveLoading,
   saveDisabled,
   onClose,
@@ -87,7 +92,7 @@ function ModalFooter({
         loading={saveLoading}
         onClick={onSave}
         uppercase={false}
-        variant="primary"
+        variant={saveVariant}
       >
         {saveLabel}
       </Button>
@@ -103,6 +108,7 @@ export function Modal({
   onSave,
   cancelLabel = "Cancelar",
   saveLabel = "Salvar",
+  saveVariant = "primary",
   saveLoading = false,
   saveDisabled = false,
   className,
@@ -152,6 +158,7 @@ export function Modal({
           saveDisabled={saveDisabled}
           saveLabel={saveLabel}
           saveLoading={saveLoading}
+          saveVariant={saveVariant}
         />
       </section>
     </div>,
