@@ -508,6 +508,7 @@ export function LoginWorkspace() {
                 onBlur={handleFieldBlur}
                 error={errors.login}
                 autoComplete="username"
+                className="login-autofill-input"
               />
 
               <PasswordInput
@@ -520,6 +521,7 @@ export function LoginWorkspace() {
                 onChange={handleInputChange}
                 onBlur={handleFieldBlur}
                 error={errors.password}
+                className="login-autofill-input"
               />
 
               <div className="flex items-center justify-between gap-4">

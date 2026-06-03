@@ -63,64 +63,24 @@ body {
   }
 }
 
-input[data-input-variant="dark"]:-webkit-autofill,
-input[data-input-variant="dark"]:-webkit-autofill:hover,
-input[data-input-variant="dark"]:-webkit-autofill:focus,
-input[data-input-variant="dark"]:-webkit-autofill:active {
+.login-autofill-input:-webkit-autofill,
+.login-autofill-input:-webkit-autofill:hover,
+.login-autofill-input:-webkit-autofill:focus,
+.login-autofill-input:-webkit-autofill:active {
   -webkit-text-fill-color: #ffffff;
   caret-color: #ffffff;
-  -webkit-box-shadow: 0 0 0 1000px #063e66 inset;
-  box-shadow: 0 0 0 1000px #063e66 inset;
+  -webkit-box-shadow: 0 0 0 1000px #0b527f inset;
+  box-shadow: 0 0 0 1000px #0b527f inset;
   transition: background-color 9999s ease-in-out 0s;
 }
 
-input[data-input-variant="white"]:-webkit-autofill,
-input[data-input-variant="white"]:-webkit-autofill:hover,
-input[data-input-variant="white"]:-webkit-autofill:active {
-  -webkit-text-fill-color: #0f172a;
-  caret-color: #084e80;
-  -webkit-box-shadow: 0 0 0 1000px #e8f0fe inset;
-  box-shadow: 0 0 0 1000px #e8f0fe inset;
-  transition: background-color 9999s ease-in-out 0s;
-}
-
-input[data-input-variant="white"]:-webkit-autofill:focus {
-  -webkit-text-fill-color: #0f172a;
-  caret-color: #084e80;
-  -webkit-box-shadow:
-    0 0 0 1000px #e8f0fe inset,
-    0 0 0 1px #084e80;
-  box-shadow:
-    0 0 0 1000px #e8f0fe inset,
-    0 0 0 1px #084e80;
-  transition: background-color 9999s ease-in-out 0s;
-}
-
-input[data-input-variant="white"]:-webkit-autofill + label,
-input[data-input-variant="white"]:-webkit-autofill:hover + label,
-input[data-input-variant="white"]:-webkit-autofill:focus + label,
-input[data-input-variant="white"]:-webkit-autofill:active + label {
-  top: 0;
-  transform: translateY(-50%);
-  font-size: 0.75rem;
-  line-height: 1rem;
-}
-
-input[data-input-variant="dark"]:-webkit-autofill + label,
-input[data-input-variant="dark"]:-webkit-autofill:hover + label,
-input[data-input-variant="dark"]:-webkit-autofill:focus + label,
-input[data-input-variant="dark"]:-webkit-autofill:active + label {
+.login-autofill-input:-webkit-autofill + label,
+.login-autofill-input:-webkit-autofill:hover + label,
+.login-autofill-input:-webkit-autofill:focus + label,
+.login-autofill-input:-webkit-autofill:active + label {
   top: 0.5rem;
   transform: translateY(0);
   font-size: 0.75rem;
   line-height: 1rem;
-  color: rgb(255 255 255 / 0.7);
-}
-
-input[data-input-variant="white"]:-webkit-autofill + label,
-input[data-input-variant="white"]:-webkit-autofill:hover + label,
-input[data-input-variant="white"]:-webkit-autofill:focus + label,
-input[data-input-variant="white"]:-webkit-autofill:active + label {
-  background-color: #ffffff;
-  color: #084e80;
+  color: rgb(255 255 255 / 0.78);
 }
