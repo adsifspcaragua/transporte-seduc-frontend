@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { LogIn } from "lucide-react";
+import { ArrowRight, LogIn } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -467,8 +467,8 @@ export function LoginWorkspace() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <div className="flex h-full w-143.75 shrink-0 flex-col justify-between bg-brand-600 p-6 text-white">
+    <div className="flex min-h-screen w-full overflow-hidden bg-brand-600 lg:h-screen">
+      <div className="flex min-h-screen w-full shrink-0 flex-col justify-between bg-brand-600 px-6 py-7 text-white sm:px-10 lg:h-full lg:min-h-0 lg:w-143.75 lg:p-6">
         <div className="w-full">
           <Image
             src="/logo_educacao_w.svg"
@@ -479,7 +479,7 @@ export function LoginWorkspace() {
           />
         </div>
 
-        <div className="mx-auto flex w-full max-w-112.5 flex-col gap-6">
+        <div className="mx-auto flex w-full max-w-112.5 flex-col gap-6 py-8 lg:py-0">
           <div className="flex flex-col gap-3">
             <h1 className="text-center text-2xl font-semibold">
               Acesso ao sistema
@@ -560,6 +560,14 @@ export function LoginWorkspace() {
                   ? `Tente novamente em ${retryAfterSeconds}s`
                   : "Entrar"}
               </Button>
+
+              <Link
+                href="/registro"
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-brand-100 bg-transparent px-5 py-2.5 text-center text-base font-semibold uppercase leading-tight tracking-wide text-brand-100 transition-all duration-200 hover:bg-brand-100/10 active:scale-[0.99] lg:hidden"
+              >
+                <span>Solicitar transporte universitário</span>
+                <ArrowRight className="size-5" />
+              </Link>
             </form>
           </div>
         </div>
@@ -571,7 +579,7 @@ export function LoginWorkspace() {
         </p>
       </div>
 
-      <div className="h-full w-full">
+      <div className="hidden h-full w-full lg:block">
         <LoginCarousel />
       </div>
     </div>
