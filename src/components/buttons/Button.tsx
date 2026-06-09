@@ -2,7 +2,15 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/utils/cn";
 
-type ButtonVariant = "light" | "primary" | "success" | "danger" | "ghost";
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "neutral"
+  | "approved"
+  | "danger"
+  | "light"
+  | "success"
+  | "ghost";
 type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -17,35 +25,61 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  light: `
-    bg-brand-100 text-brand-700
-    hover:bg-brand-050
-    active:bg-brand-050
-    shadow-[0_8px_18px_rgba(0,0,0,0.14)]
-  `,
   primary: `
-    bg-action-primary text-white
-    hover:bg-action-primary-hover
-    active:bg-action-primary-pressed
-    shadow-[0_8px_18px_rgba(0,0,0,0.14)]
+    border-[#084E80] bg-[#084E80] text-white
+    hover:border-[#06446F] hover:bg-[#06446F]
+    active:border-[#05395F] active:bg-[#05395F]
+    disabled:border-[#8DB6D1] disabled:bg-[#8DB6D1] disabled:text-white/75
+    shadow-sm
   `,
-  success: `
-    bg-emerald-600 text-white
-    hover:bg-emerald-700
-    active:bg-emerald-800
-    shadow-[0_8px_18px_rgba(0,0,0,0.14)]
+  secondary: `
+    border-[#C4E6F0] bg-[#C4E6F0] text-[#084E80]
+    hover:border-[#D6EFF6] hover:bg-[#D6EFF6]
+    active:border-[#AFD8E5] active:bg-[#AFD8E5]
+    disabled:border-[#E2F2F6] disabled:bg-[#E2F2F6] disabled:text-[#084E80]/45
+    shadow-sm
+  `,
+  neutral: `
+    border-[#004685]/20 bg-white text-[#004685]
+    hover:bg-[#004685]/5
+    active:border-[#004685]/30 active:bg-[#004685]/10
+    disabled:border-[#004685]/10 disabled:bg-white disabled:text-[#004685]/35
+    shadow-sm
+  `,
+  approved: `
+    border-[#008000] bg-[#008000] text-white
+    hover:border-[#007300] hover:bg-[#007300]
+    active:border-[#006000] active:bg-[#006000]
+    disabled:border-[#86C58A] disabled:bg-[#86C58A] disabled:text-white/75
+    shadow-sm
   `,
   danger: `
-    bg-danger-600 text-white
-    hover:bg-danger-700
-    active:bg-danger-800
-    shadow-[0_8px_18px_rgba(0,0,0,0.14)]
+    border-[#D32F2F] bg-[#D32F2F] text-white
+    hover:border-[#C51F1F] hover:bg-[#C51F1F]
+    active:border-[#A91515] active:bg-[#A91515]
+    disabled:border-[#EAA1A1] disabled:bg-[#EAA1A1] disabled:text-white/75
+    shadow-sm
+  `,
+  light: `
+    border-[#C4E6F0] bg-[#C4E6F0] text-[#084E80]
+    hover:border-[#D6EFF6] hover:bg-[#D6EFF6]
+    active:border-[#AFD8E5] active:bg-[#AFD8E5]
+    disabled:border-[#E2F2F6] disabled:bg-[#E2F2F6] disabled:text-[#084E80]/45
+    shadow-sm
+  `,
+  success: `
+    border-[#008000] bg-[#008000] text-white
+    hover:border-[#007300] hover:bg-[#007300]
+    active:border-[#006000] active:bg-[#006000]
+    disabled:border-[#86C58A] disabled:bg-[#86C58A] disabled:text-white/75
+    shadow-sm
   `,
   ghost: `
-    bg-transparent text-brand-600
-    hover:bg-black/5
-    active:bg-black/10
-    shadow-none
+    border-[#004685]/20 bg-white text-[#004685]
+    hover:bg-[#004685]/5
+    active:border-[#004685]/30 active:bg-[#004685]/10
+    disabled:border-[#004685]/10 disabled:bg-white disabled:text-[#004685]/35
+    shadow-sm
   `,
 };
 
@@ -57,11 +91,14 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 const spinnerClasses: Record<ButtonVariant, string> = {
-  light: "border-brand-700 border-t-transparent",
   primary: "border-white border-t-transparent",
-  success: "border-white border-t-transparent",
+  secondary: "border-[#084E80] border-t-transparent",
+  neutral: "border-[#004685] border-t-transparent",
+  approved: "border-white border-t-transparent",
   danger: "border-white border-t-transparent",
-  ghost: "border-brand-600 border-t-transparent",
+  light: "border-[#084E80] border-t-transparent",
+  success: "border-white border-t-transparent",
+  ghost: "border-[#004685] border-t-transparent",
 };
 
 export default function Button({
@@ -85,7 +122,7 @@ export default function Button({
       type={type}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex items-center justify-center gap-2 rounded-lg border font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#084E80] disabled:cursor-not-allowed",
         uppercase ? "uppercase tracking-wide" : "normal-case tracking-normal",
         fullWidth && !isIconOnly && "w-full",
         !fullWidth && "self-center",
