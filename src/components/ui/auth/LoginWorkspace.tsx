@@ -563,7 +563,7 @@ export function LoginWorkspace() {
 
               <Link
                 href="/registro"
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-brand-100 bg-transparent px-5 py-2.5 text-center text-base font-semibold uppercase leading-tight tracking-wide text-brand-100 transition-all duration-200 hover:bg-brand-100/10 active:scale-[0.99] lg:hidden"
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#C4E6F0] bg-[#C4E6F0] px-5 py-2.5 text-center text-base font-semibold uppercase leading-tight tracking-wide text-[#084E80] shadow-sm transition-all duration-200 hover:border-[#D6EFF6] hover:bg-[#D6EFF6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#084E80] active:scale-[0.99] active:border-[#AFD8E5] active:bg-[#AFD8E5] lg:hidden"
               >
                 <span>Solicitar transporte universitário</span>
                 <ArrowRight className="size-5" />
