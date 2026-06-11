@@ -217,6 +217,7 @@ export function LoginWorkspace() {
 
   const isRateLimited = retryAfterSeconds > 0;
   const isSubmitDisabled = loading || isRateLimited;
+  const loginInputClassName = "login-autofill-input";
 
   useEffect(() => {
     const rememberedLogin = window.localStorage.getItem(
@@ -508,7 +509,7 @@ export function LoginWorkspace() {
                 onBlur={handleFieldBlur}
                 error={errors.login}
                 autoComplete="username"
-                className="login-autofill-input"
+                className={loginInputClassName}
               />
 
               <PasswordInput
@@ -521,7 +522,7 @@ export function LoginWorkspace() {
                 onChange={handleInputChange}
                 onBlur={handleFieldBlur}
                 error={errors.password}
-                className="login-autofill-input"
+                className={loginInputClassName}
               />
 
               <div className="flex items-center justify-between gap-4">
@@ -532,11 +533,16 @@ export function LoginWorkspace() {
                   onChange={handleRememberLoginChange}
                 />
 
-                <Link href="/recuperar-senha">Esqueceu a senha?</Link>
+                <Link
+                  href="/recuperar-senha"
+                  className="underline underline-offset-4 transition-colors hover:text-brand-100"
+                >
+                  Esqueceu a senha?
+                </Link>
               </div>
 
               {errors.form && (
-                <span className="text-sm font-semibold text-red-400">
+                <span className="text-sm font-semibold text-danger-600">
                   {errors.form}
                 </span>
               )}
@@ -563,7 +569,7 @@ export function LoginWorkspace() {
 
               <Link
                 href="/registro"
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#C4E6F0] bg-[#C4E6F0] px-5 py-2.5 text-center text-base font-semibold uppercase leading-tight tracking-wide text-[#084E80] shadow-sm transition-all duration-200 hover:border-[#D6EFF6] hover:bg-[#D6EFF6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#084E80] active:scale-[0.99] active:border-[#AFD8E5] active:bg-[#AFD8E5] lg:hidden"
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border-2 border-action-light-default bg-transparent px-5 py-2.5 text-center text-base font-semibold leading-tight text-action-light-default transition-all duration-200 hover:border-action-light-hover hover:bg-white/10 hover:text-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-light-default active:scale-[0.99] lg:hidden"
               >
                 <span>Solicitar transporte universitário</span>
                 <ArrowRight className="size-5" />
