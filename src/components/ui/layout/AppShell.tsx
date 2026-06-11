@@ -15,7 +15,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <div className="min-h-screen bg-[#f4f4f4] text-slate-950">
+    <div className="min-h-screen bg-app-surface text-slate-950">
       <AppSidebar
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen((current) => !current)}
