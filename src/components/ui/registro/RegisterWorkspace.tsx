@@ -1447,7 +1447,7 @@ export function RegisterWorkspace() {
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="font-semibold text-slate-800">
                         {document.label}
-                        <span className="ml-1 text-red-500">*</span>
+                        <span className="ml-1 text-danger-600">*</span>
                       </h4>
                       <StatusPill
                         status={isUploaded ? "complete" : "pending"}
@@ -1458,7 +1458,7 @@ export function RegisterWorkspace() {
                       {currentDocument?.fileName ?? document.description}
                     </p>
                     {currentDocument?.error && (
-                      <p className="mt-2 text-sm font-semibold text-red-500">
+                      <p className="mt-2 text-sm font-semibold text-danger-600">
                         {currentDocument.error}
                       </p>
                     )}
@@ -1481,7 +1481,7 @@ export function RegisterWorkspace() {
                         type="button"
                         aria-label={`Remover ${document.label}`}
                         onClick={() => removeLocalDocument(document.key)}
-                        className="flex size-10 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-50"
+                        className="flex size-10 items-center justify-center rounded-lg text-danger-600 transition hover:bg-danger-600/10"
                       >
                         <Trash2 className="size-4" />
                       </button>
@@ -1802,7 +1802,8 @@ function InlineNotice({
       className={cn(
         "flex items-start gap-2 rounded-lg border px-4 py-3 text-sm",
         tone === "info" && "border-brand-100 bg-brand-100/35 text-brand-700",
-        tone === "error" && "border-red-200 bg-red-50 text-red-700",
+        tone === "error" &&
+          "border-danger-600/20 bg-danger-600/10 text-danger-700",
         tone === "success" &&
           "border-emerald-200 bg-emerald-50 text-emerald-700",
         className,
@@ -1862,7 +1863,7 @@ function SegmentedQuestion({
     <div>
       <span className="text-xs font-bold uppercase text-brand-600">
         {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && <span className="ml-1 text-danger-600">*</span>}
       </span>
       <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1">
         {[
@@ -1884,7 +1885,7 @@ function SegmentedQuestion({
           </button>
         ))}
       </div>
-      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger-600">{error}</p>}
     </div>
   );
 }
