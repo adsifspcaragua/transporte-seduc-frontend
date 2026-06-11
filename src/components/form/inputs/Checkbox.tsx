@@ -78,7 +78,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         </label>
 
         {error ? (
-          <span className="text-sm text-red-400">{error}</span>
+          <span className="text-sm text-danger-600">{error}</span>
         ) : hint ? (
           <span
             className={cn(
