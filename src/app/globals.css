@@ -6,18 +6,50 @@
 }
 
 @theme {
-  --color-brand-700: #063e66;
+  /* Brand */
+  --color-brand-800: #042c49;
+  --color-brand-700: #063b61;
   --color-brand-600: #084e80;
   --color-brand-100: #c4e6f0;
   --color-brand-050: #cfeafe;
 
-  --color-action-primary: #084e80;
-  --color-action-primary-hover: #063b61;
-  --color-action-primary-pressed: #042c49;
+  /* Surfaces */
+  --color-app-surface: #f4f4f4;
+  --color-skeleton: #d7d7d7;
 
-  --color-danger-600: #d32f2f;
-  --color-danger-700: #b91c1c;
-  --color-danger-800: #991b1b;
+  /* Edit / primary actions */
+  --color-edit-default: #084e80;
+  --color-edit-hover: #063b61;
+  --color-edit-pressing: #042c49;
+  --color-edit-disabled: #7fa6c4;
+
+  /* Light actions */
+  --color-action-light-default: #c4e6f0;
+  --color-action-light-hover: #d6eff6;
+  --color-action-light-pressing: #afd8e5;
+  --color-action-light-disabled: #e2f2f6;
+
+  /* Delete / danger actions */
+  --color-delete-default: #d32f2f;
+  --color-delete-hover: #b91c1c;
+  --color-delete-pressing: #991b1b;
+  --color-delete-disabled: #e7a0a0;
+
+  /* Semantic danger aliases */
+  --color-danger-600: var(--color-delete-default);
+  --color-danger-700: var(--color-delete-hover);
+  --color-danger-800: var(--color-delete-pressing);
+
+  /* Approve / success actions */
+  --color-approve-default: #008000;
+  --color-approve-hover: #006b00;
+  --color-approve-pressing: #004d00;
+  --color-approve-disabled: #7fbf7f;
+
+  /* Auth */
+  --color-login-carousel-bg: #0d4f8f;
+  --color-login-carousel-overlay: #0a73b8;
+  --color-login-autofill: #0b527f;
 }
 
 @theme inline {
@@ -27,7 +59,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Desabilitado porque ainda não estamos usando modo dark */
+/* Disabled because dark mode is not in use yet. */
 /* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -67,10 +99,10 @@ body {
 .login-autofill-input:-webkit-autofill:hover,
 .login-autofill-input:-webkit-autofill:focus,
 .login-autofill-input:-webkit-autofill:active {
-  -webkit-text-fill-color: #ffffff;
-  caret-color: #ffffff;
-  -webkit-box-shadow: 0 0 0 1000px #0b527f inset;
-  box-shadow: 0 0 0 1000px #0b527f inset;
+  -webkit-text-fill-color: var(--color-white);
+  caret-color: var(--color-white);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-login-autofill) inset;
+  box-shadow: 0 0 0 1000px var(--color-login-autofill) inset;
   transition: background-color 9999s ease-in-out 0s;
 }
 
