@@ -368,7 +368,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               "peer flex w-full items-center justify-between gap-4 px-8 pb-1 pt-6 text-left outline-none transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60",
               variantClasses[variant].field,
               error
-                ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                ? "border-danger-600 focus:border-danger-600 focus:ring-1 focus:ring-danger-600"
                 : variantClasses[variant].state,
               "pr-16",
               className,
@@ -395,7 +395,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             >
               {Icon && <Icon className="mb-0.5" />}
               {label}
-              {required && <span className="ml-1 text-red-400">*</span>}
+              {required && <span className="ml-1 text-danger-600">*</span>}
             </label>
           )}
 
@@ -456,7 +456,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </div>
 
         {error ? (
-          <span className={cn("text-sm text-red-400", errorClassName)}>
+          <span className={cn("text-sm text-danger-600", errorClassName)}>
             {error}
           </span>
         ) : hint ? (
