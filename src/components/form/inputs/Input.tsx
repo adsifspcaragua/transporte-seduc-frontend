@@ -35,9 +35,7 @@ const variantClasses: Record<
     labelPosition:
       "left-8 top-1/2 -translate-y-1/2 text-base uppercase peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:text-xs",
     label: `
-      text-white/50
-      peer-focus:text-white/70
-      peer-[:not(:placeholder-shown)]:text-white/70
+      text-white/70
     `,
     hint: "text-white/60",
   },
@@ -47,10 +45,9 @@ const variantClasses: Record<
     labelPosition:
       "left-3 top-1/2 -translate-y-1/2 text-sm peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-xs peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:-translate-y-1/2 peer-[:not(:placeholder-shown)]:text-xs",
     label: `
+      bg-white
       text-slate-500
-      peer-focus:bg-white
       peer-focus:text-brand-600
-      peer-[:not(:placeholder-shown)]:bg-white
       peer-[:not(:placeholder-shown)]:text-brand-600
     `,
     hint: "text-slate-500",
@@ -93,7 +90,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               "peer h-12 w-full px-4 py-0 text-sm outline-none transition-colors duration-200 placeholder:text-transparent disabled:cursor-not-allowed disabled:opacity-60",
               variantClasses[variant].input,
               error
-                ? "border-red-500 focus:border-red-500"
+                ? "border-danger-600 focus:border-danger-600"
                 : variantClasses[variant].state,
               Boolean(rightElement) && "pr-12",
               className,
@@ -105,18 +102,25 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             <label
               htmlFor={inputId}
               className={cn(
-                "pointer-events-none absolute z-10 flex items-center px-1 transition-all duration-200",
+                "pointer-events-none absolute z-10 flex items-center px-1 transition-[top,transform,font-size,line-height] duration-200",
                 variantClasses[variant].labelPosition,
                 variantClasses[variant].label,
                 error &&
-                  (variant === "dark"
-                    ? "text-red-300 peer-focus:text-red-300 peer-[:not(:placeholder-shown)]:text-red-300"
-                    : "text-red-500 peer-focus:text-red-500 peer-[:not(:placeholder-shown)]:text-red-500"),
+                  "text-danger-600 peer-focus:text-danger-600 peer-[:not(:placeholder-shown)]:text-danger-600",
                 labelClassName,
               )}
             >
               {label}
-              {required && <span className="ml-1 text-red-400">*</span>}
+              {required && (
+                <span
+                  className={cn(
+                    "ml-1",
+                    variant === "dark" ? "text-danger-600" : "text-danger-600",
+                  )}
+                >
+                  *
+                </span>
+              )}
             </label>
           )}
 
@@ -133,7 +137,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {error ? (
-          <span className={cn("text-sm text-red-400", errorClassName)}>
+          <span
+            className={cn(
+              "text-sm",
+              variant === "dark" ? "text-danger-600" : "text-danger-600",
+              errorClassName,
+            )}
+          >
             {error}
           </span>
         ) : hint ? (
