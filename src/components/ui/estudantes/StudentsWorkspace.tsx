@@ -35,18 +35,18 @@ function StudentsTableSkeleton({ rows = 6 }: { rows?: number }) {
           key={index.toString()}
         >
           <div>
-            <Skeleton className="h-4 w-52 max-w-full rounded-full bg-[#d7d7d7]" />
-            <Skeleton className="mt-3 h-3 w-40 max-w-full rounded-full bg-[#d7d7d7]" />
+            <Skeleton className="h-4 w-52 max-w-full rounded-full bg-skeleton" />
+            <Skeleton className="mt-3 h-3 w-40 max-w-full rounded-full bg-skeleton" />
           </div>
           <div>
-            <Skeleton className="h-4 w-36 max-w-full rounded-full bg-[#d7d7d7]" />
-            <Skeleton className="mt-3 h-3 w-28 max-w-full rounded-full bg-[#d7d7d7]" />
+            <Skeleton className="h-4 w-36 max-w-full rounded-full bg-skeleton" />
+            <Skeleton className="mt-3 h-3 w-28 max-w-full rounded-full bg-skeleton" />
           </div>
-          <Skeleton className="h-7 w-20 rounded bg-[#d7d7d7]" />
-          <Skeleton className="h-3 w-16 rounded-full bg-[#d7d7d7]" />
+          <Skeleton className="h-7 w-20 rounded bg-skeleton" />
+          <Skeleton className="h-3 w-16 rounded-full bg-skeleton" />
           <div className="flex flex-wrap gap-2 md:flex-col md:items-start">
-            <Skeleton className="h-7 w-20 rounded bg-[#d7d7d7]" />
-            <Skeleton className="h-7 w-20 rounded bg-[#d7d7d7]" />
+            <Skeleton className="h-7 w-20 rounded bg-skeleton" />
+            <Skeleton className="h-7 w-20 rounded bg-skeleton" />
           </div>
         </article>
       ))}
