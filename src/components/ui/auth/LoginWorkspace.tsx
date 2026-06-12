@@ -444,10 +444,10 @@ export function LoginWorkspace() {
               <div className="flex items-center justify-between gap-4">
                 <Checkbox
                   name="rememberLogin"
+                  variant="dark"
                   label="Lembrar usuário"
                   checked={rememberLogin}
                   onChange={handleRememberLoginChange}
-                  className="size-4 rounded-md"
                   labelClassName="text-sm sm:text-base"
                 />
 
@@ -478,8 +478,7 @@ export function LoginWorkspace() {
                 leftIcon={<LogIn />}
                 loading={loading}
                 disabled={isRateLimited}
-                uppercase
-                className="h-10 rounded-full text-sm"
+                className="rounded-full text-sm"
               >
                 {isRateLimited
                   ? `Tente novamente em ${retryAfterSeconds}s`

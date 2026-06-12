@@ -1,3 +1,4 @@
+import { CircleX } from "lucide-react";
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { forwardRef, useId } from "react";
 
@@ -26,6 +27,7 @@ const variantClasses: Record<
     labelPosition: string;
     label: string;
     hint: string;
+    error: string;
   }
 > = {
   dark: {
@@ -33,11 +35,12 @@ const variantClasses: Record<
       "h-14 rounded-full border-2 bg-brand-700 px-8 pb-1 pt-6 text-base text-white",
     state: "border-brand-700 focus:border-brand-100",
     labelPosition:
-      "left-8 top-1/2 origin-left -translate-y-1/2 scale-100 text-base uppercase peer-focus:-translate-y-[1.45rem] peer-focus:scale-75 peer-[:not(:placeholder-shown)]:-translate-y-[1.45rem] peer-[:not(:placeholder-shown)]:scale-75",
+      "left-8 top-1/2 origin-left -translate-y-1/2 scale-100 text-base peer-focus:-translate-y-[1.45rem] peer-focus:scale-75 peer-[:not(:placeholder-shown)]:-translate-y-[1.45rem] peer-[:not(:placeholder-shown)]:scale-75",
     label: `
       text-white/70
     `,
     hint: "text-white/60",
+    error: "font-semibold text-danger-600",
   },
   white: {
     input: "rounded-lg border-2 bg-white text-slate-900",
@@ -51,6 +54,7 @@ const variantClasses: Record<
       peer-[:not(:placeholder-shown)]:text-brand-600
     `,
     hint: "text-slate-500",
+    error: "font-medium text-danger-700",
   },
 };
 
@@ -87,7 +91,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             placeholder=" "
             data-input-variant={variant}
             className={cn(
-              "peer h-12 w-full px-4 py-0 text-sm outline-none transition-colors duration-200 placeholder:text-transparent disabled:cursor-not-allowed disabled:opacity-60",
+              "peer h-11 w-full px-4 py-0 text-sm outline-none transition-colors duration-200 placeholder:text-transparent disabled:cursor-not-allowed disabled:opacity-60",
               variantClasses[variant].input,
               error
                 ? "border-danger-600 focus:border-danger-600"
@@ -126,8 +130,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {error ? (
-          <span className={cn("text-sm text-danger-600", errorClassName)}>
-            {error}
+          <span
+            className={cn(
+              "flex items-start gap-1.5 text-sm",
+              variantClasses[variant].error,
+              errorClassName,
+            )}
+          >
+            <CircleX className="mt-0.5 size-4 shrink-0" />
+            <span>{error}</span>
           </span>
         ) : hint ? (
           <span

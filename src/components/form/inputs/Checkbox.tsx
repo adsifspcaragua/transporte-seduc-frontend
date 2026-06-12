@@ -23,7 +23,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       containerClassName = "",
       labelClassName = "",
       id,
-      variant = "dark",
+      variant = "white",
       ...props
     },
     ref,
@@ -53,12 +53,13 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               `
               flex size-5 items-center justify-center rounded-md
               transition-all duration-200
-              [&>svg]:size-3 [&>svg]:text-brand-700 [&>svg]:opacity-0 [&>svg]:transition-all [&>svg]:duration-200
-              peer-focus:ring-2 peer-focus:ring-brand-100/50
-              peer-checked:bg-brand-100
+              [&>svg]:size-3 [&>svg]:opacity-0 [&>svg]:transition-all [&>svg]:duration-200
+              peer-focus-visible:ring-2
               peer-checked:[&>svg]:opacity-100
             `,
-              variant === "dark" ? "bg-brand-700" : "border border-brand-600",
+              variant === "dark"
+                ? "bg-brand-700 peer-checked:bg-brand-100 peer-focus-visible:ring-brand-100/50 [&>svg]:text-brand-700"
+                : "border border-slate-300 bg-white peer-checked:border-brand-600 peer-checked:bg-brand-600 peer-focus-visible:ring-slate-200 [&>svg]:text-white",
               className,
             )}
           >
@@ -69,7 +70,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             <span
               className={cn(
                 "leading-none",
-                variant === "dark" ? "text-white" : "text-brand-700",
+                variant === "dark" ? "text-white" : "text-slate-700",
               )}
             >
               {label}

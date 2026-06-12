@@ -21,7 +21,6 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
   variant?: ButtonVariant;
   size?: ButtonSize;
-  uppercase?: boolean;
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -84,10 +83,10 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-9 px-3.5 text-sm",
+  sm: "h-11 px-3.5 text-sm",
   md: "h-11 px-5 text-base",
   lg: "h-11 px-6 text-lg",
-  icon: "size-10 p-0",
+  icon: "size-11 p-0",
 };
 
 const spinnerClasses: Record<ButtonVariant, string> = {
@@ -109,7 +108,6 @@ export default function Button({
   loading = false,
   variant = "light",
   size = "md",
-  uppercase = false,
   className = "",
   disabled,
   type = "button",
@@ -123,7 +121,7 @@ export default function Button({
       disabled={disabled || loading}
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-lg border font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed",
-        uppercase ? "uppercase tracking-wide" : "normal-case tracking-normal",
+        "normal-case tracking-normal",
         fullWidth && !isIconOnly && "w-full",
         !fullWidth && "self-center",
         variantClasses[variant],

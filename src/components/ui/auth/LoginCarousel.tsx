@@ -3,7 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const slides = [
   {
@@ -20,16 +20,36 @@ const slides = [
   },
 ];
 
+const SLIDE_DURATION_MS = 4000;
+
 export default function LoginCarousel() {
   const [current, setCurrent] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startSlideTimer = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    intervalRef.current = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, SLIDE_DURATION_MS);
+  }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % slides.length);
-    }, 4000);
+    startSlideTimer();
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [startSlideTimer]);
+
+  function handleSlideChange(index: number) {
+    setCurrent(index);
+    startSlideTimer();
+  }
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-login-carousel-bg">
@@ -70,7 +90,7 @@ export default function LoginCarousel() {
             key={slide.alt}
             type="button"
             aria-label={`Ir para slide ${index + 1}`}
-            onClick={() => setCurrent(index)}
+            onClick={() => handleSlideChange(index)}
             className={`h-2.5 rounded-full transition-all ${
               current === index
                 ? "w-8 bg-white"

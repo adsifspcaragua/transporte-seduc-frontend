@@ -209,7 +209,6 @@ export function StudentsWorkspace() {
                       fullWidth={false}
                       leftIcon={<Pencil />}
                       size="sm"
-                      uppercase={false}
                       variant="primary"
                     >
                       Editar
@@ -221,7 +220,6 @@ export function StudentsWorkspace() {
                       loading={deleteLoadingId === student.id}
                       onClick={() => openDeleteModal(student)}
                       size="sm"
-                      uppercase={false}
                       variant="danger"
                     >
                       Deletar

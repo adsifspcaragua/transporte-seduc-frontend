@@ -1421,7 +1421,6 @@ export function RegisterWorkspace() {
 
             <Button
               fullWidth={false}
-              uppercase={false}
               variant="primary"
               size="sm"
               leftIcon={<Upload className="size-4" />}
@@ -1467,7 +1466,6 @@ export function RegisterWorkspace() {
                   <div className="flex items-center gap-2">
                     <Button
                       fullWidth={false}
-                      uppercase={false}
                       variant="ghost"
                       size="sm"
                       leftIcon={<Upload className="size-4" />}
@@ -1560,7 +1558,6 @@ export function RegisterWorkspace() {
 
               <Button
                 fullWidth={false}
-                uppercase={false}
                 variant="primary"
                 size="sm"
                 leftIcon={<Edit3 className="size-4" />}
@@ -1649,7 +1646,6 @@ export function RegisterWorkspace() {
             {step === 4 ? (
               <Button
                 fullWidth={false}
-                uppercase={false}
                 variant="success"
                 size="md"
                 loading={saving}
@@ -1661,7 +1657,6 @@ export function RegisterWorkspace() {
             ) : (
               <Button
                 fullWidth={false}
-                uppercase={false}
                 variant="primary"
                 size="md"
                 loading={saving}
@@ -1760,7 +1755,6 @@ export function RegisterWorkspace() {
             <div className="mt-6 flex justify-end gap-3">
               <Button
                 fullWidth={false}
-                uppercase={false}
                 variant="ghost"
                 size="md"
                 onClick={closeDocumentModal}
@@ -1769,7 +1763,6 @@ export function RegisterWorkspace() {
               </Button>
               <Button
                 fullWidth={false}
-                uppercase={false}
                 variant="primary"
                 size="md"
                 onClick={handleDocumentUpload}

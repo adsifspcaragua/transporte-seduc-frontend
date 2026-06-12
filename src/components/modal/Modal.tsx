@@ -80,7 +80,6 @@ function ModalFooter({
         className="min-h-10 px-4 py-2 text-sm"
         fullWidth={false}
         onClick={onClose}
-        uppercase={false}
         variant="ghost"
       >
         {cancelLabel}
@@ -91,7 +90,6 @@ function ModalFooter({
         fullWidth={false}
         loading={saveLoading}
         onClick={onSave}
-        uppercase={false}
         variant={saveVariant}
       >
         {saveLabel}
