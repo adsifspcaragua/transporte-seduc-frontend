@@ -50,6 +50,7 @@
   --color-login-carousel-bg: #0d4f8f;
   --color-login-carousel-overlay: #0a73b8;
   --color-login-autofill: #0b527f;
+  --color-auth-field-focus: #c4e6f0;
 }
 
 @theme inline {
