@@ -545,7 +545,7 @@ function buildInstituicaoPayload(
 }
 
 function fieldClassName() {
-  return "h-12 rounded-lg";
+  return "rounded-lg";
 }
 
 export function RegisterWorkspace() {
