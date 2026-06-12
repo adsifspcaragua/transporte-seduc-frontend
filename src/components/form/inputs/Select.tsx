@@ -55,15 +55,15 @@ const variantClasses: Record<
   }
 > = {
   dark: {
-    field: "rounded-full border-2 bg-brand-700 text-white",
-    state: "border-brand-700 focus:border-brand-100",
-    label: "text-white/70",
+    field: "rounded-lg border-2 bg-transparent text-white",
+    state: "border-slate-300 focus:border-brand-600",
+    label: "bg-brand-600 text-white/70",
     hint: "text-white/60",
     icon: "text-white/70",
     placeholder: "text-white/70",
   },
   white: {
-    field: "rounded-lg border bg-white text-slate-900",
+    field: "rounded-lg border-2 bg-white text-slate-900",
     state:
       "border-slate-300 focus:border-brand-600 focus:ring-1 focus:ring-brand-600",
     label: "text-brand-600",
@@ -365,12 +365,12 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             onClick={() => setIsOpen((current) => !current && !disabled)}
             onKeyDown={handleKeyDown}
             className={cn(
-              "peer flex w-full items-center justify-between gap-4 px-8 pb-1 pt-6 text-left outline-none transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60",
+              "peer flex h-11 w-full items-center justify-between gap-4 px-4 text-left outline-none transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60",
               variantClasses[variant].field,
               error
                 ? "border-danger-600 focus:border-danger-600 focus:ring-1 focus:ring-danger-600"
                 : variantClasses[variant].state,
-              "pr-16",
+              "pr-12",
               className,
             )}
           >
@@ -388,7 +388,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             <label
               htmlFor={selectId}
               className={cn(
-                "pointer-events-none absolute left-8 top-2 flex items-center gap-1.5 text-xs uppercase transition-all duration-200 [&>svg]:size-4",
+                "pointer-events-none absolute left-3 top-0 flex -translate-y-1/2 items-center gap-1.5 px-1 text-xs transition-all duration-200 [&>svg]:size-4",
                 variantClasses[variant].label,
                 labelClassName,
               )}
@@ -401,7 +401,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
 
           <div
             className={cn(
-              "pointer-events-none absolute right-6 top-1/2 z-10 -translate-y-1/2 transition-transform duration-200",
+              "pointer-events-none absolute right-4 top-1/2 z-10 -translate-y-1/2 transition-transform duration-200",
               isOpen && "rotate-180",
               variantClasses[variant].icon,
               rightElementClassName,

@@ -57,7 +57,7 @@ export default function LoginCarousel() {
       <div className="absolute right-8 top-8 z-20">
         <Link
           href="/registro"
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-action-light-default bg-action-light-default px-5 py-2.5 text-sm font-semibold text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-action-light-default bg-action-light-default px-5 text-sm font-semibold text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
         >
           <span>Solicitar transporte universitário</span>
           <ArrowRight className="size-5" />

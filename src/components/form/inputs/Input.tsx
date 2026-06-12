@@ -33,7 +33,7 @@ const variantClasses: Record<
       "h-14 rounded-full border-2 bg-brand-700 px-8 pb-1 pt-6 text-base text-white",
     state: "border-brand-700 focus:border-brand-100",
     labelPosition:
-      "left-8 top-1/2 -translate-y-1/2 text-base uppercase peer-focus:top-2 peer-focus:translate-y-0 peer-focus:text-xs peer-[:not(:placeholder-shown)]:top-2 peer-[:not(:placeholder-shown)]:translate-y-0 peer-[:not(:placeholder-shown)]:text-xs",
+      "left-8 top-1/2 origin-left -translate-y-1/2 scale-100 text-base uppercase peer-focus:-translate-y-[1.45rem] peer-focus:scale-75 peer-[:not(:placeholder-shown)]:-translate-y-[1.45rem] peer-[:not(:placeholder-shown)]:scale-75",
     label: `
       text-white/70
     `,
@@ -102,25 +102,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             <label
               htmlFor={inputId}
               className={cn(
-                "pointer-events-none absolute z-10 flex items-center px-1 transition-[top,transform,font-size,line-height] duration-200",
+                "pointer-events-none absolute z-10 flex items-center px-1 transition-transform duration-200",
                 variantClasses[variant].labelPosition,
                 variantClasses[variant].label,
-                error &&
-                  "text-danger-600 peer-focus:text-danger-600 peer-[:not(:placeholder-shown)]:text-danger-600",
                 labelClassName,
               )}
             >
               {label}
-              {required && (
-                <span
-                  className={cn(
-                    "ml-1",
-                    variant === "dark" ? "text-danger-600" : "text-danger-600",
-                  )}
-                >
-                  *
-                </span>
-              )}
+              {required && <span className="ml-1 text-danger-600">*</span>}
             </label>
           )}
 
@@ -137,13 +126,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {error ? (
-          <span
-            className={cn(
-              "text-sm",
-              variant === "dark" ? "text-danger-600" : "text-danger-600",
-              errorClassName,
-            )}
-          >
+          <span className={cn("text-sm text-danger-600", errorClassName)}>
             {error}
           </span>
         ) : hint ? (
