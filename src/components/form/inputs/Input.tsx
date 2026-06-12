@@ -102,7 +102,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             <label
               htmlFor={inputId}
               className={cn(
-                "pointer-events-none absolute z-10 flex items-center px-1 transition-transform duration-200",
+                "pointer-events-none absolute z-10 flex items-center px-1 transition-all duration-200",
                 variantClasses[variant].labelPosition,
                 variantClasses[variant].label,
                 labelClassName,
