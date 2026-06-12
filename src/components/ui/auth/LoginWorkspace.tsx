@@ -7,10 +7,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/buttons";
-import { Checkbox, Input, PasswordInput } from "@/components/form/inputs";
+import { Checkbox, CpfInput, PasswordInput } from "@/components/form/inputs";
 import LoginCarousel from "@/components/ui/auth/LoginCarousel";
 import { useAuth } from "@/hooks/use-auth";
-import { cleanCpf, formatCpf, isCpfLike, isValidCpf } from "@/utils/cpf";
+import { cleanCpf, isValidCpf } from "@/utils/cpf";
 
 type LoginFormData = {
   login: string;
@@ -46,10 +46,6 @@ type FormatValidationState = {
   password: boolean;
 };
 
-type FormatOptions = {
-  eager?: boolean;
-};
-
 const REMEMBERED_LOGIN_STORAGE_KEY = "remembered-login";
 
 function parseRetryAfterSeconds(value?: string | null) {
@@ -70,101 +66,26 @@ function parseRetryAfterSeconds(value?: string | null) {
   return 60;
 }
 
-function isValidEmail(value: string) {
-  if (!/^[a-z0-9._+-]+@[a-z0-9.-]+$/.test(value)) {
-    return false;
-  }
-
-  const [localPart, domain, ...rest] = value.split("@");
-
-  if (!localPart || !domain || rest.length > 0) {
-    return false;
-  }
-
-  if (
-    localPart.startsWith(".") ||
-    localPart.endsWith(".") ||
-    localPart.includes("..")
-  ) {
-    return false;
-  }
-
-  const labels = domain.split(".");
-
-  if (labels.length < 2) {
-    return false;
-  }
-
-  return labels.every((label) =>
-    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label),
-  );
-}
-
-function sanitizeEmailInput(value: string) {
-  return value
-    .replace(/\s+/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9@._+-]/g, "");
-}
-
-function sanitizeLoginInput(value: string, formatOptions?: FormatOptions) {
-  const compactValue = value.replace(/\s+/g, "");
-
-  if (!compactValue) {
-    return "";
-  }
-
-  const looksLikeEmail = /[a-zA-Z@_+]/.test(compactValue);
-
-  if (!looksLikeEmail) {
-    return formatCpf(compactValue, formatOptions);
-  }
-
-  return sanitizeEmailInput(compactValue);
-}
-
-function isDeleting(event: React.ChangeEvent<HTMLInputElement>) {
-  const inputType = (event.nativeEvent as InputEvent).inputType;
-
-  return typeof inputType === "string" && inputType.startsWith("delete");
-}
-
 function getLoginPayload(value: string) {
-  const normalizedValue = sanitizeLoginInput(value).trim();
-
-  if (isCpfLike(normalizedValue)) {
-    return cleanCpf(normalizedValue);
-  }
-
-  return normalizedValue;
+  return cleanCpf(value);
 }
 
 function validateLoginField(
   value: string,
   { showRequired = false, showFormat = false }: ValidationOptions = {},
 ) {
-  const loginValue = sanitizeLoginInput(value).trim();
+  const loginValue = cleanCpf(value);
 
   if (!loginValue) {
     return showRequired ? "Este campo é obrigatório." : undefined;
   }
 
-  if (isCpfLike(loginValue)) {
-    const cpf = cleanCpf(loginValue);
-
-    if (cpf.length < 11) {
-      return showFormat ? "Informe um CPF completo." : undefined;
-    }
-
-    if (!isValidCpf(loginValue)) {
-      return showFormat ? "Informe um CPF válido." : undefined;
-    }
-
-    return undefined;
+  if (loginValue.length < 11) {
+    return showFormat ? "Informe um CPF completo." : undefined;
   }
 
-  if (!isValidEmail(loginValue)) {
-    return showFormat ? "Informe um e-mail válido." : undefined;
+  if (!isValidCpf(loginValue)) {
+    return showFormat ? "Informe um CPF válido." : undefined;
   }
 
   return undefined;
@@ -217,7 +138,6 @@ export function LoginWorkspace() {
 
   const isRateLimited = retryAfterSeconds > 0;
   const isSubmitDisabled = loading || isRateLimited;
-  const loginInputClassName = "login-autofill-input";
 
   useEffect(() => {
     const rememberedLogin = window.localStorage.getItem(
@@ -227,7 +147,7 @@ export function LoginWorkspace() {
     if (rememberedLogin) {
       setForm((prev) => ({
         ...prev,
-        login: sanitizeLoginInput(rememberedLogin),
+        login: rememberedLogin,
       }));
       setRememberLogin(true);
     }
@@ -243,7 +163,7 @@ export function LoginWorkspace() {
       return;
     }
 
-    const loginValue = sanitizeLoginInput(form.login).trim();
+    const loginValue = cleanCpf(form.login);
 
     if (!loginValue) {
       window.localStorage.removeItem(REMEMBERED_LOGIN_STORAGE_KEY);
@@ -283,15 +203,13 @@ export function LoginWorkspace() {
 
   function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
+    const fieldName = name === "cpf" ? "login" : name;
 
-    const nextValue =
-      name === "login"
-        ? sanitizeLoginInput(value, { eager: !isDeleting(event) })
-        : value;
+    const nextValue = value;
 
     setForm((prev) => ({
       ...prev,
-      [name]: nextValue,
+      [fieldName]: nextValue,
     }));
 
     setErrors((prev) => {
@@ -300,14 +218,14 @@ export function LoginWorkspace() {
         form: undefined,
       };
 
-      if (name === "login") {
+      if (fieldName === "login") {
         nextErrors.login = validateLoginField(nextValue, {
           showRequired: touched.login || hasSubmitted,
           showFormat: formatValidationEnabled.login || hasSubmitted,
         });
       }
 
-      if (name === "password") {
+      if (fieldName === "password") {
         nextErrors.password = validatePasswordField(nextValue, {
           showRequired: touched.password || hasSubmitted,
           showFormat: formatValidationEnabled.password || hasSubmitted,
@@ -326,8 +244,9 @@ export function LoginWorkspace() {
 
   function handleFieldBlur(event: React.FocusEvent<HTMLInputElement>) {
     const { name, value } = event.target;
+    const fieldName = name === "cpf" ? "login" : name;
 
-    if (name === "login") {
+    if (fieldName === "login") {
       const loginError = validateLoginField(value, {
         showRequired: true,
         showFormat: true,
@@ -336,7 +255,7 @@ export function LoginWorkspace() {
       setTouched((prev) => ({ ...prev, login: true }));
       setFormatValidationEnabled((prev) => ({
         ...prev,
-        login: Boolean(loginError && sanitizeLoginInput(value).trim()),
+        login: Boolean(loginError && cleanCpf(value)),
       }));
       setErrors((prev) => ({
         ...prev,
@@ -344,7 +263,7 @@ export function LoginWorkspace() {
       }));
     }
 
-    if (name === "password") {
+    if (fieldName === "password") {
       const passwordError = validatePasswordField(value, {
         showRequired: true,
         showFormat: true,
@@ -378,7 +297,7 @@ export function LoginWorkspace() {
       password: true,
     });
     setFormatValidationEnabled({
-      login: Boolean(loginError && sanitizeLoginInput(form.login).trim()),
+      login: Boolean(loginError && cleanCpf(form.login)),
       password: Boolean(passwordError && form.password.trim()),
     });
 
@@ -498,44 +417,43 @@ export function LoginWorkspace() {
               noValidate
               className="flex flex-col gap-5"
             >
-              <Input
-                variant="dark"
-                label="E-mail ou CPF"
-                name="login"
-                type="text"
-                required
+              <CpfInput
+                label="CPF"
+                name="cpf"
+                aria-required="true"
                 value={form.login}
                 onChange={handleInputChange}
                 onBlur={handleFieldBlur}
                 error={errors.login}
-                autoComplete="username"
-                className={loginInputClassName}
+                autoComplete="off"
+                variant="dark"
               />
 
               <PasswordInput
-                variant="dark"
                 label="Senha"
                 name="password"
                 autoComplete="current-password"
-                required
+                aria-required="true"
                 value={form.password}
                 onChange={handleInputChange}
                 onBlur={handleFieldBlur}
                 error={errors.password}
-                className={loginInputClassName}
+                variant="dark"
               />
 
               <div className="flex items-center justify-between gap-4">
                 <Checkbox
                   name="rememberLogin"
-                  label="Lembrar login"
+                  label="Lembrar usuário"
                   checked={rememberLogin}
                   onChange={handleRememberLoginChange}
+                  className="size-4 rounded-md"
+                  labelClassName="text-sm sm:text-base"
                 />
 
                 <Link
                   href="/recuperar-senha"
-                  className="underline underline-offset-4 transition-colors hover:text-brand-100"
+                  className="text-sm transition-colors hover:text-brand-100 sm:text-base"
                 >
                   Esqueceu a senha?
                 </Link>
@@ -557,10 +475,11 @@ export function LoginWorkspace() {
                 type="submit"
                 variant="light"
                 size="md"
-                leftIcon={<LogIn className="size-5" />}
+                leftIcon={<LogIn />}
                 loading={loading}
                 disabled={isRateLimited}
-                className="rounded-full"
+                uppercase
+                className="h-10 rounded-full text-sm"
               >
                 {isRateLimited
                   ? `Tente novamente em ${retryAfterSeconds}s`
@@ -569,7 +488,7 @@ export function LoginWorkspace() {
 
               <Link
                 href="/registro"
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border-2 border-action-light-default bg-transparent px-5 py-2.5 text-center text-base font-semibold leading-tight text-action-light-default transition-all duration-200 hover:border-action-light-hover hover:bg-white/10 hover:text-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-light-default active:scale-[0.99] lg:hidden"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-brand-600/20 bg-white px-5 text-center text-base font-semibold leading-tight text-brand-600 shadow-sm transition-all duration-200 hover:bg-brand-600/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-brand-600/30 active:bg-brand-600/10 lg:hidden"
               >
                 <span>Solicitar transporte universitário</span>
                 <ArrowRight className="size-5" />
