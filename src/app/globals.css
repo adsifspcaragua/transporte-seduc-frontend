@@ -31,6 +31,9 @@
   --color-border-subtle: #e2e8f0;
   --color-focus-muted: #e2e8f0;
   --color-disabled-surface: #cbd5e1;
+  --color-field-disabled-surface: #f1f5f9;
+  --color-field-disabled-border: #d5dee9;
+  --color-field-disabled-content: #94a3b8;
   --color-overlay: #000000;
   --color-modal-shadow: rgb(0 0 0 / 0.22);
 
@@ -89,6 +92,35 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-montserrat), Arial, Helvetica, sans-serif;
+}
+
+.select-scrollbar {
+  scrollbar-color: #084e80 transparent;
+  scrollbar-width: thin;
+}
+
+.select-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.select-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.select-scrollbar.select-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #084e80;
+  border-radius: 9999px;
+  min-height: 32px;
+}
+
+.select-scrollbar.select-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #063b61;
+}
+
+.select-scrollbar::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .animation-loading-skeleton::after {

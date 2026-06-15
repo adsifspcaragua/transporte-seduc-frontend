@@ -78,7 +78,7 @@ const variantClasses: Record<ButtonVariant, string> = {
     hover:bg-brand-600/5
     active:border-brand-600/30 active:bg-brand-600/10
     disabled:border-brand-600/10 disabled:bg-surface-primary disabled:text-brand-600/35
-    shadow-sm
+    shadow-sm transition-[background-color,border-color,color] duration-200 ease-out
   `,
 };
 
@@ -120,7 +120,7 @@ export default function Button({
       type={type}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg border font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 rounded-lg border font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-default",
         "normal-case tracking-normal",
         fullWidth && !isIconOnly && "w-full",
         !fullWidth && "self-center",
