@@ -14,8 +14,25 @@
   --color-brand-050: #cfeafe;
 
   /* Surfaces */
+  --color-surface-primary: #ffffff;
+  --color-surface-muted: #f1f5f9;
   --color-app-surface: #f4f4f4;
   --color-skeleton: #d7d7d7;
+
+  /* Content */
+  --color-content-primary: #0f172a;
+  --color-content-secondary: #334155;
+  --color-content-muted: #64748b;
+  --color-content-disabled: #94a3b8;
+  --color-content-inverse: #ffffff;
+
+  /* Borders and effects */
+  --color-border-default: #cbd5e1;
+  --color-border-subtle: #e2e8f0;
+  --color-focus-muted: #e2e8f0;
+  --color-disabled-surface: #cbd5e1;
+  --color-overlay: #000000;
+  --color-modal-shadow: rgb(0 0 0 / 0.22);
 
   /* Edit / primary actions */
   --color-edit-default: #084e80;
