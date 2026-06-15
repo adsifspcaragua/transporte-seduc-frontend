@@ -25,38 +25,38 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: `
-    border-edit-default bg-edit-default text-white
+    border-edit-default bg-edit-default text-content-inverse
     hover:border-edit-hover hover:bg-edit-hover
     active:border-edit-pressing active:bg-edit-pressing
-    disabled:border-edit-disabled disabled:bg-edit-disabled disabled:text-white/75
+    disabled:border-edit-disabled disabled:bg-edit-disabled disabled:text-content-inverse/75
     shadow-sm
   `,
   secondary: `
-    gap-3 border-brand-600/20 bg-white text-brand-600
+    gap-3 border-brand-600/20 bg-surface-primary text-brand-600
     hover:bg-brand-600/5
     active:border-brand-600/30 active:bg-brand-600/10
-    disabled:border-brand-600/10 disabled:bg-white disabled:text-brand-600/35
+    disabled:border-brand-600/10 disabled:bg-surface-primary disabled:text-brand-600/35
     shadow-sm
   `,
   neutral: `
-    border-brand-600/20 bg-white text-brand-600
+    border-brand-600/20 bg-surface-primary text-brand-600
     hover:bg-brand-600/5
     active:border-brand-600/30 active:bg-brand-600/10
-    disabled:border-brand-600/10 disabled:bg-white disabled:text-brand-600/35
+    disabled:border-brand-600/10 disabled:bg-surface-primary disabled:text-brand-600/35
     shadow-sm
   `,
   approved: `
-    border-approve-default bg-approve-default text-white
+    border-approve-default bg-approve-default text-content-inverse
     hover:border-approve-hover hover:bg-approve-hover
     active:border-approve-pressing active:bg-approve-pressing
-    disabled:border-approve-disabled disabled:bg-approve-disabled disabled:text-white/75
+    disabled:border-approve-disabled disabled:bg-approve-disabled disabled:text-content-inverse/75
     shadow-sm
   `,
   danger: `
-    border-danger-600 bg-danger-600 text-white
+    border-danger-600 bg-danger-600 text-content-inverse
     hover:border-danger-700 hover:bg-danger-700
     active:border-danger-800 active:bg-danger-800
-    disabled:border-delete-disabled disabled:bg-delete-disabled disabled:text-white/75
+    disabled:border-delete-disabled disabled:bg-delete-disabled disabled:text-content-inverse/75
     shadow-sm
   `,
   light: `
@@ -67,17 +67,17 @@ const variantClasses: Record<ButtonVariant, string> = {
     shadow-sm
   `,
   success: `
-    border-approve-default bg-approve-default text-white
+    border-approve-default bg-approve-default text-content-inverse
     hover:border-approve-hover hover:bg-approve-hover
     active:border-approve-pressing active:bg-approve-pressing
-    disabled:border-approve-disabled disabled:bg-approve-disabled disabled:text-white/75
+    disabled:border-approve-disabled disabled:bg-approve-disabled disabled:text-content-inverse/75
     shadow-sm
   `,
   ghost: `
-    border-brand-600/20 bg-white text-brand-600
+    border-brand-600/20 bg-surface-primary text-brand-600
     hover:bg-brand-600/5
     active:border-brand-600/30 active:bg-brand-600/10
-    disabled:border-brand-600/10 disabled:bg-white disabled:text-brand-600/35
+    disabled:border-brand-600/10 disabled:bg-surface-primary disabled:text-brand-600/35
     shadow-sm
   `,
 };
@@ -90,13 +90,13 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 const spinnerClasses: Record<ButtonVariant, string> = {
-  primary: "border-white border-t-transparent",
+  primary: "border-content-inverse border-t-transparent",
   secondary: "border-brand-600 border-t-transparent",
   neutral: "border-brand-600 border-t-transparent",
-  approved: "border-white border-t-transparent",
-  danger: "border-white border-t-transparent",
+  approved: "border-content-inverse border-t-transparent",
+  danger: "border-content-inverse border-t-transparent",
   light: "border-brand-600 border-t-transparent",
-  success: "border-white border-t-transparent",
+  success: "border-content-inverse border-t-transparent",
   ghost: "border-brand-600 border-t-transparent",
 };
 

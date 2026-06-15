@@ -32,28 +32,28 @@ const variantClasses: Record<
 > = {
   dark: {
     input:
-      "h-14 rounded-full border-2 bg-brand-700 px-8 pb-1 pt-6 text-base text-white",
+      "h-14 rounded-full border-2 bg-brand-700 px-8 pb-1 pt-6 text-base text-content-inverse",
     state: "border-brand-700 focus:border-brand-100",
     labelPosition:
       "left-8 top-1/2 origin-left -translate-y-1/2 scale-100 text-base peer-focus:-translate-y-[1.45rem] peer-focus:scale-75 peer-[:not(:placeholder-shown)]:-translate-y-[1.45rem] peer-[:not(:placeholder-shown)]:scale-75",
     label: `
-      text-white/70
+      text-content-inverse/70
     `,
-    hint: "text-white/60",
+    hint: "text-content-inverse/60",
     error: "font-semibold text-danger-600",
   },
   white: {
-    input: "rounded-lg border-2 bg-white text-slate-900",
-    state: "border-slate-300 focus:border-brand-600",
+    input: "rounded-lg border-2 bg-surface-primary text-content-primary",
+    state: "border-border-default focus:border-brand-600",
     labelPosition:
       "left-3 top-1/2 -translate-y-1/2 text-sm peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-xs peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:-translate-y-1/2 peer-[:not(:placeholder-shown)]:text-xs",
     label: `
-      bg-white
-      text-slate-500
+      bg-surface-primary
+      text-content-muted
       peer-focus:text-brand-600
       peer-[:not(:placeholder-shown)]:text-brand-600
     `,
-    hint: "text-slate-500",
+    hint: "text-content-muted",
     error: "font-medium text-danger-700",
   },
 };

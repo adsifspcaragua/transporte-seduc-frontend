@@ -55,21 +55,21 @@ const variantClasses: Record<
   }
 > = {
   dark: {
-    field: "rounded-lg border-2 bg-transparent text-white",
-    state: "border-slate-300 focus:border-brand-600",
-    label: "bg-brand-600 text-white/70",
-    hint: "text-white/60",
-    icon: "text-white/70",
-    placeholder: "text-white/70",
+    field: "rounded-lg border-2 bg-transparent text-content-inverse",
+    state: "border-border-default focus:border-brand-600",
+    label: "bg-brand-600 text-content-inverse/70",
+    hint: "text-content-inverse/60",
+    icon: "text-content-inverse/70",
+    placeholder: "text-content-inverse/70",
   },
   white: {
-    field: "rounded-lg border-2 bg-white text-slate-900",
+    field: "rounded-lg border-2 bg-surface-primary text-content-primary",
     state:
-      "border-slate-300 focus:border-brand-600 focus:ring-1 focus:ring-brand-600",
+      "border-border-default focus:border-brand-600 focus:ring-1 focus:ring-brand-600",
     label: "text-brand-600",
-    hint: "text-slate-500",
+    hint: "text-content-muted",
     icon: "text-brand-600",
-    placeholder: "text-slate-500",
+    placeholder: "text-content-muted",
   },
 };
 
@@ -416,7 +416,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               role="listbox"
               aria-labelledby={selectId}
               className={cn(
-                "absolute left-0 top-full z-[60] mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 text-sm text-slate-900 shadow-xl shadow-slate-900/10",
+                "absolute left-0 top-full z-[60] mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-border-subtle bg-surface-primary py-1 text-sm text-content-primary shadow-xl shadow-content-primary/10",
                 listboxClassName,
               )}
             >
@@ -435,15 +435,15 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                     onClick={() => chooseOption(option)}
                     className={cn(
                       "flex min-h-10 w-full items-center px-4 py-2.5 text-left font-medium transition-colors",
-                      isSelected && "bg-brand-600 text-white",
+                      isSelected && "bg-brand-600 text-content-inverse",
                       !isSelected &&
                         isActive &&
                         "bg-brand-100/60 text-brand-700",
                       !isSelected &&
                         !isActive &&
-                        "text-slate-700 hover:bg-brand-100/60 hover:text-brand-700",
+                        "text-content-secondary hover:bg-brand-100/60 hover:text-brand-700",
                       option.disabled &&
-                        "cursor-not-allowed bg-transparent text-slate-400 hover:bg-transparent hover:text-slate-400",
+                        "cursor-not-allowed bg-transparent text-content-disabled hover:bg-transparent hover:text-content-disabled",
                       optionClassName,
                     )}
                   >

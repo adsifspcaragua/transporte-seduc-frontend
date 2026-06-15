@@ -9,6 +9,8 @@ type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   error?: string;
   hint?: string;
   containerClassName?: string;
+  errorClassName?: string;
+  hintClassName?: string;
   labelClassName?: string;
   variant?: "dark" | "white";
 };
@@ -21,6 +23,8 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       hint,
       className = "",
       containerClassName = "",
+      errorClassName = "",
+      hintClassName = "",
       labelClassName = "",
       id,
       variant = "white",
@@ -59,7 +63,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             `,
               variant === "dark"
                 ? "bg-brand-700 peer-checked:bg-brand-100 peer-focus-visible:ring-brand-100/50 [&>svg]:text-brand-700"
-                : "border border-slate-300 bg-white peer-checked:border-brand-600 peer-checked:bg-brand-600 peer-focus-visible:ring-slate-200 [&>svg]:text-white",
+                : "border border-border-default bg-surface-primary peer-checked:border-brand-600 peer-checked:bg-brand-600 peer-focus-visible:ring-focus-muted [&>svg]:text-content-inverse",
               className,
             )}
           >
@@ -70,7 +74,9 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             <span
               className={cn(
                 "leading-none",
-                variant === "dark" ? "text-white" : "text-slate-700",
+                variant === "dark"
+                  ? "text-content-inverse"
+                  : "text-content-secondary",
               )}
             >
               {label}
@@ -79,12 +85,17 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         </label>
 
         {error ? (
-          <span className="text-sm text-danger-600">{error}</span>
+          <span className={cn("text-sm text-danger-600", errorClassName)}>
+            {error}
+          </span>
         ) : hint ? (
           <span
             className={cn(
               "text-sm",
-              variant === "dark" ? "text-white/60" : "text-brand-600/70",
+              variant === "dark"
+                ? "text-content-inverse/60"
+                : "text-brand-600/70",
+              hintClassName,
             )}
           >
             {hint}

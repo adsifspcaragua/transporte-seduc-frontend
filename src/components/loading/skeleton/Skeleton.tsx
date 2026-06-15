@@ -34,7 +34,7 @@ export function Skeleton({
     <div
       {...props}
       className={cn(
-        "animation-loading-skeleton relative h-20 w-20 cursor-progress overflow-hidden rounded-2xl bg-gray-200",
+        "animation-loading-skeleton relative h-20 w-20 cursor-progress overflow-hidden rounded-2xl bg-skeleton",
         className,
       )}
     />

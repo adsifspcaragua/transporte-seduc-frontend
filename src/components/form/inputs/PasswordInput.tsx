@@ -43,11 +43,12 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
-            className={
+            className={cn(
+              "flex items-center justify-center transition",
               variant === "dark"
-                ? "flex items-center justify-center text-white/70 transition hover:text-white"
-                : "flex items-center justify-center text-slate-500 transition hover:text-brand-600"
-            }
+                ? "text-content-inverse/70 hover:text-content-inverse"
+                : "text-content-muted hover:text-brand-600",
+            )}
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
           >
             {showPassword ? (

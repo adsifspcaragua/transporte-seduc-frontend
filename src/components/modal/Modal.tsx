@@ -47,11 +47,11 @@ type ModalFooterProps = {
 
 function ModalHeader({ title, onClose }: ModalHeaderProps) {
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+    <header className="flex items-center justify-between gap-4 border-b border-border-subtle px-5 py-4">
       <h2 className="text-base font-bold text-brand-600">{title}</h2>
       <button
         aria-label="Fechar modal"
-        className="flex size-9 cursor-pointer items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+        className="flex size-9 cursor-pointer items-center justify-center rounded-md text-content-muted transition-colors hover:bg-surface-muted hover:text-content-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
         onClick={onClose}
         type="button"
       >
@@ -75,7 +75,7 @@ function ModalFooter({
   onSave,
 }: ModalFooterProps) {
   return (
-    <footer className="flex flex-col-reverse gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:justify-end">
+    <footer className="flex flex-col-reverse gap-3 border-t border-border-subtle px-5 py-4 sm:flex-row sm:justify-end">
       <Button
         className="min-h-10 px-4 py-2 text-sm"
         fullWidth={false}
@@ -134,7 +134,7 @@ export function Modal({
     <div className="fixed inset-0 z-[80] flex min-h-screen items-center justify-center p-4">
       <button
         aria-label="Fechar modal"
-        className="absolute inset-0 cursor-default bg-black/45"
+        className="absolute inset-0 cursor-default bg-overlay/45"
         onClick={onClose}
         type="button"
       />
@@ -142,7 +142,7 @@ export function Modal({
         aria-labelledby="modal-title"
         aria-modal="true"
         className={cn(
-          "relative z-10 max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-hidden rounded-md bg-white shadow-[0_18px_50px_rgba(0,0,0,0.22)]",
+          "relative z-10 max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-hidden rounded-md bg-surface-primary shadow-[0_18px_50px_var(--color-modal-shadow)]",
           className,
         )}
         role="dialog"
