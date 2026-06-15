@@ -451,6 +451,8 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
 
       if (nextDisplayValue.length === 10 && nextDate) {
         commitDate(nextDate);
+        setIsOpen(false);
+        setCalendarView("days");
       }
     }
 
@@ -594,7 +596,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
                     currentYearPageStart - YEARS_PER_PAGE,
                 )
               }
-              className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-not-allowed disabled:text-content-disabled disabled:hover:bg-transparent"
+              className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-default disabled:text-content-disabled disabled:hover:bg-transparent"
             >
               <ChevronLeft className="size-6" />
             </button>
@@ -613,7 +615,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
                     currentYearPageStart + YEARS_PER_PAGE,
                 )
               }
-              className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-not-allowed disabled:text-content-disabled disabled:hover:bg-transparent"
+              className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-default disabled:text-content-disabled disabled:hover:bg-transparent"
             >
               <ChevronRight className="size-6" />
             </button>
@@ -629,7 +631,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
               aria-label="Ano anterior"
               disabled={!canGoToPreviousYear}
               onClick={() => changeYear(-1)}
-              className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-not-allowed disabled:text-content-disabled disabled:hover:bg-transparent"
+              className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-default disabled:text-content-disabled disabled:hover:bg-transparent"
             >
               <ChevronLeft className="size-6" />
             </button>
@@ -650,7 +652,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
               aria-label="Proximo ano"
               disabled={!canGoToNextYear}
               onClick={() => changeYear(1)}
-              className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-not-allowed disabled:text-content-disabled disabled:hover:bg-transparent"
+              className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-default disabled:text-content-disabled disabled:hover:bg-transparent"
             >
               <ChevronRight className="size-6" />
             </button>
@@ -665,7 +667,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             aria-label="Mes anterior"
             disabled={!canGoToPreviousMonth}
             onClick={() => changeMonth(-1)}
-            className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-not-allowed disabled:text-content-disabled disabled:hover:bg-transparent"
+            className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-default disabled:text-content-disabled disabled:hover:bg-transparent"
           >
             <ChevronLeft className="size-6" />
           </button>
@@ -683,7 +685,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             aria-label="Proximo mes"
             disabled={!canGoToNextMonth}
             onClick={() => changeMonth(1)}
-            className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-not-allowed disabled:text-content-disabled disabled:hover:bg-transparent"
+            className="flex size-9 items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-default disabled:text-content-disabled disabled:hover:bg-transparent"
           >
             <ChevronRight className="size-6" />
           </button>
@@ -737,7 +739,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
                       "bg-brand-600 text-content-inverse shadow-md shadow-brand-700/20 ring-0 hover:bg-brand-700",
                     !isSelected && !isDisabled && "hover:bg-brand-100/55",
                     isDisabled &&
-                      "cursor-not-allowed text-content-disabled opacity-60",
+                      "cursor-default text-content-disabled opacity-60",
                   )}
                 >
                   {calendarDay.date.getDate()}
@@ -777,7 +779,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
                   isSelected &&
                     "bg-brand-600 text-content-inverse shadow-md shadow-brand-700/20 hover:bg-brand-700",
                   !isSelected && !isDisabled && "hover:bg-brand-100/55",
-                  isDisabled && "cursor-not-allowed text-content-disabled",
+                  isDisabled && "cursor-default text-content-disabled",
                 )}
               >
                 {getMonthName(monthIndex)}
@@ -813,7 +815,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
                   isSelected &&
                     "bg-brand-600 text-content-inverse shadow-md shadow-brand-700/20 hover:bg-brand-700",
                   !isSelected && !isDisabled && "hover:bg-brand-100/55",
-                  isDisabled && "cursor-not-allowed text-content-disabled",
+                  isDisabled && "cursor-default text-content-disabled",
                 )}
               >
                 {year}
@@ -878,7 +880,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
                 type="button"
                 onClick={handleClear}
                 disabled={!storedValue && !displayValue}
-                className="rounded-full px-3 py-1.5 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-not-allowed disabled:text-brand-600/35"
+                className="rounded-full px-3 py-1.5 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-100/55 disabled:cursor-default disabled:text-brand-600/35"
               >
                 Limpar
               </button>
@@ -887,7 +889,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
                 type="button"
                 onClick={handleTodaySelect}
                 disabled={!canChooseToday}
-                className="rounded-full bg-brand-600 px-3 py-1.5 text-sm font-semibold text-content-inverse transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-disabled-surface"
+                className="rounded-full bg-brand-600 px-3 py-1.5 text-sm font-semibold text-content-inverse transition-colors hover:bg-brand-700 disabled:cursor-default disabled:bg-disabled-surface"
               >
                 Hoje
               </button>

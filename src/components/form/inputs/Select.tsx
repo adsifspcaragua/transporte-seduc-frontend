@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, type LucideIcon } from "lucide-react";
+import { Check, ChevronDown, CircleX, type LucideIcon } from "lucide-react";
 import {
   type ChangeEvent,
   Children,
@@ -49,7 +49,10 @@ const variantClasses: Record<
     field: string;
     state: string;
     label: string;
+    labelFloating: string;
+    labelResting: string;
     hint: string;
+    error: string;
     icon: string;
     placeholder: string;
   }
@@ -57,17 +60,22 @@ const variantClasses: Record<
   dark: {
     field: "rounded-lg border-2 bg-transparent text-content-inverse",
     state: "border-border-default focus:border-brand-600",
-    label: "bg-brand-600 text-content-inverse/70",
+    label: "text-content-inverse/70",
+    labelFloating: "bg-brand-600 text-xs",
+    labelResting: "text-sm",
     hint: "text-content-inverse/60",
+    error: "font-semibold text-danger-600",
     icon: "text-content-inverse/70",
     placeholder: "text-content-inverse/70",
   },
   white: {
     field: "rounded-lg border-2 bg-surface-primary text-content-primary",
-    state:
-      "border-border-default focus:border-brand-600 focus:ring-1 focus:ring-brand-600",
-    label: "text-brand-600",
+    state: "border-border-default focus:border-brand-600",
+    label: "text-content-muted",
+    labelFloating: "bg-surface-primary text-xs text-brand-600",
+    labelResting: "text-sm",
     hint: "text-content-muted",
+    error: "font-medium text-danger-700",
     icon: "text-brand-600",
     placeholder: "text-content-muted",
   },
@@ -156,7 +164,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       id,
       required,
       options,
-      placeholder = "Selecione",
+      placeholder = "",
       children,
       rightElement,
       value,
@@ -188,23 +196,14 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       [children, options],
     );
 
-    const allOptions = useMemo<SelectOption[]>(
-      () => [
-        {
-          disabled: true,
-          label: placeholder,
-          value: "",
-        },
-        ...parsedOptions,
-      ],
-      [parsedOptions, placeholder],
-    );
+    const allOptions = parsedOptions;
 
-    const selectedOption = allOptions.find(
+    const selectedOption = parsedOptions.find(
       (option) => option.value === selectedValue,
     );
     const hasSelectedValue = Boolean(selectedValue && selectedOption);
-    const displayLabel = selectedOption?.label ?? placeholder;
+    const displayLabel = selectedOption?.label ?? "";
+    const shouldFloatLabel = isOpen || hasSelectedValue;
 
     function setSelectRef(node: HTMLSelectElement | null) {
       selectRef.current = node;
@@ -365,10 +364,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             onClick={() => setIsOpen((current) => !current && !disabled)}
             onKeyDown={handleKeyDown}
             className={cn(
-              "peer flex h-11 w-full items-center justify-between gap-4 px-4 text-left outline-none transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60",
+              "peer flex h-11 w-full cursor-pointer items-center justify-between gap-4 px-4 text-left text-sm font-normal outline-none transition-all duration-200 disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
               variantClasses[variant].field,
               error
-                ? "border-danger-600 focus:border-danger-600 focus:ring-1 focus:ring-danger-600"
+                ? "border-danger-600 focus:border-danger-600"
                 : variantClasses[variant].state,
               "pr-12",
               className,
@@ -388,12 +387,18 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             <label
               htmlFor={selectId}
               className={cn(
-                "pointer-events-none absolute left-3 top-0 flex -translate-y-1/2 items-center gap-1.5 px-1 text-xs transition-all duration-200 [&>svg]:size-4",
+                "pointer-events-none absolute left-3 z-10 flex items-center px-1 transition-all duration-200 [&>svg]:size-4",
+                shouldFloatLabel
+                  ? "top-0 -translate-y-1/2"
+                  : "top-1/2 -translate-y-1/2",
                 variantClasses[variant].label,
+                shouldFloatLabel
+                  ? variantClasses[variant].labelFloating
+                  : variantClasses[variant].labelResting,
                 labelClassName,
               )}
             >
-              {Icon && <Icon className="mb-0.5" />}
+              {Icon && <Icon className="mb-0.5 mr-1.5" />}
               {label}
               {required && <span className="ml-1 text-danger-600">*</span>}
             </label>
@@ -416,48 +421,72 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               role="listbox"
               aria-labelledby={selectId}
               className={cn(
-                "absolute left-0 top-full z-[60] mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-border-subtle bg-surface-primary py-1 text-sm text-content-primary shadow-xl shadow-content-primary/10",
+                "select-scrollbar absolute left-0 top-full z-[60] mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-border-subtle bg-surface-primary py-1 text-sm text-content-primary shadow-xl shadow-content-primary/10",
                 listboxClassName,
               )}
             >
-              {allOptions.map((option, index) => {
-                const isSelected = option.value === selectedValue;
-                const isActive = index === activeIndex;
+              {allOptions.length > 0 ? (
+                allOptions.map((option, index) => {
+                  const isSelected = option.value === selectedValue;
+                  const isActive = index === activeIndex;
 
-                return (
-                  <button
-                    key={`${option.value}-${option.label}`}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    disabled={option.disabled}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    onClick={() => chooseOption(option)}
-                    className={cn(
-                      "flex min-h-10 w-full items-center px-4 py-2.5 text-left font-medium transition-colors",
-                      isSelected && "bg-brand-600 text-content-inverse",
-                      !isSelected &&
-                        isActive &&
-                        "bg-brand-100/60 text-brand-700",
-                      !isSelected &&
-                        !isActive &&
-                        "text-content-secondary hover:bg-brand-100/60 hover:text-brand-700",
-                      option.disabled &&
-                        "cursor-not-allowed bg-transparent text-content-disabled hover:bg-transparent hover:text-content-disabled",
-                      optionClassName,
-                    )}
-                  >
-                    <span className="min-w-0 truncate">{option.label}</span>
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={`${option.value}-${option.label}`}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      disabled={option.disabled}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      onClick={() => chooseOption(option)}
+                      className={cn(
+                        "flex min-h-10 w-full cursor-pointer items-center justify-between gap-3 px-4 py-2.5 text-left font-medium transition-colors",
+                        isSelected &&
+                          "bg-[#e4ebf5] text-brand-600 hover:bg-[#dbe6f2] active:bg-[#d1dfed]",
+                        !isSelected &&
+                          isActive &&
+                          "bg-surface-muted text-brand-700 active:bg-[#e4ebf5]",
+                        !isSelected &&
+                          !isActive &&
+                          "text-content-secondary hover:bg-surface-muted hover:text-brand-700 active:bg-[#e4ebf5]",
+                        option.disabled &&
+                          "cursor-default bg-transparent text-content-disabled hover:bg-transparent hover:text-content-disabled",
+                        optionClassName,
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "min-w-0 flex-1 truncate",
+                          isSelected && "font-bold",
+                        )}
+                      >
+                        {option.label}
+                      </span>
+                      {isSelected && (
+                        <Check className="size-4 shrink-0 text-brand-600" />
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="flex min-h-10 w-full items-center px-4 py-2.5 text-left font-medium text-content-disabled">
+                  Nenhuma opção disponível
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {error ? (
-          <span className={cn("text-sm text-danger-600", errorClassName)}>
-            {error}
+          <span
+            className={cn(
+              "flex items-start gap-1.5 text-sm",
+              variantClasses[variant].error,
+              errorClassName,
+            )}
+          >
+            <CircleX className="mt-0.5 size-4 shrink-0" />
+            <span>{error}</span>
           </span>
         ) : hint ? (
           <span

@@ -47,7 +47,7 @@ export default function Register({ children, step, stepStatuses = [] }: Props) {
           <h2 className="text-xl font-bold">Realize seu cadastro</h2>
 
           <div className="relative mt-10">
-            <div className="absolute left-[1.375rem] top-7 h-[calc(100%-3.5rem)] w-2 rounded-full bg-white" />
+            <div className="absolute left-7 top-7 h-[calc(100%-3.5rem)] w-2 -translate-x-1/2 rounded-full bg-white" />
 
             <ol className="relative flex flex-col gap-7">
               {steps.map((item, index) => {

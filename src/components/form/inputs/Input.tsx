@@ -91,7 +91,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             placeholder=" "
             data-input-variant={variant}
             className={cn(
-              "peer h-11 w-full px-4 py-0 text-sm outline-none transition-colors duration-200 placeholder:text-transparent disabled:cursor-not-allowed disabled:opacity-60",
+              "peer h-11 w-full px-4 py-0 text-sm outline-none transition-colors duration-200 placeholder:text-transparent disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
               variantClasses[variant].input,
               error
                 ? "border-danger-600 focus:border-danger-600"

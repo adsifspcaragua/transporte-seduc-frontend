@@ -2,6 +2,7 @@
 
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowRight,
   Building2,
   CheckCircle2,
@@ -94,6 +95,8 @@ type DocumentState = {
 type FieldErrors = Partial<Record<keyof RegistrationForm, string>>;
 
 const MAX_DOCUMENT_SIZE = 2 * 1024 * 1024;
+const REGISTRATION_DRAFT_STORAGE_KEY = "transporte-seduc:registration-draft";
+const REGISTRATION_DRAFT_VERSION = 1;
 
 const REQUIRED_DOCUMENTS = [
   {
@@ -178,6 +181,84 @@ const initialForm: RegistrationForm = {
   accepted_terms: false,
   accepted_terms_2: false,
 };
+
+type PersistedDocumentState = Omit<DocumentState, "file" | "uploading">;
+
+type RegistrationDraft = {
+  version: typeof REGISTRATION_DRAFT_VERSION;
+  step: StepIndex;
+  editingStep: StepIndex | null;
+  form: RegistrationForm;
+  inscricaoId: number | null;
+  inscricaoInstituicaoId: number | null;
+  documents: Record<string, PersistedDocumentState>;
+};
+
+function isStepIndex(value: unknown): value is StepIndex {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= 4
+  );
+}
+
+function getPersistableDocuments(documents: Record<string, DocumentState>) {
+  return Object.fromEntries(
+    Object.entries(documents).map(([key, document]) => [
+      key,
+      {
+        id: document.id,
+        fileName: document.fileName,
+        filePath: document.filePath,
+        status: document.status,
+        type: document.type,
+        error: document.error,
+      },
+    ]),
+  ) as Record<string, PersistedDocumentState>;
+}
+
+function parseRegistrationDraft(
+  value: string | null,
+): RegistrationDraft | null {
+  if (!value) return null;
+
+  try {
+    const draft = JSON.parse(value) as Partial<RegistrationDraft>;
+
+    if (
+      draft.version !== REGISTRATION_DRAFT_VERSION ||
+      !isStepIndex(draft.step) ||
+      (draft.editingStep !== null &&
+        draft.editingStep !== undefined &&
+        !isStepIndex(draft.editingStep)) ||
+      !draft.form ||
+      typeof draft.form !== "object"
+    ) {
+      return null;
+    }
+
+    return {
+      version: REGISTRATION_DRAFT_VERSION,
+      step: draft.step,
+      editingStep: draft.editingStep ?? null,
+      form: {
+        ...initialForm,
+        ...draft.form,
+      },
+      inscricaoId:
+        typeof draft.inscricaoId === "number" ? draft.inscricaoId : null,
+      inscricaoInstituicaoId:
+        typeof draft.inscricaoInstituicaoId === "number"
+          ? draft.inscricaoInstituicaoId
+          : null,
+      documents: draft.documents ?? {},
+    };
+  } catch {
+    return null;
+  }
+}
 
 function formatLocalIsoDate(date: Date) {
   return [
@@ -283,7 +364,7 @@ function getFieldErrors(form: RegistrationForm, todayIso: string): FieldErrors {
   }
 
   if (!isValidFutureOrTodayDate(form.expected_completion, todayIso)) {
-    errors.expected_completion = "Informe uma data igual ou posterior a hoje.";
+    errors.expected_completion = "Informe uma data.";
   }
 
   if (!form.shift) {
@@ -572,6 +653,7 @@ export function RegisterWorkspace() {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [draftHydrated, setDraftHydrated] = useState(false);
   const lastCepLookupRef = useRef("");
 
   const todayIso = useMemo(() => formatLocalIsoDate(new Date()), []);
@@ -587,6 +669,60 @@ export function RegisterWorkspace() {
     (document) => document.key === documentDraftKey,
   );
   const isEditing = editingStep !== null && step === editingStep;
+
+  useEffect(() => {
+    const draft = parseRegistrationDraft(
+      window.sessionStorage.getItem(REGISTRATION_DRAFT_STORAGE_KEY),
+    );
+
+    if (draft) {
+      setStep(draft.step);
+      setEditingStep(draft.editingStep);
+      setForm(draft.form);
+      setInscricaoId(draft.inscricaoId);
+      setInscricaoInstituicaoId(draft.inscricaoInstituicaoId);
+      setDocuments(draft.documents);
+    }
+
+    setDraftHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      window.setTimeout(() => {
+        if (window.location.pathname !== "/registro") {
+          window.sessionStorage.removeItem(REGISTRATION_DRAFT_STORAGE_KEY);
+        }
+      }, 0);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydrated) return;
+
+    const draft: RegistrationDraft = {
+      version: REGISTRATION_DRAFT_VERSION,
+      step,
+      editingStep,
+      form,
+      inscricaoId,
+      inscricaoInstituicaoId,
+      documents: getPersistableDocuments(documents),
+    };
+
+    window.sessionStorage.setItem(
+      REGISTRATION_DRAFT_STORAGE_KEY,
+      JSON.stringify(draft),
+    );
+  }, [
+    documents,
+    draftHydrated,
+    editingStep,
+    form,
+    inscricaoId,
+    inscricaoInstituicaoId,
+    step,
+  ]);
 
   const lookupCep = useCallback(async (value: string) => {
     const cepDigits = cleanCep(value);
@@ -631,7 +767,9 @@ export function RegisterWorkspace() {
       } catch {
         if (!isActive) return;
 
-        setInstituicoesError("Não foi possível carregar as instituições.");
+        setInstituicoesError(
+          "Não foi possível carregar as instituições. A API redirecionou a rota de instituições para login.",
+        );
       }
     }
 
@@ -643,10 +781,20 @@ export function RegisterWorkspace() {
   }, []);
 
   useEffect(() => {
+    if (!draftHydrated) return;
+
     const cepDigits = cleanCep(form.cep);
 
     if (cepDigits.length !== 8) {
       if (!cepDigits.length) lastCepLookupRef.current = "";
+      return;
+    }
+
+    if (
+      lastCepLookupRef.current !== cepDigits &&
+      [form.city, form.neighborhood, form.address].some(isFilled)
+    ) {
+      lastCepLookupRef.current = cepDigits;
       return;
     }
 
@@ -655,7 +803,14 @@ export function RegisterWorkspace() {
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
-  }, [form.cep, lookupCep]);
+  }, [
+    draftHydrated,
+    form.address,
+    form.cep,
+    form.city,
+    form.neighborhood,
+    lookupCep,
+  ]);
 
   function setField<K extends keyof RegistrationForm>(
     field: K,
@@ -682,20 +837,94 @@ export function RegisterWorkspace() {
       : undefined;
   }
 
+  function getStepFields(stepIndex: StepIndex): (keyof RegistrationForm)[] {
+    if (stepIndex === 0) {
+      const civilFields: (keyof RegistrationForm)[] = [
+        "name",
+        "birth_date",
+        "mother_name",
+        "cpf",
+      ];
+
+      if (!form.no_father) {
+        civilFields.push("father_name");
+      }
+
+      return civilFields;
+    }
+
+    if (stepIndex === 1) {
+      return [
+        "cep",
+        "city",
+        "neighborhood",
+        "address",
+        "number",
+        "email",
+        "phone",
+      ];
+    }
+
+    if (stepIndex === 2) {
+      const institutionalFields: (keyof RegistrationForm)[] = [
+        "instituicao_id",
+        "course",
+        "semester",
+        "expected_completion",
+        "shift",
+        "city_destination",
+        "used_transport",
+        "has_scholarship",
+      ];
+
+      if (form.has_scholarship === "true") {
+        institutionalFields.push("scholarship_type");
+      }
+
+      return institutionalFields;
+    }
+
+    if (stepIndex === 4) {
+      return ["accepted_terms", "accepted_terms_2"];
+    }
+
+    return [];
+  }
+
+  function hasRequiredDocuments() {
+    return REQUIRED_DOCUMENTS.every((document) => {
+      const currentDocument = documents[document.key];
+
+      return Boolean(currentDocument?.id || currentDocument?.fileName);
+    });
+  }
+
+  function getStepValidationMessage(stepIndex: StepIndex) {
+    if (stepIndex === 0) {
+      return "Preencha os dados obrigatórios da identidade civil para avançar.";
+    }
+
+    if (stepIndex === 1) {
+      return "Preencha os dados obrigatórios de endereço e contato para avançar.";
+    }
+
+    if (stepIndex === 2) {
+      return "Preencha os dados institucionais obrigatórios para avançar.";
+    }
+
+    if (stepIndex === 3) {
+      return "Anexe todos os documentos obrigatórios para avançar.";
+    }
+
+    return "Preencha os campos obrigatórios para continuar.";
+  }
+
   function canLeaveCurrentStep() {
-    if (step !== 0) return true;
+    if (step === 3) {
+      return hasRequiredDocuments();
+    }
 
-    const requiredCivilFields: (keyof RegistrationForm)[] = [
-      "name",
-      "birth_date",
-      "mother_name",
-      "cpf",
-    ];
-
-    return (
-      requiredCivilFields.every((field) => !fieldErrors[field]) &&
-      (form.no_father || !fieldErrors.father_name)
-    );
+    return getStepFields(step).every((field) => !fieldErrors[field]);
   }
 
   async function saveInscricaoBase() {
@@ -796,8 +1025,7 @@ export function RegisterWorkspace() {
     if (!canLeaveCurrentStep()) {
       setFeedback({
         type: "error",
-        message:
-          "Preencha os dados obrigatorios da identidade civil para avancar.",
+        message: getStepValidationMessage(step),
       });
       return;
     }
@@ -809,6 +1037,18 @@ export function RegisterWorkspace() {
     }
 
     setStep((current) => Math.min(current + 1, 4) as StepIndex);
+  }
+
+  function handlePrevious() {
+    setFeedback(null);
+
+    if (isEditing) {
+      setEditingStep(null);
+      setStep(4);
+      return;
+    }
+
+    setStep((current) => Math.max(current - 1, 0) as StepIndex);
   }
 
   async function handleConfirm() {
@@ -844,6 +1084,7 @@ export function RegisterWorkspace() {
         type: "success",
         message: "Cadastro enviado para análise com sucesso.",
       });
+      window.sessionStorage.removeItem(REGISTRATION_DRAFT_STORAGE_KEY);
     } catch (error) {
       setFeedback({
         type: "error",
@@ -981,7 +1222,6 @@ export function RegisterWorkspace() {
               onChange={(event) => setField("name", event.target.value)}
               error={shouldShowError("name", 0)}
               className={fieldClassName()}
-              containerClassName="md:col-span-2"
               autoComplete="name"
             />
 
@@ -1094,7 +1334,7 @@ export function RegisterWorkspace() {
             "O CEP consulta o ViaCEP automaticamente ao completar 8 digitos.",
           )}
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-12">
             <CepInput
               variant="white"
               label="CEP"
@@ -1103,6 +1343,7 @@ export function RegisterWorkspace() {
               onChange={(event) => setField("cep", event.target.value)}
               error={shouldShowError("cep", 1)}
               className={fieldClassName()}
+              containerClassName="md:col-span-3"
             />
 
             <Input
@@ -1113,6 +1354,7 @@ export function RegisterWorkspace() {
               onChange={(event) => setField("city", event.target.value)}
               error={shouldShowError("city", 1)}
               className={fieldClassName()}
+              containerClassName="md:col-span-4"
             />
 
             <Input
@@ -1123,6 +1365,7 @@ export function RegisterWorkspace() {
               onChange={(event) => setField("neighborhood", event.target.value)}
               error={shouldShowError("neighborhood", 1)}
               className={fieldClassName()}
+              containerClassName="md:col-span-5"
             />
 
             <Input
@@ -1133,6 +1376,7 @@ export function RegisterWorkspace() {
               onChange={(event) => setField("address", event.target.value)}
               error={shouldShowError("address", 1)}
               className={fieldClassName()}
+              containerClassName="md:col-span-4"
             />
 
             <Input
@@ -1144,6 +1388,7 @@ export function RegisterWorkspace() {
               onChange={(event) => setField("number", event.target.value)}
               error={shouldShowError("number", 1)}
               className={fieldClassName()}
+              containerClassName="md:col-span-2"
             />
 
             <Input
@@ -1153,6 +1398,7 @@ export function RegisterWorkspace() {
               onChange={(event) => setField("complement", event.target.value)}
               error={shouldShowError("complement", 1)}
               className={fieldClassName()}
+              containerClassName="md:col-span-6"
             />
           </div>
         </section>
@@ -1209,7 +1455,7 @@ export function RegisterWorkspace() {
             "Dados acadêmicos vinculados à inscrição.",
           )}
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-12">
             <Select
               variant="white"
               label="Instituição"
@@ -1225,6 +1471,7 @@ export function RegisterWorkspace() {
               }
               disabled={Boolean(instituicoesError)}
               className={fieldClassName()}
+              containerClassName="md:col-span-6"
             />
 
             <Select
@@ -1239,16 +1486,7 @@ export function RegisterWorkspace() {
                 { value: "2", label: "Noturno" },
               ]}
               className={fieldClassName()}
-            />
-
-            <Input
-              variant="white"
-              label="Curso"
-              required
-              value={form.course}
-              onChange={(event) => setField("course", event.target.value)}
-              error={shouldShowError("course", 2)}
-              className={fieldClassName()}
+              containerClassName="md:col-span-2"
             />
 
             <Input
@@ -1261,6 +1499,18 @@ export function RegisterWorkspace() {
               }
               error={shouldShowError("city_destination", 2)}
               className={fieldClassName()}
+              containerClassName="md:col-span-4"
+            />
+
+            <Input
+              variant="white"
+              label="Curso"
+              required
+              value={form.course}
+              onChange={(event) => setField("course", event.target.value)}
+              error={shouldShowError("course", 2)}
+              className={fieldClassName()}
+              containerClassName="md:col-span-6"
             />
 
             <Select
@@ -1275,6 +1525,7 @@ export function RegisterWorkspace() {
                 label: `${index + 1}º semestre`,
               }))}
               className={fieldClassName()}
+              containerClassName="md:col-span-3"
             />
 
             <DateInput
@@ -1290,6 +1541,7 @@ export function RegisterWorkspace() {
               }
               error={shouldShowError("expected_completion", 2)}
               className={fieldClassName()}
+              containerClassName="md:col-span-3"
             />
           </div>
 
@@ -1309,16 +1561,18 @@ export function RegisterWorkspace() {
             "Esses dados ajudam a classificar a solicitação.",
           )}
 
-          <div className="grid gap-5 lg:grid-cols-2">
-            <SegmentedQuestion
-              label="Já utiliza transporte?"
-              required
-              value={form.used_transport}
-              error={shouldShowError("used_transport", 2)}
-              onChange={(value) => setField("used_transport", value)}
-            />
+          <div className="grid gap-5 lg:grid-cols-12">
+            <div className="lg:col-span-6">
+              <SegmentedQuestion
+                label="Já utiliza transporte?"
+                required
+                value={form.used_transport}
+                error={shouldShowError("used_transport", 2)}
+                onChange={(value) => setField("used_transport", value)}
+              />
+            </div>
 
-            <div>
+            <div className="lg:col-span-6">
               <SegmentedQuestion
                 label="Possui bolsa?"
                 required
@@ -1333,55 +1587,65 @@ export function RegisterWorkspace() {
                   }));
                 }}
               />
-
-              {form.has_scholarship === "true" && (
-                <Select
-                  variant="white"
-                  label="Tipo da bolsa"
-                  required
-                  value={form.scholarship_type}
-                  onChange={(event) =>
-                    setField("scholarship_type", event.target.value)
-                  }
-                  error={shouldShowError("scholarship_type", 2)}
-                  options={[
-                    { value: "Bolsa integral", label: "Bolsa integral" },
-                    { value: "75%", label: "75%" },
-                    { value: "50%", label: "50%" },
-                    { value: "25%", label: "25%" },
-                  ]}
-                  containerClassName="mt-4"
-                  className={fieldClassName()}
-                />
-              )}
             </div>
-          </div>
 
-          <div className="mt-6">
-            <span className="text-xs font-bold uppercase text-brand-600">
-              Dias de uso do transporte
-            </span>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {WEEKDAYS.map((day) => {
-                const selected = form.days_of_week.includes(day.value);
+            <div className="lg:col-span-6">
+              <span className="text-xs font-bold uppercase text-brand-600">
+                Dias de uso do transporte
+              </span>
+              <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+                {WEEKDAYS.map((day) => {
+                  const selected = form.days_of_week.includes(day.value);
 
-                return (
-                  <button
-                    key={day.value}
-                    type="button"
-                    aria-pressed={selected}
-                    onClick={() => toggleWeekday(day.value)}
-                    className={cn(
-                      "h-10 min-w-14 rounded-lg border px-3 text-sm font-semibold transition",
-                      selected
-                        ? "border-brand-600 bg-brand-600 text-white"
-                        : "border-brand-100 bg-white text-brand-700 hover:border-brand-600",
-                    )}
-                  >
-                    {day.label}
-                  </button>
-                );
-              })}
+                  return (
+                    <Button
+                      key={day.value}
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-pressed={selected}
+                      onClick={() => toggleWeekday(day.value)}
+                      className={cn(
+                        "w-full px-3",
+                        selected &&
+                          "border-brand-600 bg-brand-600 text-white hover:border-brand-600 hover:bg-brand-600 active:border-brand-600 active:bg-brand-600",
+                      )}
+                    >
+                      {day.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="lg:col-span-6">
+              {form.has_scholarship === "true" ? (
+                <div>
+                  <span className="text-xs font-bold uppercase text-brand-600">
+                    Selecione o tipo da bolsa
+                  </span>
+                  <Select
+                    variant="white"
+                    label="Tipo da bolsa"
+                    required
+                    value={form.scholarship_type}
+                    onChange={(event) =>
+                      setField("scholarship_type", event.target.value)
+                    }
+                    error={shouldShowError("scholarship_type", 2)}
+                    options={[
+                      { value: "Bolsa integral", label: "Bolsa integral" },
+                      { value: "75%", label: "75%" },
+                      { value: "50%", label: "50%" },
+                      { value: "25%", label: "25%" },
+                    ]}
+                    className={fieldClassName()}
+                    containerClassName="mt-3"
+                  />
+                </div>
+              ) : (
+                <div aria-hidden="true" className="hidden lg:block" />
+              )}
             </div>
           </div>
         </section>
@@ -1603,6 +1867,10 @@ export function RegisterWorkspace() {
     );
   }
 
+  if (!draftHydrated) {
+    return null;
+  }
+
   return (
     <Register step={step} stepStatuses={stepStatuses}>
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl flex-col">
@@ -1642,7 +1910,21 @@ export function RegisterWorkspace() {
             </InlineNotice>
           )}
 
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {step > 0 || isEditing ? (
+              <Button
+                fullWidth={false}
+                variant="ghost"
+                size="md"
+                leftIcon={<ArrowLeft className="size-5" />}
+                onClick={handlePrevious}
+              >
+                Voltar
+              </Button>
+            ) : (
+              <div aria-hidden="true" />
+            )}
+
             {step === 4 ? (
               <Button
                 fullWidth={false}
@@ -1868,7 +2150,7 @@ function SegmentedQuestion({
             type="button"
             onClick={() => onChange(option.value)}
             className={cn(
-              "h-11 rounded-md text-sm font-bold transition",
+              "h-11 cursor-pointer rounded-md text-sm font-bold transition",
               value === option.value
                 ? "bg-brand-600 text-white shadow-sm"
                 : "text-brand-700 hover:bg-white",

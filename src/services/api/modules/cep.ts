@@ -12,12 +12,24 @@ export const cepService = {
       },
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+    let data: CepAddress | { message?: string } | null = null;
 
-    if (!response.ok) {
-      throw new Error(data?.message ?? "Não foi possível consultar o CEP.");
+    try {
+      data = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      throw new Error("Não foi possível consultar o CEP.");
     }
 
-    return data;
+    if (!response.ok) {
+      const message =
+        data && "message" in data
+          ? data.message
+          : "Não foi possível consultar o CEP.";
+
+      throw new Error(message);
+    }
+
+    return data as CepAddress;
   },
 };
