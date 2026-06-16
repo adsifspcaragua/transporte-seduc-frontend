@@ -89,6 +89,12 @@ export type Instituicao = {
   [key: string]: unknown;
 };
 
+export type Curso = {
+  id: number;
+  name: string;
+  [key: string]: unknown;
+};
+
 export type CepAddress = {
   cep: string;
   state: string;

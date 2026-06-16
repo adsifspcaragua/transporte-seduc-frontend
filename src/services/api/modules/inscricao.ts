@@ -1,6 +1,7 @@
-import { api } from "@/services/api/client";
+import { api, publicApi } from "@/services/api/client";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
 import type {
+  Curso,
   Inscricao,
   InscricaoDocumento,
   InscricaoInstituicao,
@@ -96,8 +97,16 @@ export const inscricaoService = {
   },
 
   async listInstituicoes() {
-    const { data } = await api.get<LaravelCollectionResponse<Instituicao>>(
-      API_ENDPOINTS.INSTITUICOES.BASE,
+    const { data } = await publicApi.get<
+      LaravelCollectionResponse<Instituicao>
+    >(API_ENDPOINTS.INSTITUICOES.BASE);
+
+    return unwrapCollection(data);
+  },
+
+  async listCursos() {
+    const { data } = await publicApi.get<LaravelCollectionResponse<Curso>>(
+      API_ENDPOINTS.CURSOS.BASE,
     );
 
     return unwrapCollection(data);

@@ -39,6 +39,7 @@ import Register, {
 import { cepService } from "@/services/api/modules/cep";
 import { inscricaoService } from "@/services/api/modules/inscricao";
 import type {
+  Curso,
   InscricaoInstituicaoPayload,
   InscricaoPayload,
   Instituicao,
@@ -151,6 +152,13 @@ const WEEKDAYS = [
   { value: 5, label: "Sex" },
   { value: 6, label: "Sáb" },
 ] as const;
+
+const CITY_DESTINATION_OPTIONS = [
+  { value: "Caraguatatuba", label: "Caraguatatuba" },
+  { value: "São Sebastião", label: "São Sebastião" },
+  { value: "Ubatuba", label: "Ubatuba" },
+  { value: "Ilha Bela", label: "Ilha Bela" },
+];
 
 const initialForm: RegistrationForm = {
   name: "",
@@ -356,7 +364,7 @@ function getFieldErrors(form: RegistrationForm, todayIso: string): FieldErrors {
   }
 
   if (!hasMinLength(form.course, 3)) {
-    errors.course = "Informe o curso.";
+    errors.course = "Selecione o curso.";
   }
 
   if (!form.semester) {
@@ -371,8 +379,8 @@ function getFieldErrors(form: RegistrationForm, todayIso: string): FieldErrors {
     errors.shift = "Selecione o turno.";
   }
 
-  if (!hasMinLength(form.city_destination, 3)) {
-    errors.city_destination = "Informe a cidade de destino.";
+  if (!form.city_destination) {
+    errors.city_destination = "Selecione a cidade de destino.";
   }
 
   if (!form.used_transport) {
@@ -639,6 +647,8 @@ export function RegisterWorkspace() {
   >(null);
   const [instituicoes, setInstituicoes] = useState<Instituicao[]>([]);
   const [instituicoesError, setInstituicoesError] = useState("");
+  const [cursos, setCursos] = useState<Curso[]>([]);
+  const [cursosError, setCursosError] = useState("");
   const [attemptedSteps, setAttemptedSteps] = useState<Set<number>>(
     () => new Set(),
   );
@@ -774,6 +784,29 @@ export function RegisterWorkspace() {
     }
 
     void loadInstituicoes();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadCursos() {
+      try {
+        const response = await inscricaoService.listCursos();
+        if (!isActive) return;
+
+        setCursos(response);
+      } catch {
+        if (!isActive) return;
+
+        setCursosError("Não foi possível carregar os cursos.");
+      }
+    }
+
+    void loadCursos();
 
     return () => {
       isActive = false;
@@ -1445,6 +1478,10 @@ export function RegisterWorkspace() {
       value: String(instituicao.id),
       label: instituicao.name,
     }));
+    const cursoOptions = cursos.map((curso) => ({
+      value: curso.name,
+      label: curso.name,
+    }));
 
     return (
       <div className="space-y-8">
@@ -1489,7 +1526,7 @@ export function RegisterWorkspace() {
               containerClassName="md:col-span-2"
             />
 
-            <Input
+            <Select
               variant="white"
               label="Cidade de destino"
               required
@@ -1498,17 +1535,22 @@ export function RegisterWorkspace() {
                 setField("city_destination", event.target.value)
               }
               error={shouldShowError("city_destination", 2)}
+              options={CITY_DESTINATION_OPTIONS}
+              placeholder="Selecione"
               className={fieldClassName()}
               containerClassName="md:col-span-4"
             />
 
-            <Input
+            <Select
               variant="white"
               label="Curso"
               required
               value={form.course}
               onChange={(event) => setField("course", event.target.value)}
               error={shouldShowError("course", 2)}
+              options={cursoOptions}
+              placeholder={cursosError ? "Cursos indisponíveis" : "Selecione"}
+              disabled={Boolean(cursosError)}
               className={fieldClassName()}
               containerClassName="md:col-span-6"
             />
@@ -1548,6 +1590,12 @@ export function RegisterWorkspace() {
           {instituicoesError && (
             <InlineNotice tone="error" className="mt-4">
               {instituicoesError}
+            </InlineNotice>
+          )}
+
+          {cursosError && (
+            <InlineNotice tone="error" className="mt-4">
+              {cursosError}
             </InlineNotice>
           )}
         </section>

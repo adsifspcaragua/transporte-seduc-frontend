@@ -24,6 +24,9 @@ export const API_ENDPOINTS = {
   INSTITUICOES: {
     BASE: "/instituicao",
   },
+  CURSOS: {
+    BASE: "/curso",
+  },
   ESTUDANTES: {
     BASE: "/estudantes",
     COUNT: "/contar-estudantes",
