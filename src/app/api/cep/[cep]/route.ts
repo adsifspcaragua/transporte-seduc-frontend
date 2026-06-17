@@ -21,6 +21,8 @@ function cleanCep(value: string) {
   return value.replace(/\D/g, "").slice(0, 8);
 }
 
+const VIA_CEP_TIMEOUT_MS = 8000;
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ cep: string }> },
@@ -35,12 +37,32 @@ export async function GET(
     );
   }
 
-  const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), VIA_CEP_TIMEOUT_MS);
+  let response: Response;
+
+  try {
+    response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+  } catch (error) {
+    const isTimeout = error instanceof Error && error.name === "AbortError";
+
+    return NextResponse.json(
+      {
+        message: isTimeout
+          ? "Tempo esgotado ao consultar o CEP no ViaCEP."
+          : "Não foi possível consultar o CEP no ViaCEP.",
+      },
+      { status: isTimeout ? 504 : 502 },
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     return NextResponse.json(

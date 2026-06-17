@@ -22,7 +22,7 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
-import type { ChangeEvent, DragEvent, ReactNode } from "react";
+import type { ChangeEvent, DragEvent, FocusEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/buttons";
 import {
@@ -681,12 +681,15 @@ export function RegisterWorkspace() {
   const [isDraggingDocumentCard, setIsDraggingDocumentCard] = useState(false);
   const [documentDropError, setDocumentDropError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isCepLookupLoading, setIsCepLookupLoading] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const lastCepLookupRef = useRef("");
+  const cepLookupRequestRef = useRef(0);
+  const hasCepBlurredRef = useRef(false);
 
   const todayIso = useMemo(() => formatLocalIsoDate(new Date()), []);
   const fieldErrors = useMemo(
@@ -714,6 +717,17 @@ export function RegisterWorkspace() {
       setInscricaoId(draft.inscricaoId);
       setInscricaoInstituicaoId(draft.inscricaoInstituicaoId);
       setDocuments(draft.documents);
+
+      const draftCep = cleanCep(draft.form.cep);
+
+      if (
+        isValidCep(draftCep) &&
+        [draft.form.city, draft.form.neighborhood, draft.form.address].some(
+          isFilled,
+        )
+      ) {
+        lastCepLookupRef.current = draftCep;
+      }
     }
 
     setDraftHydrated(true);
@@ -763,27 +777,45 @@ export function RegisterWorkspace() {
       return;
     }
 
+    const requestId = cepLookupRequestRef.current + 1;
+
+    cepLookupRequestRef.current = requestId;
     lastCepLookupRef.current = cepDigits;
 
+    setIsCepLookupLoading(true);
     setFeedback(null);
 
     try {
       const address = await cepService.lookup(cepDigits);
 
-      setForm((current) => ({
-        ...current,
-        cep: address.cep,
-        city: address.city || current.city,
-        neighborhood: address.neighborhood || current.neighborhood,
-        address: address.address || current.address,
-        complement: address.complement || current.complement,
-      }));
-    } catch (error) {
-      setFeedback({
-        type: "error",
-        message: getErrorMessage(error),
+      if (cepLookupRequestRef.current !== requestId) return;
+
+      setForm((current) => {
+        if (cleanCep(current.cep) !== cepDigits) return current;
+
+        return {
+          ...current,
+          cep: address.cep,
+          city: address.city || current.city,
+          neighborhood: address.neighborhood || current.neighborhood,
+          address: address.address || current.address,
+          complement: address.complement || current.complement,
+        };
       });
+    } catch (error) {
+      if (cepLookupRequestRef.current !== requestId) return;
+
+      if (hasCepBlurredRef.current) {
+        setFeedback({
+          type: "error",
+          message: getErrorMessage(error),
+        });
+      }
       lastCepLookupRef.current = "";
+    } finally {
+      if (cepLookupRequestRef.current === requestId) {
+        setIsCepLookupLoading(false);
+      }
     }
   }, []);
 
@@ -841,31 +873,32 @@ export function RegisterWorkspace() {
     const cepDigits = cleanCep(form.cep);
 
     if (cepDigits.length !== 8) {
-      if (!cepDigits.length) lastCepLookupRef.current = "";
+      cepLookupRequestRef.current += 1;
+      setIsCepLookupLoading(false);
+      lastCepLookupRef.current = "";
       return;
     }
 
-    if (
-      lastCepLookupRef.current !== cepDigits &&
-      [form.city, form.neighborhood, form.address].some(isFilled)
-    ) {
-      lastCepLookupRef.current = cepDigits;
-      return;
+    void lookupCep(cepDigits);
+  }, [draftHydrated, form.cep, lookupCep]);
+
+  function handleCepChange(event: ChangeEvent<HTMLInputElement>) {
+    const value = event.target.value;
+
+    setField("cep", value);
+
+    if (isValidCep(value)) {
+      void lookupCep(value);
     }
+  }
 
-    const timeoutId = window.setTimeout(() => {
-      void lookupCep(cepDigits);
-    }, 250);
+  function handleCepBlur(event: FocusEvent<HTMLInputElement>) {
+    hasCepBlurredRef.current = true;
 
-    return () => window.clearTimeout(timeoutId);
-  }, [
-    draftHydrated,
-    form.address,
-    form.cep,
-    form.city,
-    form.neighborhood,
-    lookupCep,
-  ]);
+    if (isValidCep(event.target.value)) {
+      void lookupCep(event.target.value);
+    }
+  }
 
   function setField<K extends keyof RegistrationForm>(
     field: K,
@@ -1438,10 +1471,25 @@ export function RegisterWorkspace() {
               label="CEP"
               required
               value={form.cep}
-              onChange={(event) => setField("cep", event.target.value)}
+              onChange={handleCepChange}
+              onBlur={handleCepBlur}
               error={shouldShowError("cep", 1)}
               className={fieldClassName()}
               containerClassName="md:col-span-3"
+              aria-busy={isCepLookupLoading}
+              rightElement={
+                isCepLookupLoading ? (
+                  <output
+                    aria-label="Consultando CEP"
+                    className="flex size-5 items-center justify-center"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="size-4 animate-spin rounded-full border-2 border-brand-600 border-t-transparent"
+                    />
+                  </output>
+                ) : null
+              }
             />
 
             <Input
