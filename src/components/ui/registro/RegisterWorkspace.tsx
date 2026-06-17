@@ -108,6 +108,13 @@ const MAX_DOCUMENT_SIZE = 2 * 1024 * 1024;
 const REGISTRATION_DRAFT_STORAGE_KEY = "transporte-seduc:registration-draft";
 const REGISTRATION_DRAFT_VERSION = 1;
 
+function registrationFieldProps(field: keyof RegistrationForm) {
+  return {
+    id: `registration-${field.replace(/_/g, "-")}`,
+    name: field,
+  };
+}
+
 const REGISTRATION_DOCUMENTS = [
   {
     key: "foto",
@@ -145,18 +152,18 @@ const REGISTRATION_DOCUMENTS = [
     required: true,
   },
   {
-    key: "cronograma",
-    label: "Cronograma de aulas",
-    description: "Cronograma ou grade semanal de aulas.",
-    type: "documento",
-    required: false,
-  },
-  {
     key: "declaracao",
     label: "Declaração complementar",
     description: "Declaração complementar exigida para a inscrição.",
     type: "documento",
     required: true,
+  },
+  {
+    key: "cronograma",
+    label: "Cronograma de aulas",
+    description: "Cronograma ou grade semanal de aulas.",
+    type: "documento",
+    required: false,
   },
 ] satisfies RegistrationDocument[];
 
@@ -1349,6 +1356,7 @@ export function RegisterWorkspace() {
               variant="white"
               label="Nome completo"
               required
+              {...registrationFieldProps("name")}
               value={form.name}
               onChange={(event) => setField("name", event.target.value)}
               error={shouldShowError("name", 0)}
@@ -1364,10 +1372,12 @@ export function RegisterWorkspace() {
               max={todayIso}
               minYear={1900}
               maxYear={new Date().getFullYear()}
+              {...registrationFieldProps("birth_date")}
               value={form.birth_date}
               onChange={(event) => setField("birth_date", event.target.value)}
               error={shouldShowError("birth_date", 0)}
               className={fieldClassName()}
+              autoComplete="bday"
             />
           </div>
         </section>
@@ -1386,15 +1396,18 @@ export function RegisterWorkspace() {
               variant="white"
               label="Nome da mãe"
               required
+              {...registrationFieldProps("mother_name")}
               value={form.mother_name}
               onChange={(event) => setField("mother_name", event.target.value)}
               error={shouldShowError("mother_name", 0)}
               className={fieldClassName()}
+              autoComplete="off"
             />
 
             <Input
               variant="white"
               label="Nome do pai"
+              {...registrationFieldProps("father_name")}
               value={form.father_name}
               disabled={form.no_father}
               onChange={(event) => setField("father_name", event.target.value)}
@@ -1403,11 +1416,13 @@ export function RegisterWorkspace() {
                 fieldClassName(),
                 form.no_father && "cursor-not-allowed opacity-60",
               )}
+              autoComplete="off"
             />
 
             <Checkbox
               variant="white"
               label="Não consta"
+              {...registrationFieldProps("no_father")}
               checked={form.no_father}
               containerClassName="md:col-start-2"
               onChange={(event) => {
@@ -1435,6 +1450,7 @@ export function RegisterWorkspace() {
               variant="white"
               label="CPF"
               required
+              {...registrationFieldProps("cpf")}
               value={form.cpf}
               onChange={(event) => setField("cpf", event.target.value)}
               error={shouldShowError("cpf", 0)}
@@ -1444,10 +1460,12 @@ export function RegisterWorkspace() {
             <Input
               variant="white"
               label="RG"
+              {...registrationFieldProps("rg")}
               value={form.rg}
               onChange={(event) => setField("rg", event.target.value)}
               error={shouldShowError("rg", 0)}
               className={fieldClassName()}
+              autoComplete="off"
             />
           </div>
         </section>
@@ -1470,6 +1488,7 @@ export function RegisterWorkspace() {
               variant="white"
               label="CEP"
               required
+              {...registrationFieldProps("cep")}
               value={form.cep}
               onChange={handleCepChange}
               onBlur={handleCepBlur}
@@ -1496,33 +1515,39 @@ export function RegisterWorkspace() {
               variant="white"
               label="Cidade"
               required
+              {...registrationFieldProps("city")}
               value={form.city}
               onChange={(event) => setField("city", event.target.value)}
               error={shouldShowError("city", 1)}
               className={fieldClassName()}
               containerClassName="md:col-span-4"
+              autoComplete="address-level2"
             />
 
             <Input
               variant="white"
               label="Bairro"
               required
+              {...registrationFieldProps("neighborhood")}
               value={form.neighborhood}
               onChange={(event) => setField("neighborhood", event.target.value)}
               error={shouldShowError("neighborhood", 1)}
               className={fieldClassName()}
               containerClassName="md:col-span-5"
+              autoComplete="address-level3"
             />
 
             <Input
               variant="white"
               label="Logradouro"
               required
+              {...registrationFieldProps("address")}
               value={form.address}
               onChange={(event) => setField("address", event.target.value)}
               error={shouldShowError("address", 1)}
               className={fieldClassName()}
               containerClassName="md:col-span-4"
+              autoComplete="address-line1"
             />
 
             <Input
@@ -1530,21 +1555,25 @@ export function RegisterWorkspace() {
               label="Número"
               required
               inputMode="numeric"
+              {...registrationFieldProps("number")}
               value={form.number}
               onChange={(event) => setField("number", event.target.value)}
               error={shouldShowError("number", 1)}
               className={fieldClassName()}
               containerClassName="md:col-span-2"
+              autoComplete="address-line2"
             />
 
             <Input
               variant="white"
               label="Complemento"
+              {...registrationFieldProps("complement")}
               value={form.complement}
               onChange={(event) => setField("complement", event.target.value)}
               error={shouldShowError("complement", 1)}
               className={fieldClassName()}
               containerClassName="md:col-span-6"
+              autoComplete="address-line3"
             />
           </div>
         </section>
@@ -1564,6 +1593,7 @@ export function RegisterWorkspace() {
               label="E-mail"
               required
               type="email"
+              {...registrationFieldProps("email")}
               value={form.email}
               onChange={(event) => setField("email", event.target.value)}
               error={shouldShowError("email", 1)}
@@ -1575,6 +1605,7 @@ export function RegisterWorkspace() {
               variant="white"
               label="Telefone"
               required
+              {...registrationFieldProps("phone")}
               value={form.phone}
               onChange={(event) => setField("phone", event.target.value)}
               error={shouldShowError("phone", 1)}
@@ -1610,6 +1641,7 @@ export function RegisterWorkspace() {
               variant="white"
               label="Instituição"
               required
+              {...registrationFieldProps("instituicao_id")}
               value={form.instituicao_id}
               onChange={(event) =>
                 setField("instituicao_id", event.target.value)
@@ -1628,6 +1660,7 @@ export function RegisterWorkspace() {
               variant="white"
               label="Turno"
               required
+              {...registrationFieldProps("shift")}
               value={form.shift}
               onChange={(event) => setField("shift", event.target.value)}
               error={shouldShowError("shift", 2)}
@@ -1643,6 +1676,7 @@ export function RegisterWorkspace() {
               variant="white"
               label="Cidade de destino"
               required
+              {...registrationFieldProps("city_destination")}
               value={form.city_destination}
               onChange={(event) =>
                 setField("city_destination", event.target.value)
@@ -1658,6 +1692,7 @@ export function RegisterWorkspace() {
               variant="white"
               label="Curso"
               required
+              {...registrationFieldProps("course")}
               value={form.course}
               onChange={(event) => setField("course", event.target.value)}
               error={shouldShowError("course", 2)}
@@ -1672,6 +1707,7 @@ export function RegisterWorkspace() {
               variant="white"
               label="Semestre"
               required
+              {...registrationFieldProps("semester")}
               value={form.semester}
               onChange={(event) => setField("semester", event.target.value)}
               error={shouldShowError("semester", 2)}
@@ -1690,6 +1726,7 @@ export function RegisterWorkspace() {
               min={todayIso}
               minYear={new Date().getFullYear()}
               maxYear={new Date().getFullYear() + 20}
+              {...registrationFieldProps("expected_completion")}
               value={form.expected_completion}
               onChange={(event) =>
                 setField("expected_completion", event.target.value)
@@ -1697,6 +1734,7 @@ export function RegisterWorkspace() {
               error={shouldShowError("expected_completion", 2)}
               className={fieldClassName()}
               containerClassName="md:col-span-3"
+              autoComplete="off"
             />
           </div>
 
@@ -1789,6 +1827,7 @@ export function RegisterWorkspace() {
                     variant="white"
                     label="Tipo da bolsa"
                     required
+                    {...registrationFieldProps("scholarship_type")}
                     value={form.scholarship_type}
                     onChange={(event) =>
                       setField("scholarship_type", event.target.value)
@@ -1828,11 +1867,6 @@ export function RegisterWorkspace() {
           "Anexe os documentos obrigatorios para validar o cadastro.",
         )}
 
-        <InlineNotice>
-          Formatos aceitos pelo backend: .pdf, .doc, .docx, .png ou .jpg, com
-          limite de 2MB por arquivo.
-        </InlineNotice>
-
         <section
           aria-label="Area de upload dos documentos"
           onDragOver={handleDocumentCardDragOver}
@@ -1840,26 +1874,26 @@ export function RegisterWorkspace() {
           onDrop={handleDocumentCardDrop}
           className="relative mt-6 overflow-hidden rounded-lg border border-brand-100 bg-white"
         >
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-slate-50 px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-white px-5 py-4">
             <div>
-              <h3 className="font-bold text-brand-700">
-                Documentos obrigatórios
-              </h3>
+              <h3 className="font-bold text-brand-700">Documentos</h3>
               <p className="text-sm text-slate-500">
                 {uploadedCount} de {REQUIRED_DOCUMENTS.length} obrigatórios
                 anexados
               </p>
             </div>
 
-            <Button
-              fullWidth={false}
-              variant="primary"
-              size="sm"
-              leftIcon={<Upload className="size-4" />}
-              onClick={() => openDocumentModal()}
-            >
-              Anexar documento
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                fullWidth={false}
+                variant="primary"
+                size="sm"
+                leftIcon={<Upload className="size-4" />}
+                onClick={() => openDocumentModal()}
+              >
+                Anexar documento
+              </Button>
+            </div>
           </div>
 
           <div className="divide-y divide-brand-100">
@@ -1931,14 +1965,19 @@ export function RegisterWorkspace() {
           </div>
 
           {isDraggingDocumentCard && (
-            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-white/90 p-6 text-center text-brand-700 backdrop-blur-sm">
-              <div className="rounded-lg bg-brand-100/20 px-8 py-6">
-                <Upload className="mx-auto mb-4 size-12 text-brand-600" />
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-white p-6 text-center text-brand-700">
+              <div className="flex min-h-56 w-full max-w-lg flex-col items-center justify-center rounded-lg border-2 border-dashed border-brand-100 px-6 py-7">
+                <Upload className="mb-5 size-14 text-brand-600" />
                 <p className="text-base font-bold text-brand-700">
                   Solte para realizar upload
                 </p>
                 <p className="mt-1 text-sm text-content-muted">
                   Depois escolha o tipo do documento.
+                </p>
+                <p className="mt-6 text-sm leading-6 text-content-muted">
+                  Formatos permitidos: .pdf, .doc, .docx, .png, .jpg
+                  <br />
+                  Tamanho maximo: 2MB
                 </p>
               </div>
             </div>
@@ -2041,6 +2080,7 @@ export function RegisterWorkspace() {
           <div className="space-y-4">
             <Checkbox
               variant="white"
+              {...registrationFieldProps("accepted_terms")}
               checked={form.accepted_terms}
               onChange={(event) =>
                 setField("accepted_terms", event.target.checked)
@@ -2050,6 +2090,7 @@ export function RegisterWorkspace() {
             />
             <Checkbox
               variant="white"
+              {...registrationFieldProps("accepted_terms_2")}
               checked={form.accepted_terms_2}
               onChange={(event) =>
                 setField("accepted_terms_2", event.target.checked)
@@ -2264,9 +2305,11 @@ export function RegisterWorkspace() {
                       ? documentDraftFile.name
                       : "Arraste e solte o arquivo aqui"}
                   </span>
-                  <span className="mt-1 text-base font-bold text-brand-700">
-                    ou clique para selecionar
-                  </span>
+                  {!documentDraftFile?.name && (
+                    <span className="mt-1 text-base font-bold text-brand-700">
+                      ou clique para selecionar
+                    </span>
+                  )}
                   <span className="mt-6 text-sm leading-6 text-content-muted">
                     Formatos permitidos: .pdf, .doc, .docx, .png, .jpg
                     <br />
@@ -2370,7 +2413,7 @@ function StatusPill({
         "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold",
         status === "complete" && "bg-emerald-100 text-emerald-700",
         status === "incomplete" && "bg-amber-100 text-amber-700",
-        status === "pending" && "bg-orange-100 text-orange-700",
+        status === "pending" && "bg-yellow-100 text-yellow-800",
       )}
     >
       {status === "complete" && <CheckCircle2 className="size-3.5" />}
