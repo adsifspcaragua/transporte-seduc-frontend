@@ -13,6 +13,7 @@ import {
   GraduationCap,
   Home,
   IdCard,
+  Info,
   MapPin,
   Phone,
   ShieldCheck,
@@ -93,56 +94,75 @@ type DocumentState = {
   error?: string;
 };
 
+type RegistrationDocument = {
+  key: string;
+  label: string;
+  description: string;
+  type: string;
+  required: boolean;
+};
+
 type FieldErrors = Partial<Record<keyof RegistrationForm, string>>;
 
 const MAX_DOCUMENT_SIZE = 2 * 1024 * 1024;
 const REGISTRATION_DRAFT_STORAGE_KEY = "transporte-seduc:registration-draft";
 const REGISTRATION_DRAFT_VERSION = 1;
 
-const REQUIRED_DOCUMENTS = [
+const REGISTRATION_DOCUMENTS = [
   {
     key: "foto",
     label: "Foto",
     description: "Foto recente do estudante.",
     type: "imagem",
+    required: true,
   },
   {
     key: "identidade",
     label: "Documento de identidade",
     description: "Documento com foto, frente e verso.",
     type: "documento",
+    required: true,
   },
   {
     key: "residencia",
     label: "Comprovante de residência",
     description: "Comprovante recente de endereço.",
     type: "documento",
+    required: true,
   },
   {
     key: "historico",
     label: "Histórico escolar",
     description: "Histórico ou documento acadêmico equivalente.",
     type: "documento",
+    required: true,
   },
   {
     key: "matricula",
     label: "Declaração de matrícula",
     description: "Declaração emitida pela instituição.",
     type: "documento",
+    required: true,
   },
   {
     key: "cronograma",
     label: "Cronograma de aulas",
     description: "Cronograma ou grade semanal de aulas.",
     type: "documento",
+    required: false,
   },
   {
     key: "declaracao",
     label: "Declaração complementar",
     description: "Declaração complementar exigida para a inscrição.",
     type: "documento",
+    required: true,
   },
-] as const;
+] satisfies RegistrationDocument[];
+
+const REQUIRED_DOCUMENTS = REGISTRATION_DOCUMENTS.filter(
+  (document) => document.required,
+);
 
 const WEEKDAYS = [
   { value: 1, label: "Seg" },
@@ -658,6 +678,8 @@ export function RegisterWorkspace() {
   const [documentDraftFile, setDocumentDraftFile] = useState<File | null>(null);
   const [documentDraftError, setDocumentDraftError] = useState("");
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [isDraggingDocumentCard, setIsDraggingDocumentCard] = useState(false);
+  const [documentDropError, setDocumentDropError] = useState("");
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
@@ -675,7 +697,7 @@ export function RegisterWorkspace() {
     () => getSectionStatus(form, documents, fieldErrors),
     [documents, fieldErrors, form],
   );
-  const selectedDocument = REQUIRED_DOCUMENTS.find(
+  const selectedDocument = REGISTRATION_DOCUMENTS.find(
     (document) => document.key === documentDraftKey,
   );
   const isEditing = editingStep !== null && step === editingStep;
@@ -997,7 +1019,7 @@ export function RegisterWorkspace() {
   }
 
   async function submitDocuments(targetInscricaoId: number) {
-    for (const document of REQUIRED_DOCUMENTS) {
+    for (const document of REGISTRATION_DOCUMENTS) {
       const currentDocument = documents[document.key];
 
       if (!currentDocument?.file) continue;
@@ -1146,6 +1168,7 @@ export function RegisterWorkspace() {
     setDocumentDraftKey(documentKey);
     setDocumentDraftFile(null);
     setDocumentDraftError("");
+    setDocumentDropError("");
     setDocumentModalOpen(true);
   }
 
@@ -1158,20 +1181,67 @@ export function RegisterWorkspace() {
   }
 
   function setDraftFile(file?: File) {
-    if (!file) return;
+    if (!file) return false;
 
+    if (file.size > MAX_DOCUMENT_SIZE) {
+      setDocumentDraftFile(null);
+      setDocumentDraftError("O arquivo deve ter no maximo 2MB.");
+      return false;
+    }
+
+    setDocumentDropError("");
     setDocumentDraftError("");
     setDocumentDraftFile(file);
+    return true;
   }
 
   function handleFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     setDraftFile(event.target.files?.[0]);
+    event.target.value = "";
   }
 
   function handleFileDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setIsDraggingFile(false);
     setDraftFile(event.dataTransfer.files?.[0]);
+  }
+
+  function hasDraggedFiles(event: DragEvent<HTMLElement>) {
+    return Array.from(event.dataTransfer.types).includes("Files");
+  }
+
+  function handleDocumentCardDragOver(event: DragEvent<HTMLDivElement>) {
+    if (!hasDraggedFiles(event)) return;
+
+    event.preventDefault();
+    setIsDraggingDocumentCard(true);
+  }
+
+  function handleDocumentCardDragLeave(event: DragEvent<HTMLDivElement>) {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      return;
+    }
+
+    setIsDraggingDocumentCard(false);
+  }
+
+  function handleDocumentCardDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDraggingDocumentCard(false);
+
+    const file = event.dataTransfer.files?.[0];
+    setDocumentDropError("");
+    setDocumentDraftKey("");
+
+    if (!file) return;
+
+    if (file.size > MAX_DOCUMENT_SIZE) {
+      setDocumentDropError("O arquivo deve ter no maximo 2MB.");
+      return;
+    }
+
+    setDocumentModalOpen(true);
+    setDraftFile(file);
   }
 
   function handleDocumentUpload() {
@@ -1184,11 +1254,6 @@ export function RegisterWorkspace() {
 
     if (!documentDraftFile) {
       setDocumentDraftError("Selecione o arquivo para envio.");
-      return;
-    }
-
-    if (documentDraftFile.size > MAX_DOCUMENT_SIZE) {
-      setDocumentDraftError("O arquivo deve ter no máximo 2MB.");
       return;
     }
 
@@ -1720,14 +1785,21 @@ export function RegisterWorkspace() {
           limite de 2MB por arquivo.
         </InlineNotice>
 
-        <div className="mt-6 overflow-hidden rounded-lg border border-brand-100 bg-white">
+        <section
+          aria-label="Area de upload dos documentos"
+          onDragOver={handleDocumentCardDragOver}
+          onDragLeave={handleDocumentCardDragLeave}
+          onDrop={handleDocumentCardDrop}
+          className="relative mt-6 overflow-hidden rounded-lg border border-brand-100 bg-white"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-100 bg-slate-50 px-5 py-4">
             <div>
               <h3 className="font-bold text-brand-700">
                 Documentos obrigatórios
               </h3>
               <p className="text-sm text-slate-500">
-                {uploadedCount} de {REQUIRED_DOCUMENTS.length} anexados
+                {uploadedCount} de {REQUIRED_DOCUMENTS.length} obrigatórios
+                anexados
               </p>
             </div>
 
@@ -1743,7 +1815,7 @@ export function RegisterWorkspace() {
           </div>
 
           <div className="divide-y divide-brand-100">
-            {REQUIRED_DOCUMENTS.map((document) => {
+            {REGISTRATION_DOCUMENTS.map((document) => {
               const currentDocument = documents[document.key];
               const isUploaded = Boolean(
                 currentDocument?.id || currentDocument?.fileName,
@@ -1758,11 +1830,19 @@ export function RegisterWorkspace() {
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="font-semibold text-slate-800">
                         {document.label}
-                        <span className="ml-1 text-danger-600">*</span>
+                        {document.required && (
+                          <span className="ml-1 text-danger-600">*</span>
+                        )}
                       </h4>
                       <StatusPill
                         status={isUploaded ? "complete" : "pending"}
-                        label={isUploaded ? "Anexado" : "Pendente"}
+                        label={
+                          isUploaded
+                            ? "Anexado"
+                            : document.required
+                              ? "Pendente"
+                              : "Opcional"
+                        }
                       />
                     </div>
                     <p className="mt-1 text-sm text-slate-500">
@@ -1801,7 +1881,27 @@ export function RegisterWorkspace() {
               );
             })}
           </div>
-        </div>
+
+          {isDraggingDocumentCard && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-white/90 p-6 text-center text-brand-700 backdrop-blur-sm">
+              <div className="rounded-lg bg-brand-100/20 px-8 py-6">
+                <Upload className="mx-auto mb-4 size-12 text-brand-600" />
+                <p className="text-base font-bold text-brand-700">
+                  Solte para realizar upload
+                </p>
+                <p className="mt-1 text-sm text-content-muted">
+                  Depois escolha o tipo do documento.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {documentDropError && (
+          <InlineNotice tone="error" className="mt-4">
+            {documentDropError}
+          </InlineNotice>
+        )}
       </div>
     );
   }
@@ -2008,97 +2108,160 @@ export function RegisterWorkspace() {
 
       {documentModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4">
-          <div className="w-full max-w-3xl rounded-lg bg-white p-5 shadow-2xl shadow-slate-950/30">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-brand-700">
-                  Inserir documento
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Selecione o tipo e anexe o arquivo correspondente.
-                </p>
+          <button
+            type="button"
+            aria-label="Fechar modal"
+            onClick={closeDocumentModal}
+            className="absolute inset-0 cursor-default"
+          />
+
+          <div className="relative z-10 w-full max-w-5xl overflow-hidden rounded-lg bg-white shadow-2xl shadow-slate-950/30">
+            <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-6 py-5">
+              <div className="flex items-center gap-4">
+                <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-100/55 text-brand-600">
+                  <FileText className="size-7" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-brand-700">
+                    Inserir documento
+                  </h2>
+                  <p className="mt-1 text-sm text-content-muted">
+                    Selecione o tipo e anexe o arquivo correspondente.
+                  </p>
+                </div>
               </div>
 
               <button
                 type="button"
                 aria-label="Fechar modal"
                 onClick={closeDocumentModal}
-                className="flex size-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100"
+                className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-brand-600 transition hover:bg-brand-100/45"
               >
-                <X className="size-5" />
+                <X className="size-6" />
               </button>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-              <Select
-                variant="white"
-                label="Tipo do documento"
-                required
-                value={documentDraftKey}
-                onChange={(event) => setDocumentDraftKey(event.target.value)}
-                options={REQUIRED_DOCUMENTS.map((document) => ({
-                  value: document.key,
-                  label: document.label,
-                }))}
-                className={fieldClassName()}
-              />
+            <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+              <div className="space-y-6 lg:border-r lg:border-border-subtle lg:pr-6">
+                <div>
+                  <h3 className="text-base font-bold text-brand-700">
+                    1. Tipo do documento
+                  </h3>
+                  <p className="mt-2 text-sm text-content-muted">
+                    Selecione o tipo do documento que deseja inserir.
+                  </p>
+                </div>
 
-              <label
-                htmlFor="registration-document-file"
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  setIsDraggingFile(true);
-                }}
-                onDragLeave={() => setIsDraggingFile(false)}
-                onDrop={handleFileDrop}
-                className={cn(
-                  "flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-5 text-center transition",
-                  isDraggingFile
-                    ? "border-brand-600 bg-brand-100/50"
-                    : "border-brand-100 bg-slate-50 hover:border-brand-600",
-                )}
-              >
-                <input
-                  id="registration-document-file"
-                  type="file"
-                  accept=".pdf,.doc,.docx,.png,.jpg"
-                  className="sr-only"
-                  onChange={handleFileInputChange}
+                <Select
+                  variant="white"
+                  label="Tipo do documento"
+                  required
+                  value={documentDraftKey}
+                  onChange={(event) => setDocumentDraftKey(event.target.value)}
+                  options={REGISTRATION_DOCUMENTS.map((document) => ({
+                    value: document.key,
+                    label: document.label,
+                  }))}
+                  className={fieldClassName()}
                 />
-                <Upload className="mb-2 size-6 text-brand-600" />
-                <span className="text-sm font-semibold text-brand-700">
-                  {documentDraftFile?.name ??
-                    "Arraste ou clique para inserir arquivo"}
-                </span>
-                <span className="mt-1 text-xs text-slate-500">
-                  .pdf, .doc, .docx, .png ou .jpg até 2MB
-                </span>
-              </label>
+
+                <div className="flex gap-4 rounded-lg bg-brand-100/35 p-5 text-brand-700">
+                  <Info className="mt-0.5 size-5 shrink-0" />
+                  <div>
+                    <p className="font-bold">Importante</p>
+                    <p className="mt-2 text-sm leading-6 text-content-muted">
+                      Certifique-se de que o documento esta legivel e dentro dos
+                      formatos permitidos.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-base font-bold text-brand-700">
+                    2. Anexar arquivo
+                  </h3>
+                  <p className="mt-2 text-sm text-content-muted">
+                    Arraste ou clique para selecionar o arquivo do seu
+                    dispositivo.
+                  </p>
+                </div>
+
+                <label
+                  htmlFor="registration-document-file"
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setIsDraggingFile(true);
+                  }}
+                  onDragLeave={() => setIsDraggingFile(false)}
+                  onDrop={handleFileDrop}
+                  className={cn(
+                    "flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-7 text-center transition",
+                    isDraggingFile
+                      ? "border-brand-600 bg-brand-100/50"
+                      : "border-brand-100 bg-white hover:border-brand-600 hover:bg-brand-100/20",
+                  )}
+                >
+                  <input
+                    id="registration-document-file"
+                    type="file"
+                    accept=".pdf,.doc,.docx,.png,.jpg"
+                    className="sr-only"
+                    onChange={handleFileInputChange}
+                  />
+                  <Upload className="mb-5 size-14 text-brand-600" />
+                  <span className="text-base font-bold text-brand-700">
+                    {documentDraftFile?.name
+                      ? documentDraftFile.name
+                      : "Arraste e solte o arquivo aqui"}
+                  </span>
+                  <span className="mt-1 text-base font-bold text-brand-700">
+                    ou clique para selecionar
+                  </span>
+                  <span className="mt-6 text-sm leading-6 text-content-muted">
+                    Formatos permitidos: .pdf, .doc, .docx, .png, .jpg
+                    <br />
+                    Tamanho maximo: 2MB
+                  </span>
+                </label>
+              </div>
             </div>
 
             {documentDraftError && (
-              <InlineNotice tone="error" className="mt-4">
+              <InlineNotice tone="error" className="mx-6 mb-5">
                 {documentDraftError}
               </InlineNotice>
             )}
 
-            <div className="mt-6 flex justify-end gap-3">
-              <Button
-                fullWidth={false}
-                variant="ghost"
-                size="md"
-                onClick={closeDocumentModal}
-              >
-                Cancelar
-              </Button>
-              <Button
-                fullWidth={false}
-                variant="primary"
-                size="md"
-                onClick={handleDocumentUpload}
-              >
-                Salvar
-              </Button>
+            <div className="flex flex-col gap-5 border-t border-border-subtle px-6 py-5 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-3 text-content-muted">
+                <ShieldCheck className="size-7 shrink-0 text-brand-600" />
+                <p className="text-sm leading-6">
+                  Seus documentos sao enviados com seguranca
+                  <br className="hidden sm:block" />e utilizados apenas para
+                  fins cadastrais.
+                </p>
+              </div>
+
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <Button
+                  fullWidth={false}
+                  variant="ghost"
+                  size="md"
+                  onClick={closeDocumentModal}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  fullWidth={false}
+                  variant="primary"
+                  size="md"
+                  onClick={handleDocumentUpload}
+                >
+                  Salvar documento
+                </Button>
+              </div>
             </div>
           </div>
         </div>
