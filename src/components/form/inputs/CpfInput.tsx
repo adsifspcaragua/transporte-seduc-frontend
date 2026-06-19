@@ -57,7 +57,6 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
       formatCpf(defaultValue?.toString() ?? ""),
     );
     const [eagerFormatting, setEagerFormatting] = useState(true);
-    const [touched, setTouched] = useState(false);
     const [internalError, setInternalError] = useState<string | undefined>();
 
     const formattedValue = useMemo(
@@ -94,15 +93,12 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
         setInternalValue(nextFormattedValue);
       }
 
-      if (touched) {
-        setInternalError(getCpfValidationError(nextFormattedValue));
-      }
+      setInternalError(undefined);
 
       onChange?.(event);
     }
 
     function handleBlur(event: FocusEvent<HTMLInputElement>) {
-      setTouched(true);
       setInternalError(getCpfValidationError(event.target.value));
       onBlur?.(event);
     }

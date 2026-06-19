@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   },
   INSCRICOES: {
     BASE: "/inscricoes",
+    VALIDATE_STEP: "/inscricoes/validar-step",
     BY_ID: (id: number | string) => `/inscricoes/${id}`,
     DOCUMENTOS: (inscricaoId: number | string) =>
       `/inscricoes/${inscricaoId}/documentos`,

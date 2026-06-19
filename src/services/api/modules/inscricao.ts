@@ -10,6 +10,11 @@ import type {
   Instituicao,
 } from "@/types/inscricao";
 
+type ValidateInscricaoStepPayload = {
+  data: InscricaoInstituicaoPayload | InscricaoPayload;
+  step: number;
+};
+
 type LaravelDataResponse<T> = {
   data: T;
   message?: string;
@@ -53,6 +58,10 @@ function unwrapCollection<T>(payload: LaravelCollectionResponse<T>) {
 }
 
 export const inscricaoService = {
+  async validateStep(payload: ValidateInscricaoStepPayload) {
+    await api.post(API_ENDPOINTS.INSCRICOES.VALIDATE_STEP, payload);
+  },
+
   async createInscricao(payload: InscricaoPayload) {
     const { data } = await api.post<Inscricao>(
       API_ENDPOINTS.INSCRICOES.BASE,

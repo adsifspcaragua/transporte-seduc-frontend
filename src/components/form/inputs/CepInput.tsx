@@ -53,7 +53,6 @@ const CepInput = forwardRef<HTMLInputElement, CepInputProps>(
       formatCep(defaultValue?.toString() ?? ""),
     );
     const [eagerFormatting, setEagerFormatting] = useState(true);
-    const [touched, setTouched] = useState(false);
     const [internalError, setInternalError] = useState<string | undefined>();
 
     const formattedValue = useMemo(
@@ -88,15 +87,12 @@ const CepInput = forwardRef<HTMLInputElement, CepInputProps>(
         setInternalValue(nextFormattedValue);
       }
 
-      if (touched) {
-        setInternalError(getCepValidationError(nextFormattedValue));
-      }
+      setInternalError(undefined);
 
       onChange?.(event);
     }
 
     function handleBlur(event: FocusEvent<HTMLInputElement>) {
-      setTouched(true);
       setInternalError(getCepValidationError(event.target.value));
       onBlur?.(event);
     }

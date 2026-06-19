@@ -22,6 +22,7 @@ import {
   UsersRound,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { ChangeEvent, DragEvent, FocusEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/buttons";
@@ -52,6 +53,7 @@ import { cleanPhone, isValidPhone } from "@/utils/phone";
 
 type StepIndex = 0 | 1 | 2 | 3 | 4;
 type BinaryAnswer = "" | "true" | "false";
+type SubmissionState = "idle" | "submitting" | "success";
 
 type RegistrationForm = {
   name: string;
@@ -107,6 +109,22 @@ type FieldErrors = Partial<Record<keyof RegistrationForm, string>>;
 const MAX_DOCUMENT_SIZE = 2 * 1024 * 1024;
 const REGISTRATION_DRAFT_STORAGE_KEY = "transporte-seduc:registration-draft";
 const REGISTRATION_DRAFT_VERSION = 1;
+
+const domSyncedTextFields = [
+  "name",
+  "mother_name",
+  "father_name",
+  "cpf",
+  "rg",
+  "cep",
+  "city",
+  "neighborhood",
+  "address",
+  "number",
+  "complement",
+  "email",
+  "phone",
+] as const satisfies readonly (keyof RegistrationForm)[];
 
 function registrationFieldProps(field: keyof RegistrationForm) {
   return {
@@ -224,8 +242,6 @@ type RegistrationDraft = {
   step: StepIndex;
   editingStep: StepIndex | null;
   form: RegistrationForm;
-  inscricaoId: number | null;
-  inscricaoInstituicaoId: number | null;
   documents: Record<string, PersistedDocumentState>;
 };
 
@@ -282,12 +298,6 @@ function parseRegistrationDraft(
         ...initialForm,
         ...draft.form,
       },
-      inscricaoId:
-        typeof draft.inscricaoId === "number" ? draft.inscricaoId : null,
-      inscricaoInstituicaoId:
-        typeof draft.inscricaoInstituicaoId === "number"
-          ? draft.inscricaoInstituicaoId
-          : null,
       documents: draft.documents ?? {},
     };
   } catch {
@@ -457,6 +467,10 @@ function hasAnyAddressData(form: RegistrationForm) {
   ].some(isFilled);
 }
 
+function hasAddressLookupData(form: RegistrationForm) {
+  return [form.city, form.neighborhood, form.address].every(isFilled);
+}
+
 function hasAnyInstitutionalData(form: RegistrationForm) {
   return (
     [
@@ -564,6 +578,115 @@ function getStatusCopy(status: RegisterStepStatus) {
   return "Nenhum dado preenchido nesta seção.";
 }
 
+const apiFieldLabels: Partial<Record<keyof RegistrationForm, string>> = {
+  name: "nome",
+  birth_date: "data de nascimento",
+  mother_name: "nome da mãe",
+  father_name: "nome do pai",
+  cpf: "CPF",
+  rg: "RG",
+  cep: "CEP",
+  city: "cidade",
+  neighborhood: "bairro",
+  address: "logradouro",
+  number: "número",
+  complement: "complemento",
+  email: "e-mail",
+  phone: "telefone",
+  instituicao_id: "instituição",
+  course: "curso",
+  semester: "semestre",
+  expected_completion: "previsão de conclusão",
+  shift: "turno",
+  city_destination: "cidade de destino",
+  used_transport: "uso do transporte",
+  days_of_week: "dias de uso do transporte",
+  has_scholarship: "situação da bolsa",
+  scholarship_type: "tipo da bolsa",
+  accepted_terms: "termo de veracidade",
+  accepted_terms_2: "termo de uso dos dados",
+};
+
+function looksLikeEnglishApiMessage(message: string | undefined) {
+  const normalizedMessage = message?.toLowerCase() ?? "";
+
+  return [
+    "the ",
+    " has ",
+    " already ",
+    " given data ",
+    "invalid",
+    "required",
+    "must be",
+    "taken",
+    "unauthenticated",
+  ].some((fragment) => normalizedMessage.includes(fragment));
+}
+
+function translateApiErrorMessage(
+  field: keyof RegistrationForm | undefined,
+  message: string | undefined,
+) {
+  const normalizedMessage = message?.toLowerCase() ?? "";
+  const fieldLabel = field ? apiFieldLabels[field] : undefined;
+
+  if (field === "cpf" && normalizedMessage.includes("taken")) {
+    return "Já existe uma inscrição cadastrada para este CPF.";
+  }
+
+  if (field === "email" && normalizedMessage.includes("taken")) {
+    return "Este e-mail já está em uso.";
+  }
+
+  if (field === "phone" && normalizedMessage.includes("taken")) {
+    return "Este telefone já está em uso.";
+  }
+
+  if (normalizedMessage.includes("already been taken")) {
+    return fieldLabel
+      ? `Este ${fieldLabel} já está em uso.`
+      : "Este dado já está em uso.";
+  }
+
+  if (normalizedMessage.includes("required")) {
+    return fieldLabel
+      ? `Informe o campo ${fieldLabel}.`
+      : "Preencha os campos obrigatórios.";
+  }
+
+  if (
+    normalizedMessage.includes("invalid") ||
+    normalizedMessage.includes("must be")
+  ) {
+    return fieldLabel
+      ? `Informe um valor válido para ${fieldLabel}.`
+      : "Informe dados válidos.";
+  }
+
+  return message && !looksLikeEnglishApiMessage(message)
+    ? message
+    : "Não foi possível validar este campo.";
+}
+
+function translateApiGeneralMessage(message: string | undefined) {
+  const normalizedMessage = message?.toLowerCase() ?? "";
+
+  if (
+    normalizedMessage.includes("given data") ||
+    normalizedMessage.includes("invalid")
+  ) {
+    return "Não foi possível validar os dados informados.";
+  }
+
+  if (normalizedMessage.includes("unauthenticated")) {
+    return "Sua sessão expirou. Faça login novamente.";
+  }
+
+  return message && !looksLikeEnglishApiMessage(message)
+    ? message
+    : "Não foi possível validar os dados.";
+}
+
 function getErrorMessage(error: unknown) {
   if (
     error &&
@@ -578,21 +701,78 @@ function getErrorMessage(error: unknown) {
       message?: string;
     };
 
-    const firstFieldError = data.errors
-      ? Object.values(data.errors).flat()[0]
-      : undefined;
-
-    if (data.errors?.cpf?.some((message) => message.includes("taken"))) {
-      return "Já existe uma inscrição cadastrada para este CPF.";
+    if (data.errors) {
+      const [field, messages] = Object.entries(data.errors)[0] ?? [];
+      return translateApiErrorMessage(
+        field as keyof RegistrationForm | undefined,
+        messages?.[0],
+      );
     }
 
-    return (
-      firstFieldError ?? data.message ?? "Não foi possível validar os dados."
-    );
+    return translateApiGeneralMessage(data.message);
   }
 
   if (error instanceof Error) return error.message;
   return "Não foi possível concluir a operação.";
+}
+
+function getApiFieldErrors(error: unknown): FieldErrors {
+  if (
+    !error ||
+    typeof error !== "object" ||
+    !("response" in error) ||
+    !error.response ||
+    typeof error.response !== "object" ||
+    !("data" in error.response)
+  ) {
+    return {};
+  }
+
+  const data = error.response.data as {
+    errors?: Record<string, string[]>;
+  };
+
+  if (!data.errors) return {};
+
+  const validFields = new Set<keyof RegistrationForm>([
+    "name",
+    "birth_date",
+    "mother_name",
+    "father_name",
+    "cpf",
+    "rg",
+    "cep",
+    "city",
+    "neighborhood",
+    "address",
+    "number",
+    "complement",
+    "email",
+    "phone",
+    "instituicao_id",
+    "course",
+    "semester",
+    "expected_completion",
+    "shift",
+    "city_destination",
+    "used_transport",
+    "days_of_week",
+    "has_scholarship",
+    "scholarship_type",
+    "accepted_terms",
+    "accepted_terms_2",
+  ]);
+
+  const fieldErrors: FieldErrors = {};
+
+  for (const [field, messages] of Object.entries(data.errors)) {
+    if (!validFields.has(field as keyof RegistrationForm)) continue;
+
+    const formField = field as keyof RegistrationForm;
+    fieldErrors[formField] = translateApiErrorMessage(formField, messages[0]);
+  }
+
+  return fieldErrors;
 }
 
 function buildInscricaoPayload(form: RegistrationForm): InscricaoPayload {
@@ -665,6 +845,7 @@ function fieldClassName() {
 }
 
 export function RegisterWorkspace() {
+  const router = useRouter();
   const [step, setStep] = useState<StepIndex>(0);
   const [editingStep, setEditingStep] = useState<StepIndex | null>(null);
   const [form, setForm] = useState<RegistrationForm>(initialForm);
@@ -688,20 +869,31 @@ export function RegisterWorkspace() {
   const [isDraggingDocumentCard, setIsDraggingDocumentCard] = useState(false);
   const [documentDropError, setDocumentDropError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [submissionState, setSubmissionState] =
+    useState<SubmissionState>("idle");
+  const [submissionProgress, setSubmissionProgress] = useState(0);
   const [isCepLookupLoading, setIsCepLookupLoading] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [apiFieldErrors, setApiFieldErrors] = useState<FieldErrors>({});
   const [draftHydrated, setDraftHydrated] = useState(false);
+  const registrationFormRef = useRef<HTMLFormElement | null>(null);
+  const formRef = useRef(form);
   const lastCepLookupRef = useRef("");
   const cepLookupRequestRef = useRef(0);
-  const hasCepBlurredRef = useRef(false);
+  const cepLookupTimeoutRef = useRef<number | null>(null);
+  const progressTimeoutRef = useRef<number | null>(null);
+  const successTimeoutRef = useRef<number | null>(null);
 
   const todayIso = useMemo(() => formatLocalIsoDate(new Date()), []);
   const fieldErrors = useMemo(
-    () => getFieldErrors(form, todayIso),
-    [form, todayIso],
+    () => ({
+      ...getFieldErrors(form, todayIso),
+      ...apiFieldErrors,
+    }),
+    [apiFieldErrors, form, todayIso],
   );
   const stepStatuses = useMemo(
     () => getSectionStatus(form, documents, fieldErrors),
@@ -713,6 +905,47 @@ export function RegisterWorkspace() {
   const isEditing = editingStep !== null && step === editingStep;
 
   useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
+  const getFormWithDomValues = useCallback((sourceForm: RegistrationForm) => {
+    const formElement = registrationFormRef.current;
+
+    if (!formElement) return sourceForm;
+
+    const formData = new FormData(formElement);
+    const nextForm = { ...sourceForm };
+
+    for (const field of domSyncedTextFields) {
+      const fieldValue = formData.get(field);
+
+      if (typeof fieldValue === "string") {
+        nextForm[field] = fieldValue;
+      }
+    }
+
+    return nextForm;
+  }, []);
+
+  const saveRegistrationDraft = useCallback(
+    (sourceForm = formRef.current) => {
+      const draft: RegistrationDraft = {
+        version: REGISTRATION_DRAFT_VERSION,
+        step,
+        editingStep,
+        form: getFormWithDomValues(sourceForm),
+        documents: getPersistableDocuments(documents),
+      };
+
+      window.sessionStorage.setItem(
+        REGISTRATION_DRAFT_STORAGE_KEY,
+        JSON.stringify(draft),
+      );
+    },
+    [documents, editingStep, getFormWithDomValues, step],
+  );
+
+  useEffect(() => {
     const draft = parseRegistrationDraft(
       window.sessionStorage.getItem(REGISTRATION_DRAFT_STORAGE_KEY),
     );
@@ -721,8 +954,6 @@ export function RegisterWorkspace() {
       setStep(draft.step);
       setEditingStep(draft.editingStep);
       setForm(draft.form);
-      setInscricaoId(draft.inscricaoId);
-      setInscricaoInstituicaoId(draft.inscricaoInstituicaoId);
       setDocuments(draft.documents);
 
       const draftCep = cleanCep(draft.form.cep);
@@ -751,36 +982,61 @@ export function RegisterWorkspace() {
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (cepLookupTimeoutRef.current) {
+        window.clearTimeout(cepLookupTimeoutRef.current);
+        cepLookupTimeoutRef.current = null;
+      }
+      if (progressTimeoutRef.current) {
+        window.clearTimeout(progressTimeoutRef.current);
+      }
+      if (successTimeoutRef.current) {
+        window.clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (submissionState !== "submitting") return;
+
+    const progressInterval = window.setInterval(() => {
+      setSubmissionProgress((current) => {
+        if (current >= 95) return current;
+        return Math.min(current + 2, 95);
+      });
+    }, 100);
+
+    return () => window.clearInterval(progressInterval);
+  }, [submissionState]);
+
+  useEffect(() => {
     if (!draftHydrated) return;
 
-    const draft: RegistrationDraft = {
-      version: REGISTRATION_DRAFT_VERSION,
-      step,
-      editingStep,
-      form,
-      inscricaoId,
-      inscricaoInstituicaoId,
-      documents: getPersistableDocuments(documents),
-    };
+    saveRegistrationDraft(form);
+  }, [draftHydrated, form, saveRegistrationDraft]);
 
-    window.sessionStorage.setItem(
-      REGISTRATION_DRAFT_STORAGE_KEY,
-      JSON.stringify(draft),
-    );
-  }, [
-    documents,
-    draftHydrated,
-    editingStep,
-    form,
-    inscricaoId,
-    inscricaoInstituicaoId,
-    step,
-  ]);
+  useEffect(() => {
+    if (!draftHydrated) return;
+
+    function handlePageHide() {
+      saveRegistrationDraft();
+    }
+
+    window.addEventListener("pagehide", handlePageHide);
+
+    return () => {
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [draftHydrated, saveRegistrationDraft]);
 
   const lookupCep = useCallback(async (value: string) => {
     const cepDigits = cleanCep(value);
 
     if (!isValidCep(cepDigits) || lastCepLookupRef.current === cepDigits) {
+      return;
+    }
+
+    if (hasAddressLookupData(formRef.current)) {
       return;
     }
 
@@ -809,15 +1065,9 @@ export function RegisterWorkspace() {
           complement: address.complement || current.complement,
         };
       });
-    } catch (error) {
+    } catch {
       if (cepLookupRequestRef.current !== requestId) return;
 
-      if (hasCepBlurredRef.current) {
-        setFeedback({
-          type: "error",
-          message: getErrorMessage(error),
-        });
-      }
       lastCepLookupRef.current = "";
     } finally {
       if (cepLookupRequestRef.current === requestId) {
@@ -825,6 +1075,27 @@ export function RegisterWorkspace() {
       }
     }
   }, []);
+
+  const scheduleCepLookup = useCallback(
+    (value: string, delay = 350) => {
+      if (cepLookupTimeoutRef.current) {
+        window.clearTimeout(cepLookupTimeoutRef.current);
+        cepLookupTimeoutRef.current = null;
+      }
+
+      const cepDigits = cleanCep(value);
+
+      if (!isValidCep(cepDigits) || hasAddressLookupData(formRef.current)) {
+        return;
+      }
+
+      cepLookupTimeoutRef.current = window.setTimeout(() => {
+        cepLookupTimeoutRef.current = null;
+        void lookupCep(cepDigits);
+      }, delay);
+    },
+    [lookupCep],
+  );
 
   useEffect(() => {
     let isActive = true;
@@ -880,30 +1151,40 @@ export function RegisterWorkspace() {
     const cepDigits = cleanCep(form.cep);
 
     if (cepDigits.length !== 8) {
+      if (cepLookupTimeoutRef.current) {
+        window.clearTimeout(cepLookupTimeoutRef.current);
+        cepLookupTimeoutRef.current = null;
+      }
       cepLookupRequestRef.current += 1;
       setIsCepLookupLoading(false);
       lastCepLookupRef.current = "";
       return;
     }
 
-    void lookupCep(cepDigits);
-  }, [draftHydrated, form.cep, lookupCep]);
+    scheduleCepLookup(cepDigits);
+  }, [draftHydrated, form.cep, scheduleCepLookup]);
+
+  useEffect(() => {
+    if (![form.city, form.neighborhood, form.address].every(isFilled)) return;
+
+    if (cepLookupTimeoutRef.current) {
+      window.clearTimeout(cepLookupTimeoutRef.current);
+      cepLookupTimeoutRef.current = null;
+    }
+
+    cepLookupRequestRef.current += 1;
+    setIsCepLookupLoading(false);
+  }, [form.address, form.city, form.neighborhood]);
 
   function handleCepChange(event: ChangeEvent<HTMLInputElement>) {
     const value = event.target.value;
 
     setField("cep", value);
-
-    if (isValidCep(value)) {
-      void lookupCep(value);
-    }
   }
 
   function handleCepBlur(event: FocusEvent<HTMLInputElement>) {
-    hasCepBlurredRef.current = true;
-
     if (isValidCep(event.target.value)) {
-      void lookupCep(event.target.value);
+      scheduleCepLookup(event.target.value, 0);
     }
   }
 
@@ -912,10 +1193,22 @@ export function RegisterWorkspace() {
     value: RegistrationForm[K],
   ) {
     setFeedback(null);
+    clearApiFieldErrors(field);
     setForm((current) => ({
       ...current,
       [field]: value,
     }));
+  }
+
+  function clearApiFieldErrors(...fields: (keyof RegistrationForm)[]) {
+    setApiFieldErrors((current) => {
+      if (fields.every((field) => !current[field])) return current;
+      const next = { ...current };
+      for (const field of fields) {
+        delete next[field];
+      }
+      return next;
+    });
   }
 
   function markStepAttempted(stepIndex: number) {
@@ -1022,6 +1315,23 @@ export function RegisterWorkspace() {
     return getStepFields(step).every((field) => !fieldErrors[field]);
   }
 
+  async function validateCurrentStep() {
+    if (step === 0 || step === 1) {
+      await inscricaoService.validateStep({
+        step,
+        data: buildInscricaoPayload(form),
+      });
+      return;
+    }
+
+    if (step === 2) {
+      await inscricaoService.validateStep({
+        step,
+        data: buildInstituicaoPayload(form),
+      });
+    }
+  }
+
   async function saveInscricaoBase() {
     const payload = buildInscricaoPayload(form);
 
@@ -1113,7 +1423,9 @@ export function RegisterWorkspace() {
     }
   }
 
-  function handleNext() {
+  async function handleNext() {
+    if (saving) return;
+
     markStepAttempted(step);
     setFeedback(null);
 
@@ -1125,13 +1437,30 @@ export function RegisterWorkspace() {
       return;
     }
 
-    if (isEditing) {
-      setEditingStep(null);
-      setStep(4);
-      return;
-    }
+    setSaving(true);
 
-    setStep((current) => Math.min(current + 1, 4) as StepIndex);
+    try {
+      await validateCurrentStep();
+
+      if (isEditing) {
+        setEditingStep(null);
+        setStep(4);
+        return;
+      }
+
+      setStep((current) => Math.min(current + 1, 4) as StepIndex);
+    } catch (error) {
+      setApiFieldErrors((current) => ({
+        ...current,
+        ...getApiFieldErrors(error),
+      }));
+      setFeedback({
+        type: "error",
+        message: getErrorMessage(error),
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handlePrevious() {
@@ -1152,7 +1481,10 @@ export function RegisterWorkspace() {
     setFeedback(null);
 
     try {
-      const latestErrors = getFieldErrors(form, todayIso);
+      const latestErrors = {
+        ...getFieldErrors(form, todayIso),
+        ...apiFieldErrors,
+      };
       const latestStatuses = getSectionStatus(form, documents, latestErrors);
       const hasIncompleteSection = latestStatuses
         .slice(0, 4)
@@ -1175,12 +1507,23 @@ export function RegisterWorkspace() {
       await saveInstituicaoData(id);
       await submitDocuments(id);
 
-      setFeedback({
-        type: "success",
-        message: "Cadastro enviado para análise com sucesso.",
-      });
+      setSubmissionProgress(0);
+      setSubmissionState("submitting");
+
       window.sessionStorage.removeItem(REGISTRATION_DRAFT_STORAGE_KEY);
+      progressTimeoutRef.current = window.setTimeout(() => {
+        setSubmissionProgress(100);
+      }, 1500);
+      successTimeoutRef.current = window.setTimeout(() => {
+        setSubmissionState("success");
+      }, 2000);
     } catch (error) {
+      setSubmissionState("idle");
+      setSubmissionProgress(0);
+      setApiFieldErrors((current) => ({
+        ...current,
+        ...getApiFieldErrors(error),
+      }));
       setFeedback({
         type: "error",
         message: getErrorMessage(error),
@@ -1190,7 +1533,46 @@ export function RegisterWorkspace() {
     }
   }
 
+  function handleStartNewRegistration() {
+    if (progressTimeoutRef.current) {
+      window.clearTimeout(progressTimeoutRef.current);
+      progressTimeoutRef.current = null;
+    }
+    if (successTimeoutRef.current) {
+      window.clearTimeout(successTimeoutRef.current);
+      successTimeoutRef.current = null;
+    }
+
+    window.sessionStorage.removeItem(REGISTRATION_DRAFT_STORAGE_KEY);
+    setStep(0);
+    setEditingStep(null);
+    setForm(initialForm);
+    setInscricaoId(null);
+    setInscricaoInstituicaoId(null);
+    setAttemptedSteps(new Set());
+    setDocuments({});
+    setDocumentModalOpen(false);
+    setDocumentDraftKey("");
+    setDocumentDraftFile(null);
+    setDocumentDraftError("");
+    setDocumentDropError("");
+    setFeedback(null);
+    setApiFieldErrors({});
+    setSaving(false);
+    setSubmissionProgress(0);
+    setSubmissionState("idle");
+    lastCepLookupRef.current = "";
+    cepLookupRequestRef.current += 1;
+  }
+
+  function handleBackToLogin() {
+    window.sessionStorage.removeItem(REGISTRATION_DRAFT_STORAGE_KEY);
+    router.push("/login");
+  }
+
   function toggleWeekday(day: number) {
+    setFeedback(null);
+    clearApiFieldErrors("days_of_week");
     setForm((current) => {
       const exists = current.days_of_week.includes(day);
       return {
@@ -1401,7 +1783,7 @@ export function RegisterWorkspace() {
               onChange={(event) => setField("mother_name", event.target.value)}
               error={shouldShowError("mother_name", 0)}
               className={fieldClassName()}
-              autoComplete="off"
+              autoComplete="name"
             />
 
             <Input
@@ -1416,7 +1798,7 @@ export function RegisterWorkspace() {
                 fieldClassName(),
                 form.no_father && "cursor-not-allowed opacity-60",
               )}
-              autoComplete="off"
+              autoComplete="name"
             />
 
             <Checkbox
@@ -1426,6 +1808,8 @@ export function RegisterWorkspace() {
               checked={form.no_father}
               containerClassName="md:col-start-2"
               onChange={(event) => {
+                setFeedback(null);
+                clearApiFieldErrors("no_father", "father_name");
                 setForm((current) => ({
                   ...current,
                   no_father: event.target.checked,
@@ -1455,6 +1839,7 @@ export function RegisterWorkspace() {
               onChange={(event) => setField("cpf", event.target.value)}
               error={shouldShowError("cpf", 0)}
               className={fieldClassName()}
+              autoComplete="on"
             />
 
             <Input
@@ -1465,7 +1850,7 @@ export function RegisterWorkspace() {
               onChange={(event) => setField("rg", event.target.value)}
               error={shouldShowError("rg", 0)}
               className={fieldClassName()}
-              autoComplete="off"
+              autoComplete="on"
             />
           </div>
         </section>
@@ -1778,6 +2163,8 @@ export function RegisterWorkspace() {
                 value={form.has_scholarship}
                 error={shouldShowError("has_scholarship", 2)}
                 onChange={(value) => {
+                  setFeedback(null);
+                  clearApiFieldErrors("has_scholarship", "scholarship_type");
                   setForm((current) => ({
                     ...current,
                     has_scholarship: value,
@@ -1949,14 +2336,14 @@ export function RegisterWorkspace() {
                       {isUploaded ? "Substituir" : "Anexar"}
                     </Button>
                     {isUploaded && (
-                      <button
-                        type="button"
+                      <Button
+                        fullWidth={false}
+                        variant="danger"
+                        size="icon"
                         aria-label={`Remover ${document.label}`}
+                        leftIcon={<Trash2 className="size-4" />}
                         onClick={() => removeLocalDocument(document.key)}
-                        className="flex size-10 items-center justify-center rounded-lg text-danger-600 transition hover:bg-danger-600/10"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
+                      />
                     )}
                   </div>
                 </div>
@@ -2104,8 +2491,92 @@ export function RegisterWorkspace() {
     );
   }
 
+  function renderSubmissionScreen() {
+    const isSuccess = submissionState === "success";
+
+    return (
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl flex-1 flex-col justify-center">
+        <section className="flex min-h-[25.5rem] items-center rounded-lg bg-white p-6 shadow-sm shadow-slate-300/70 sm:p-10">
+          <div className="mx-auto max-w-2xl text-center">
+            <div
+              className={cn(
+                "mx-auto flex size-16 items-center justify-center rounded-full",
+                isSuccess
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "bg-brand-100 text-brand-700",
+              )}
+            >
+              {isSuccess ? (
+                <CheckCircle2 className="size-9" />
+              ) : (
+                <Upload className="size-8" />
+              )}
+            </div>
+
+            <h1 className="mt-6 text-2xl font-bold text-brand-700">
+              {isSuccess
+                ? "Cadastro enviado para análise"
+                : "Enviando cadastro"}
+            </h1>
+            <p className="mt-3 text-base leading-7 text-content-muted">
+              {isSuccess
+                ? "Recebemos sua inscrição. Agora ela seguirá para análise da equipe responsável, e o retorno será feito pelos canais informados no cadastro."
+                : "Estamos registrando suas informações e anexando os documentos enviados. Mantenha esta tela aberta até a conclusão."}
+            </p>
+
+            <div className="mt-8">
+              <div className="mb-3 flex items-center justify-between text-sm font-bold text-brand-700">
+                <span>
+                  {isSuccess ? "Envio concluído" : "Progresso do envio"}
+                </span>
+                <span>{submissionProgress}%</span>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-brand-600 transition-all duration-300 ease-out"
+                  style={{ width: `${submissionProgress}%` }}
+                />
+              </div>
+            </div>
+
+            {isSuccess && (
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                <Button
+                  fullWidth={false}
+                  variant="ghost"
+                  size="md"
+                  leftIcon={<ArrowLeft className="size-5" />}
+                  onClick={handleBackToLogin}
+                >
+                  Voltar para login
+                </Button>
+                <Button
+                  fullWidth={false}
+                  variant="primary"
+                  size="md"
+                  leftIcon={<FilePlus2 className="size-5" />}
+                  onClick={handleStartNewRegistration}
+                >
+                  Enviar novo cadastro
+                </Button>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   if (!draftHydrated) {
     return null;
+  }
+
+  if (submissionState !== "idle") {
+    return (
+      <Register step={null} stepStatuses={stepStatuses}>
+        {renderSubmissionScreen()}
+      </Register>
+    );
   }
 
   return (
@@ -2127,6 +2598,7 @@ export function RegisterWorkspace() {
         </div>
 
         <form
+          ref={registrationFormRef}
           className="flex flex-1 flex-col"
           onSubmit={(event) => event.preventDefault()}
         >

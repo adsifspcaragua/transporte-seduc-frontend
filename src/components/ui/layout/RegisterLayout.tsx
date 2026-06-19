@@ -9,7 +9,7 @@ export type RegisterStepStatus = "complete" | "incomplete" | "pending";
 
 type Props = {
   children: ReactNode;
-  step: number;
+  step: number | null;
   stepStatuses?: RegisterStepStatus[];
 };
 
@@ -28,7 +28,8 @@ const statusLabels: Record<RegisterStepStatus, string> = {
 };
 
 export default function Register({ children, step, stepStatuses = [] }: Props) {
-  const currentStep = Math.min(step + 1, steps.length);
+  const currentStep =
+    step === null ? steps.length : Math.min(step + 1, steps.length);
   const progress = Math.round((currentStep / steps.length) * 100);
 
   return (
@@ -42,7 +43,6 @@ export default function Register({ children, step, stepStatuses = [] }: Props) {
               width={240}
               height={90}
               priority
-              style={{ width: 240, height: "auto" }}
             />
           </Link>
         </div>
@@ -69,7 +69,7 @@ export default function Register({ children, step, stepStatuses = [] }: Props) {
             <ol className="flex flex-col">
               {steps.map((item, index) => {
                 const status = stepStatuses[index] ?? "pending";
-                const isActive = index === step;
+                const isActive = step !== null && index === step;
                 const isLast = index === steps.length - 1;
                 const isComplete = status === "complete";
 
@@ -107,39 +107,46 @@ export default function Register({ children, step, stepStatuses = [] }: Props) {
                       )}
                     </div>
 
-                    <div className={cn("pb-8", isLast && "pb-0")}>
-                      {isActive ? (
-                        <div className="flex items-center justify-between gap-4 rounded-lg bg-white px-5 py-4 text-brand-700 shadow-xl shadow-brand-800/20">
-                          <div>
-                            <span className="block text-base font-bold">
-                              {item}
-                            </span>
-                            <span className="mt-1 block text-sm font-medium">
-                              {statusLabels[status]}
-                            </span>
-                          </div>
-                          <ChevronRight className="size-6 shrink-0 text-brand-600" />
-                        </div>
-                      ) : (
-                        <div className="pt-1">
+                    <div className={cn("pb-2", isLast && "pb-0")}>
+                      <div
+                        className={cn(
+                          "flex min-h-16 items-center justify-between gap-4 rounded-lg border px-5 py-3.5 transition-all duration-200",
+                          isActive &&
+                            "border-white bg-white text-brand-700 shadow-xl shadow-brand-800/20",
+                          !isActive &&
+                            "border-white/10 bg-white/10 text-white shadow-sm shadow-brand-800/10",
+                          !isActive &&
+                            isComplete &&
+                            "border-brand-050/20 bg-white/15",
+                        )}
+                      >
+                        <div>
                           <span
                             className={cn(
-                              "block text-base font-semibold text-white/90 transition-colors duration-200",
-                              isComplete && "text-white",
+                              "block text-base font-semibold transition-colors duration-200",
+                              isActive && "font-bold text-brand-700",
+                              !isActive && "text-white/90",
+                              !isActive && isComplete && "text-white",
                             )}
                           >
                             {item}
                           </span>
                           <span
                             className={cn(
-                              "mt-1 block text-sm font-medium text-brand-050/75",
-                              isComplete && "text-brand-050",
+                              "mt-1 block text-sm font-medium transition-colors duration-200",
+                              isActive && "text-brand-700",
+                              !isActive && "text-brand-050/75",
+                              !isActive && isComplete && "text-brand-050",
                             )}
                           >
                             {statusLabels[status]}
                           </span>
                         </div>
-                      )}
+
+                        {isActive && (
+                          <ChevronRight className="size-6 shrink-0 text-brand-600" />
+                        )}
+                      </div>
                     </div>
                   </li>
                 );

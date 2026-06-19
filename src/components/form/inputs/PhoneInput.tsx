@@ -57,7 +57,6 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
       formatPhone(defaultValue?.toString() ?? ""),
     );
     const [eagerFormatting, setEagerFormatting] = useState(true);
-    const [touched, setTouched] = useState(false);
     const [internalError, setInternalError] = useState<string | undefined>();
 
     const formattedValue = useMemo(
@@ -92,15 +91,12 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
         setInternalValue(nextFormattedValue);
       }
 
-      if (touched) {
-        setInternalError(getPhoneValidationError(nextFormattedValue));
-      }
+      setInternalError(undefined);
 
       onChange?.(event);
     }
 
     function handleBlur(event: FocusEvent<HTMLInputElement>) {
-      setTouched(true);
       setInternalError(getPhoneValidationError(event.target.value));
       onBlur?.(event);
     }
