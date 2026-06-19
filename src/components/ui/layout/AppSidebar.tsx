@@ -15,7 +15,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/utils/cn";
 
 export const SIDEBAR_COLLAPSED_WIDTH = 80;
-export const SIDEBAR_EXPANDED_WIDTH = 220;
+export const SIDEBAR_EXPANDED_WIDTH = 240;
 
 type SidebarItem = {
   label: string;

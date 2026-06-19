@@ -1,0 +1,302 @@
+"use client";
+
+import { Filter } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { Button } from "@/components/buttons";
+import { Checkbox, SearchInput } from "@/components/form/inputs";
+import { cn } from "@/utils/cn";
+
+export type StudentFilterOption = {
+  label: string;
+  value: string;
+};
+
+export type StudentFilters = {
+  institutionIds: string[];
+  lineIds: string[];
+  statuses: string[];
+};
+
+type StudentsFilterDropdownProps = {
+  filters: StudentFilters;
+  institutionOptions: StudentFilterOption[];
+  lineOptions: StudentFilterOption[];
+  onFiltersChange: (filters: StudentFilters) => void;
+};
+
+type FilterSectionProps = {
+  emptyMessage: string;
+  options: StudentFilterOption[];
+  searchPlaceholder?: string;
+  searchable?: boolean;
+  selectedValues: string[];
+  title: string;
+  onToggle: (value: string) => void;
+};
+
+export const EMPTY_STUDENT_FILTERS: StudentFilters = {
+  institutionIds: [],
+  lineIds: [],
+  statuses: [],
+};
+
+export const STUDENT_STATUS_OPTIONS: StudentFilterOption[] = [
+  { label: "Ativo", value: "ativo" },
+  { label: "Lista de espera", value: "lista_espera" },
+  { label: "Inativo", value: "inativo" },
+];
+
+function hasActiveFilters(filters: StudentFilters) {
+  return (
+    filters.statuses.length > 0 ||
+    filters.institutionIds.length > 0 ||
+    filters.lineIds.length > 0
+  );
+}
+
+function toggleFilterValue(values: string[], value: string) {
+  if (values.includes(value)) {
+    return values.filter((currentValue) => currentValue !== value);
+  }
+
+  return [...values, value];
+}
+
+function FilterSection({
+  emptyMessage,
+  options,
+  searchable = false,
+  searchPlaceholder = "Pesquisar...",
+  selectedValues,
+  title,
+  onToggle,
+}: FilterSectionProps) {
+  const [query, setQuery] = useState("");
+
+  const visibleOptions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) return options;
+
+    return options.filter((option) =>
+      option.label.toLowerCase().includes(normalizedQuery),
+    );
+  }, [options, query]);
+
+  return (
+    <section className="border-t border-border-default/80 pt-4 first:border-t-0 first:pt-0">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-brand-600/80">
+          {title}
+        </h3>
+        <span
+          className={cn(
+            "flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition-opacity",
+            selectedValues.length > 0
+              ? "bg-brand-100 text-brand-600 opacity-100"
+              : "opacity-0",
+          )}
+        >
+          {selectedValues.length}
+        </span>
+      </div>
+
+      {searchable && (
+        <SearchInput
+          className="text-xs"
+          containerClassName="mb-3 h-11"
+          onClear={() => setQuery("")}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={searchPlaceholder}
+          value={query}
+        />
+      )}
+
+      <div
+        className={cn(
+          "space-y-2 pr-1",
+          searchable && "max-h-44 overflow-y-auto",
+        )}
+      >
+        {visibleOptions.length === 0 ? (
+          <p className="rounded-md bg-slate-50 px-3 py-2 text-sm font-medium text-content-muted">
+            {emptyMessage}
+          </p>
+        ) : (
+          visibleOptions.map((option) => (
+            <Checkbox
+              checked={selectedValues.includes(option.value)}
+              containerClassName="gap-0"
+              key={option.value}
+              label={option.label}
+              labelClassName="w-full rounded-md px-2 py-1.5 text-sm hover:bg-brand-100/45"
+              onChange={() => onToggle(option.value)}
+            />
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function StudentsFilterDropdown({
+  filters,
+  institutionOptions,
+  lineOptions,
+  onFiltersChange,
+}: StudentsFilterDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [draftFilters, setDraftFilters] = useState<StudentFilters>(filters);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+
+      if (!dropdownRef.current?.contains(target)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen]);
+
+  function handleToggleOpen() {
+    setIsOpen((currentValue) => {
+      if (!currentValue) {
+        setDraftFilters(filters);
+      }
+
+      return !currentValue;
+    });
+  }
+
+  function updateDraftFilters(key: keyof StudentFilters, nextValues: string[]) {
+    setDraftFilters((currentFilters) => ({
+      ...currentFilters,
+      [key]: nextValues,
+    }));
+  }
+
+  function handleApplyFilters() {
+    onFiltersChange(draftFilters);
+    setIsOpen(false);
+  }
+
+  function handleClearFilters() {
+    setDraftFilters(EMPTY_STUDENT_FILTERS);
+    onFiltersChange(EMPTY_STUDENT_FILTERS);
+  }
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <Button
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        className="h-11 px-4"
+        fullWidth={false}
+        leftIcon={<Filter />}
+        onClick={handleToggleOpen}
+        variant="primary"
+      >
+        Filtrar
+      </Button>
+
+      {isOpen && (
+        <div
+          aria-label="Filtros de estudantes"
+          className="absolute left-0 top-[calc(100%+0.5rem)] z-50 flex max-h-[min(42rem,calc(100vh-8rem))] w-[min(26rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-brand-600/10 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.18)]"
+          role="dialog"
+        >
+          <div className="border-b border-border-default px-5 py-4">
+            <h2 className="text-base font-bold text-brand-600">Filtros</h2>
+          </div>
+
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+            <FilterSection
+              emptyMessage="Nenhum status disponível."
+              onToggle={(value) =>
+                updateDraftFilters(
+                  "statuses",
+                  toggleFilterValue(draftFilters.statuses, value),
+                )
+              }
+              options={STUDENT_STATUS_OPTIONS}
+              selectedValues={draftFilters.statuses}
+              title="Status"
+            />
+
+            <FilterSection
+              emptyMessage="Nenhuma instituição encontrada."
+              onToggle={(value) =>
+                updateDraftFilters(
+                  "institutionIds",
+                  toggleFilterValue(draftFilters.institutionIds, value),
+                )
+              }
+              options={institutionOptions}
+              searchable
+              searchPlaceholder="Buscar instituição..."
+              selectedValues={draftFilters.institutionIds}
+              title="Instituição"
+            />
+
+            <FilterSection
+              emptyMessage="Nenhuma linha encontrada."
+              onToggle={(value) =>
+                updateDraftFilters(
+                  "lineIds",
+                  toggleFilterValue(draftFilters.lineIds, value),
+                )
+              }
+              options={lineOptions}
+              searchable={lineOptions.length > 6}
+              searchPlaceholder="Buscar linha..."
+              selectedValues={draftFilters.lineIds}
+              title="Linha"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-border-default bg-white px-5 py-4">
+            <Button
+              className="h-11 px-4 text-sm"
+              disabled={
+                !hasActiveFilters(filters) && !hasActiveFilters(draftFilters)
+              }
+              fullWidth={false}
+              onClick={handleClearFilters}
+              size="sm"
+              variant="secondary"
+            >
+              Limpar
+            </Button>
+            <Button
+              className="h-11 px-4 text-sm"
+              fullWidth={false}
+              onClick={handleApplyFilters}
+              size="sm"
+              variant="primary"
+            >
+              Aplicar
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -123,6 +123,23 @@ body {
   height: 0;
 }
 
+.search-input-native {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.search-input-native::-webkit-search-cancel-button,
+.search-input-native::-webkit-search-decoration,
+.search-input-native::-webkit-search-results-button,
+.search-input-native::-webkit-search-results-decoration {
+  display: none;
+  width: 0;
+  height: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: none;
+}
+
 .animation-loading-skeleton::after {
   content: "";
   position: absolute;

@@ -53,7 +53,7 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between bg-brand-100 px-5 shadow-sm lg:justify-end lg:px-8">
+    <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between bg-white px-5 shadow-sm lg:justify-end lg:px-8">
       <button
         aria-label="Abrir menu"
         className="flex size-10 cursor-pointer items-center justify-center rounded-md bg-brand-600 text-white lg:hidden"
@@ -66,10 +66,10 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
       <div className="flex items-center gap-4">
         <button
           aria-label="Alternar tema"
-          className="flex size-10 cursor-pointer items-center justify-center rounded-full text-brand-600 transition-colors hover:bg-white/50"
+          className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-brand-600 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
           type="button"
         >
-          <Moon className="size-5 fill-brand-600" />
+          <Moon className="size-5 fill-white text-white" />
         </button>
 
         <div className="relative" ref={userMenuRef}>
@@ -77,7 +77,7 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
             aria-expanded={isUserMenuOpen}
             aria-haspopup="menu"
             aria-label="Abrir menu do usuário"
-            className="flex h-12 cursor-pointer items-center gap-2 rounded-md px-2 text-brand-600 transition-colors hover:bg-white/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            className="flex h-12 cursor-pointer items-center gap-2 rounded-md px-2 text-brand-600 transition-colors hover:bg-brand-100/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
             onClick={() => setIsUserMenuOpen((current) => !current)}
             type="button"
           >

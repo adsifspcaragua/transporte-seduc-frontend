@@ -20,11 +20,14 @@ function isEmptyMessageResponse(
 }
 
 export const estudanteService = {
-  async list(page = 1) {
+  async list(page = 1, perPage = 10) {
     const { data } = await api.get<PaginatedEstudantes | EmptyMessageResponse>(
       API_ENDPOINTS.ESTUDANTES.BASE,
       {
-        params: { page },
+        params: {
+          page,
+          per_page: perPage,
+        },
       },
     );
 
