@@ -9,6 +9,7 @@ import type {
   InscricaoInstituicaoPayload,
   InscricaoPayload,
   Instituicao,
+  Linha,
 } from "@/types/inscricao";
 
 type ValidateInscricaoStepPayload = {
@@ -154,6 +155,14 @@ export const inscricaoService = {
   async listCursos() {
     const { data } = await publicApi.get<LaravelCollectionResponse<Curso>>(
       API_ENDPOINTS.CURSOS.BASE,
+    );
+
+    return unwrapCollection(data);
+  },
+
+  async listLinhas() {
+    const { data } = await api.get<LaravelCollectionResponse<Linha>>(
+      API_ENDPOINTS.LINHAS.BASE,
     );
 
     return unwrapCollection(data);

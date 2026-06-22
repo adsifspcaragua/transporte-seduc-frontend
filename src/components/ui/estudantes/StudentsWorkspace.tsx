@@ -20,6 +20,7 @@ import {
   type StudentFilters,
   StudentsFilterDropdown,
 } from "@/components/ui/estudantes/StudentsFilterDropdown";
+import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { estudanteService } from "@/services/api/modules/estudante";
 import { inscricaoService } from "@/services/api/modules/inscricao";
 import type {
@@ -27,7 +28,7 @@ import type {
   PaginatedEstudantes,
   UpdateEstudantePayload,
 } from "@/types/estudante";
-import type { Instituicao } from "@/types/inscricao";
+import type { Curso, Instituicao, Linha } from "@/types/inscricao";
 import { cn } from "@/utils/cn";
 
 type ApiErrorPayload = {
@@ -57,8 +58,35 @@ const STUDENTS_TABLE_COLUMNS: DataTableColumn[] = [
   { key: "actions", label: "Ações" },
 ];
 
-function getLineLabel(estudante: Estudante) {
-  return estudante.linha_id ? `Linha ${estudante.linha_id}` : "Sem linha";
+let studentsPageCache: {
+  cursos: Curso[];
+  instituicoes: Instituicao[];
+  linhas: Linha[];
+  meta: StudentsPaginationMeta;
+  page: number;
+  perPage: number;
+  students: Estudante[];
+} | null = null;
+
+const SEMESTER_FILTER_OPTIONS: StudentFilterOption[] = Array.from(
+  { length: 12 },
+  (_, index) => {
+    const semester = String(index + 1);
+
+    return {
+      label: `${semester}º semestre`,
+      value: semester,
+    };
+  },
+);
+
+function getLineLabel(
+  estudante: Estudante,
+  lineNamesById?: Map<number, string>,
+) {
+  if (!estudante.linha_id) return "Sem linha";
+
+  return lineNamesById?.get(estudante.linha_id) ?? "Linha não cadastrada";
 }
 
 function getInstitutionLabel(
@@ -91,6 +119,10 @@ function getSemesterLabel(estudante: Estudante) {
   if (!estudante.semester?.trim()) return "Semestre não informado";
 
   return `${estudante.semester}º semestre`;
+}
+
+function getSemesterFilterValue(semester?: string | null) {
+  return semester?.match(/\d+/)?.[0] ?? "";
 }
 
 function getStatusLabel(status: string | null) {
@@ -274,27 +306,43 @@ function getStudentUpdateErrorMessage(error: unknown) {
   return "Não foi possível atualizar o estudante.";
 }
 
-function buildStudentFilterOptions(
-  students: Estudante[],
-  getValue: (student: Estudante) => number | null,
-  getLabel: (student: Estudante) => string,
-): StudentFilterOption[] {
-  const options = new Map<string, string>();
-
-  for (const student of students) {
-    const value = getValue(student);
-
-    if (!value) continue;
-
-    options.set(String(value), getLabel(student));
-  }
-
-  return Array.from(options, ([value, label]) => ({ label, value })).sort(
-    (firstOption, secondOption) =>
+function buildInstitutionOptions(instituicoes: Instituicao[]) {
+  return instituicoes
+    .map((instituicao) => ({
+      label: instituicao.name,
+      value: String(instituicao.id),
+    }))
+    .sort((firstOption, secondOption) =>
       firstOption.label.localeCompare(secondOption.label, "pt-BR", {
         numeric: true,
       }),
-  );
+    );
+}
+
+function buildCourseOptions(cursos: Curso[]) {
+  return cursos
+    .map((curso) => ({
+      label: curso.name,
+      value: curso.name,
+    }))
+    .sort((firstOption, secondOption) =>
+      firstOption.label.localeCompare(secondOption.label, "pt-BR", {
+        numeric: true,
+      }),
+    );
+}
+
+function buildLineOptions(linhas: Linha[]) {
+  return linhas
+    .map((linha) => ({
+      label: linha.name,
+      value: String(linha.id),
+    }))
+    .sort((firstOption, secondOption) =>
+      firstOption.label.localeCompare(secondOption.label, "pt-BR", {
+        numeric: true,
+      }),
+    );
 }
 
 function hasStudentMatchingFilters(
@@ -306,6 +354,8 @@ function hasStudentMatchingFilters(
     ? String(student.instituicao_id)
     : "";
   const lineId = student.linha_id ? String(student.linha_id) : "";
+  const courseValue = student.course?.trim() ?? "";
+  const semesterValue = getSemesterFilterValue(student.semester);
 
   const matchesStatus =
     filters.statuses.length === 0 || filters.statuses.includes(studentStatus);
@@ -314,8 +364,50 @@ function hasStudentMatchingFilters(
     filters.institutionIds.includes(institutionId);
   const matchesLine =
     filters.lineIds.length === 0 || filters.lineIds.includes(lineId);
+  const matchesCourse =
+    filters.courseValues.length === 0 ||
+    filters.courseValues.includes(courseValue);
+  const matchesSemester =
+    filters.semesterValues.length === 0 ||
+    filters.semesterValues.includes(semesterValue);
 
-  return matchesStatus && matchesInstitution && matchesLine;
+  return (
+    matchesStatus &&
+    matchesInstitution &&
+    matchesLine &&
+    matchesCourse &&
+    matchesSemester
+  );
+}
+
+function StudentsPageSkeleton() {
+  return (
+    <div aria-busy="true" aria-live="polite">
+      <div className="mb-5">
+        <Skeleton className="h-8 w-40 rounded-full bg-skeleton" />
+      </div>
+
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex w-full max-w-[calc(36rem+3.25rem)] items-center gap-3">
+          <Skeleton className="h-11 w-full max-w-xl rounded-lg bg-skeleton" />
+          <Skeleton className="h-11 w-28 rounded-lg bg-skeleton" />
+        </div>
+        <Skeleton className="h-11 w-28 rounded-lg bg-skeleton" />
+      </div>
+
+      <div className="overflow-hidden rounded-lg bg-white shadow-md">
+        <div className="grid gap-3 bg-brand-600 px-5 py-4 md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.55fr]">
+          {STUDENTS_TABLE_COLUMNS.map((column) => (
+            <Skeleton
+              className="h-4 w-24 rounded-full bg-white/30"
+              key={column.key}
+            />
+          ))}
+        </div>
+        <StudentsTableSkeleton />
+      </div>
+    </div>
+  );
 }
 
 function StudentsTableSkeleton({ rows = 6 }: { rows?: number }) {
@@ -348,12 +440,23 @@ function StudentsTableSkeleton({ rows = 6 }: { rows?: number }) {
 }
 
 export function StudentsWorkspace() {
-  const [studentsLoading, setStudentsLoading] = useState(true);
+  const hasCachedPage = Boolean(studentsPageCache);
+  const [studentsLoading, setStudentsLoading] = useState(!hasCachedPage);
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
   const [editLoading, setEditLoading] = useState(false);
-  const [students, setStudents] = useState<Estudante[]>([]);
+  const [students, setStudents] = useState<Estudante[]>(
+    () => studentsPageCache?.students ?? [],
+  );
   const [studentsError, setStudentsError] = useState("");
-  const [instituicoes, setInstituicoes] = useState<Instituicao[]>([]);
+  const [cursos, setCursos] = useState<Curso[]>(
+    () => studentsPageCache?.cursos ?? [],
+  );
+  const [instituicoes, setInstituicoes] = useState<Instituicao[]>(
+    () => studentsPageCache?.instituicoes ?? [],
+  );
+  const [linhas, setLinhas] = useState<Linha[]>(
+    () => studentsPageCache?.linhas ?? [],
+  );
   const [deleteError, setDeleteError] = useState("");
   const [editError, setEditError] = useState("");
   const [studentToEdit, setStudentToEdit] = useState<Estudante | null>(null);
@@ -361,12 +464,17 @@ export function StudentsWorkspace() {
     null,
   );
   const [filters, setFilters] = useState<StudentFilters>(EMPTY_STUDENT_FILTERS);
-  const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
+  const [page, setPage] = useState(() => studentsPageCache?.page ?? 1);
+  const [perPage, setPerPage] = useState(
+    () => studentsPageCache?.perPage ?? 10,
+  );
   const [paginationMeta, setPaginationMeta] = useState<StudentsPaginationMeta>(
-    DEFAULT_STUDENTS_PAGINATION_META,
+    () => studentsPageCache?.meta ?? DEFAULT_STUDENTS_PAGINATION_META,
   );
   const [query, setQuery] = useState("");
+  const showPageSkeleton = useMinimumVisibleLoading(
+    studentsLoading && !studentsPageCache,
+  );
 
   const institutionNamesById = useMemo(
     () =>
@@ -374,6 +482,11 @@ export function StudentsWorkspace() {
         instituicoes.map((instituicao) => [instituicao.id, instituicao.name]),
       ),
     [instituicoes],
+  );
+
+  const lineNamesById = useMemo(
+    () => new Map(linhas.map((linha) => [linha.id, linha.name])),
+    [linhas],
   );
 
   const filteredStudents = useMemo(() => {
@@ -388,7 +501,7 @@ export function StudentsWorkspace() {
           student.course,
           student.semester,
           getStatusLabel(student.status),
-          getLineLabel(student),
+          getLineLabel(student, lineNamesById),
           getInstitutionLabel(student, institutionNamesById),
         ]
           .filter(Boolean)
@@ -398,32 +511,28 @@ export function StudentsWorkspace() {
 
       return matchesQuery && hasStudentMatchingFilters(student, filters);
     });
-  }, [students, query, filters, institutionNamesById]);
+  }, [students, query, filters, institutionNamesById, lineNamesById]);
 
   const institutionOptions = useMemo(
-    () =>
-      buildStudentFilterOptions(
-        students,
-        (student) => student.instituicao_id,
-        (student) => getInstitutionLabel(student, institutionNamesById),
-      ),
-    [students, institutionNamesById],
+    () => buildInstitutionOptions(instituicoes),
+    [instituicoes],
   );
 
-  const lineOptions = useMemo(
-    () =>
-      buildStudentFilterOptions(
-        students,
-        (student) => student.linha_id,
-        getLineLabel,
-      ),
-    [students],
-  );
+  const courseOptions = useMemo(() => buildCourseOptions(cursos), [cursos]);
+
+  const lineOptions = useMemo(() => buildLineOptions(linhas), [linhas]);
 
   const loadStudents = useCallback(
     async (currentPage = page) => {
+      const shouldShowLoading =
+        !studentsPageCache ||
+        studentsPageCache.page !== currentPage ||
+        studentsPageCache.perPage !== perPage;
+
       try {
-        setStudentsLoading(true);
+        if (shouldShowLoading) {
+          setStudentsLoading(true);
+        }
         setStudentsError("");
 
         const studentsResponse = await estudanteService.list(
@@ -435,12 +544,23 @@ export function StudentsWorkspace() {
         setPaginationMeta(
           studentsResponse.meta ?? DEFAULT_STUDENTS_PAGINATION_META,
         );
+        studentsPageCache = {
+          cursos: studentsPageCache?.cursos ?? [],
+          instituicoes: studentsPageCache?.instituicoes ?? [],
+          linhas: studentsPageCache?.linhas ?? [],
+          meta: studentsResponse.meta ?? DEFAULT_STUDENTS_PAGINATION_META,
+          page: currentPage,
+          perPage,
+          students: studentsResponse.data,
+        };
       } catch (error) {
         setStudents([]);
         setPaginationMeta(DEFAULT_STUDENTS_PAGINATION_META);
         setStudentsError(getStudentsListErrorMessage(error));
       } finally {
-        setStudentsLoading(false);
+        if (shouldShowLoading) {
+          setStudentsLoading(false);
+        }
       }
     },
     [page, perPage],
@@ -453,21 +573,37 @@ export function StudentsWorkspace() {
   useEffect(() => {
     let ignore = false;
 
-    async function loadInstituicoes() {
+    async function loadFilterOptions() {
       try {
-        const nextInstituicoes = await inscricaoService.listInstituicoes();
+        const [nextCursos, nextInstituicoes, nextLinhas] = await Promise.all([
+          inscricaoService.listCursos(),
+          inscricaoService.listInstituicoes(),
+          inscricaoService.listLinhas().catch(() => []),
+        ]);
 
         if (!ignore) {
+          setCursos(nextCursos);
           setInstituicoes(nextInstituicoes);
+          setLinhas(nextLinhas);
+          studentsPageCache = studentsPageCache
+            ? {
+                ...studentsPageCache,
+                cursos: nextCursos,
+                instituicoes: nextInstituicoes,
+                linhas: nextLinhas,
+              }
+            : null;
         }
       } catch {
         if (!ignore) {
+          setCursos([]);
           setInstituicoes([]);
+          setLinhas([]);
         }
       }
     }
 
-    void loadInstituicoes();
+    void loadFilterOptions();
 
     return () => {
       ignore = true;
@@ -545,6 +681,10 @@ export function StudentsWorkspace() {
     setPage(1);
   }
 
+  if (showPageSkeleton) {
+    return <StudentsPageSkeleton />;
+  }
+
   return (
     <>
       <div className="mb-5">
@@ -561,10 +701,15 @@ export function StudentsWorkspace() {
             value={query}
           />
           <StudentsFilterDropdown
+            courseOptions={courseOptions}
             filters={filters}
             institutionOptions={institutionOptions}
             lineOptions={lineOptions}
-            onFiltersChange={setFilters}
+            onFiltersChange={(nextFilters) => {
+              setFilters(nextFilters);
+              setPage(1);
+            }}
+            semesterOptions={SEMESTER_FILTER_OPTIONS}
           />
         </div>
 
@@ -626,7 +771,7 @@ export function StudentsWorkspace() {
               </span>
             </div>
             <p className="text-xs font-medium text-slate-600">
-              {getLineLabel(student)}
+              {getLineLabel(student, lineNamesById)}
             </p>
             <div className="flex items-center gap-2">
               <TableActionButton

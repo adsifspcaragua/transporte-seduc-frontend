@@ -30,6 +30,9 @@ export const API_ENDPOINTS = {
   CURSOS: {
     BASE: "/curso",
   },
+  LINHAS: {
+    BASE: "/linha",
+  },
   ESTUDANTES: {
     BASE: "/estudantes",
     COUNT: "/contar-estudantes",

@@ -88,12 +88,23 @@ export type Instituicao = {
   id: number;
   name: string;
   city?: string | null;
+  linhas_ids?: (number | string)[] | null;
   [key: string]: unknown;
 };
 
 export type Curso = {
   id: number;
   name: string;
+  [key: string]: unknown;
+};
+
+export type Linha = {
+  id: number;
+  name: string;
+  description?: string | null;
+  departure_time?: string | null;
+  return_time?: string | null;
+  max_capacity?: number | null;
   [key: string]: unknown;
 };
 

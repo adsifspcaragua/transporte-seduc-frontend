@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter } from "lucide-react";
+import { ChevronDown, Filter } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/buttons";
@@ -13,16 +13,20 @@ export type StudentFilterOption = {
 };
 
 export type StudentFilters = {
+  courseValues: string[];
   institutionIds: string[];
   lineIds: string[];
+  semesterValues: string[];
   statuses: string[];
 };
 
 type StudentsFilterDropdownProps = {
   filters: StudentFilters;
+  courseOptions: StudentFilterOption[];
   institutionOptions: StudentFilterOption[];
   lineOptions: StudentFilterOption[];
   onFiltersChange: (filters: StudentFilters) => void;
+  semesterOptions: StudentFilterOption[];
 };
 
 type FilterSectionProps = {
@@ -35,9 +39,20 @@ type FilterSectionProps = {
   onToggle: (value: string) => void;
 };
 
+type MultiSelectSectionProps = {
+  emptyMessage: string;
+  options: StudentFilterOption[];
+  placeholder: string;
+  selectedValues: string[];
+  title: string;
+  onToggle: (value: string) => void;
+};
+
 export const EMPTY_STUDENT_FILTERS: StudentFilters = {
+  courseValues: [],
   institutionIds: [],
   lineIds: [],
+  semesterValues: [],
   statuses: [],
 };
 
@@ -53,7 +68,9 @@ function hasActiveFilters(filters: StudentFilters) {
   return (
     filters.statuses.length > 0 ||
     filters.institutionIds.length > 0 ||
-    filters.lineIds.length > 0
+    filters.lineIds.length > 0 ||
+    filters.courseValues.length > 0 ||
+    filters.semesterValues.length > 0
   );
 }
 
@@ -142,11 +159,90 @@ function FilterSection({
   );
 }
 
+function MultiSelectSection({
+  emptyMessage,
+  options,
+  placeholder,
+  selectedValues,
+  title,
+  onToggle,
+}: MultiSelectSectionProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedLabels = options
+    .filter((option) => selectedValues.includes(option.value))
+    .map((option) => option.label);
+
+  return (
+    <section className="border-t border-border-default/80 pt-4 first:border-t-0 first:pt-0">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-brand-600/80">
+          {title}
+        </h3>
+        <span
+          className={cn(
+            "flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition-opacity",
+            selectedValues.length > 0
+              ? "bg-brand-100 text-brand-600 opacity-100"
+              : "opacity-0",
+          )}
+        >
+          {selectedValues.length}
+        </span>
+      </div>
+
+      <div className="relative">
+        <button
+          className="flex h-11 w-full items-center justify-between gap-3 rounded-lg border-2 border-border-default bg-white px-3 text-left text-sm font-medium text-content-primary transition-colors hover:border-brand-600 focus:border-brand-600 focus:outline-none"
+          onClick={() => setIsOpen((currentValue) => !currentValue)}
+          type="button"
+        >
+          <span className="min-w-0 truncate">
+            {selectedLabels.length > 0
+              ? selectedLabels.join(", ")
+              : placeholder}
+          </span>
+          <ChevronDown
+            className={cn(
+              "size-4 shrink-0 text-brand-600 transition-transform",
+              isOpen && "rotate-180",
+            )}
+          />
+        </button>
+
+        {isOpen && (
+          <div className="absolute left-0 right-0 top-[calc(100%+0.25rem)] z-10 max-h-48 overflow-y-auto rounded-lg border border-brand-600/15 bg-white p-2 shadow-lg">
+            {options.length === 0 ? (
+              <p className="rounded-md bg-slate-50 px-3 py-2 text-sm font-medium text-content-muted">
+                {emptyMessage}
+              </p>
+            ) : (
+              <div className="space-y-1">
+                {options.map((option) => (
+                  <Checkbox
+                    checked={selectedValues.includes(option.value)}
+                    containerClassName="gap-0"
+                    key={option.value}
+                    label={option.label}
+                    labelClassName="w-full rounded-md px-2 py-1.5 text-sm hover:bg-brand-100/45"
+                    onChange={() => onToggle(option.value)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export function StudentsFilterDropdown({
+  courseOptions,
   filters,
   institutionOptions,
   lineOptions,
   onFiltersChange,
+  semesterOptions,
 }: StudentsFilterDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<StudentFilters>(filters);
@@ -256,6 +352,35 @@ export function StudentsFilterDropdown({
               searchPlaceholder="Buscar instituição..."
               selectedValues={draftFilters.institutionIds}
               title="Instituição"
+            />
+
+            <FilterSection
+              emptyMessage="Nenhum curso encontrado."
+              onToggle={(value) =>
+                updateDraftFilters(
+                  "courseValues",
+                  toggleFilterValue(draftFilters.courseValues, value),
+                )
+              }
+              options={courseOptions}
+              searchable
+              searchPlaceholder="Buscar curso..."
+              selectedValues={draftFilters.courseValues}
+              title="Curso"
+            />
+
+            <MultiSelectSection
+              emptyMessage="Nenhum semestre encontrado."
+              onToggle={(value) =>
+                updateDraftFilters(
+                  "semesterValues",
+                  toggleFilterValue(draftFilters.semesterValues, value),
+                )
+              }
+              options={semesterOptions}
+              placeholder="Selecione os semestres"
+              selectedValues={draftFilters.semesterValues}
+              title="Semestre"
             />
 
             <FilterSection

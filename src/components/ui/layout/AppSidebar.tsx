@@ -63,16 +63,18 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
           >
             <Menu className="size-6" />
           </button>
-          <span
+          <Link
+            aria-label="Ir para dashboard"
             className={cn(
-              "ml-3 overflow-hidden whitespace-nowrap text-3xl font-bold tracking-wide transition-all duration-300",
+              "ml-3 overflow-hidden whitespace-nowrap text-2xl font-bold tracking-wide transition-all duration-300 hover:text-white/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
               isOpen
                 ? "max-w-[130px] translate-x-0 opacity-100"
                 : "max-w-0 -translate-x-2 opacity-0",
             )}
+            href="/"
           >
-            SIGTU
-          </span>
+            UNIBUS
+          </Link>
         </div>
 
         <nav>

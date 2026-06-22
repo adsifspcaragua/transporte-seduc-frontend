@@ -12,7 +12,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Transporte 2026 - SEDUC",
+  title: "UNIBUS - SEDUC",
   description:
     "Sistema de Transporte Universitário - Secretaria de Educação de Caraguatatuba",
 };

@@ -87,7 +87,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             data-field-error={hasError ? "true" : undefined}
             data-input-variant={variant}
             className={cn(
-              "peer w-full resize-y px-4 py-3 text-sm outline-none transition-colors duration-200 placeholder:text-transparent disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
+              "peer min-h-28 max-h-64 w-full resize-y px-4 py-3 text-sm outline-none transition-colors duration-200 placeholder:text-transparent disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
               variantClasses[variant].textarea,
               hasError
                 ? "border-danger-600 focus:border-danger-600"

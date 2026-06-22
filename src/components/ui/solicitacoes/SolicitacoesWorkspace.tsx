@@ -18,12 +18,15 @@ import {
   type SolicitationFilters,
   SolicitationsFilterDropdown,
 } from "@/components/ui/solicitacoes/SolicitationsFilterDropdown";
+import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { inscricaoService } from "@/services/api/modules/inscricao";
 import type {
+  Curso,
   Inscricao,
   InscricaoDocumento,
   InscricaoInstituicao,
   Instituicao,
+  Linha,
 } from "@/types/inscricao";
 import { cn } from "@/utils/cn";
 
@@ -48,6 +51,22 @@ const SOLICITACOES_TABLE_COLUMNS: DataTableColumn[] = [
 ];
 
 const ITEMS_PER_PAGE = 10;
+
+let solicitacoesPageCache: {
+  cursos: Curso[];
+  instituicoes: Instituicao[];
+  linhas: Linha[];
+  solicitacoes: EnrichedInscricao[];
+} | null = null;
+
+const SEMESTER_FILTER_OPTIONS = Array.from({ length: 12 }, (_, index) => {
+  const semester = String(index + 1);
+
+  return {
+    label: `${semester}º semestre`,
+    value: semester,
+  };
+});
 
 function normalizeText(value: string) {
   return value
@@ -142,6 +161,10 @@ function getSemesterLabel(inscricao: EnrichedInscricao) {
   return semester ? `${semester}º semestre` : "Semestre não informado";
 }
 
+function getSemesterFilterValue(inscricao: EnrichedInscricao) {
+  return inscricao.instituicaoAcademica?.semester?.match(/\d+/)?.[0] ?? "";
+}
+
 function getInstitutionLabel(
   inscricao: EnrichedInscricao,
   institutionNamesById: Map<number, string>,
@@ -208,6 +231,51 @@ function buildFilterOptions(
   );
 }
 
+function buildInstitutionOptions(instituicoes: Instituicao[]) {
+  return instituicoes
+    .map((instituicao) => ({
+      label: instituicao.name,
+      value: String(instituicao.id),
+    }))
+    .sort((firstOption, secondOption) =>
+      firstOption.label.localeCompare(secondOption.label, "pt-BR", {
+        numeric: true,
+      }),
+    );
+}
+
+function buildCourseOptions(cursos: Curso[]) {
+  return cursos
+    .map((curso) => ({
+      label: curso.name,
+      value: curso.name,
+    }))
+    .sort((firstOption, secondOption) =>
+      firstOption.label.localeCompare(secondOption.label, "pt-BR", {
+        numeric: true,
+      }),
+    );
+}
+
+function buildLineOptions(linhas: Linha[]) {
+  return linhas
+    .map((linha) => ({
+      label: linha.name,
+      value: String(linha.id),
+    }))
+    .sort((firstOption, secondOption) =>
+      firstOption.label.localeCompare(secondOption.label, "pt-BR", {
+        numeric: true,
+      }),
+    );
+}
+
+function normalizeLineIds(value: Instituicao["linhas_ids"]) {
+  if (!Array.isArray(value)) return [];
+
+  return value.map((lineId) => String(lineId)).filter(Boolean);
+}
+
 function SolicitacoesTableSkeleton({ rows = 6 }: { rows?: number }) {
   return (
     <div>
@@ -237,6 +305,36 @@ function SolicitacoesTableSkeleton({ rows = 6 }: { rows?: number }) {
   );
 }
 
+function SolicitacoesPageSkeleton() {
+  return (
+    <div aria-busy="true" aria-live="polite">
+      <div className="mb-5">
+        <Skeleton className="h-8 w-40 rounded-full bg-skeleton" />
+      </div>
+
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex w-full max-w-[calc(36rem+3.25rem)] items-center gap-3">
+          <Skeleton className="h-11 w-full max-w-xl rounded-lg bg-skeleton" />
+          <Skeleton className="h-11 w-28 rounded-lg bg-skeleton" />
+        </div>
+        <Skeleton className="h-11 w-32 rounded-lg bg-skeleton" />
+      </div>
+
+      <div className="overflow-hidden rounded-lg bg-white shadow-md">
+        <div className="grid gap-3 bg-brand-600 px-5 py-4 md:grid-cols-[1.35fr_1fr_0.85fr_0.65fr_0.75fr]">
+          {SOLICITACOES_TABLE_COLUMNS.map((column) => (
+            <Skeleton
+              className="h-4 w-24 rounded-full bg-white/30"
+              key={column.key}
+            />
+          ))}
+        </div>
+        <SolicitacoesTableSkeleton />
+      </div>
+    </div>
+  );
+}
+
 function DetailItem({
   label,
   value,
@@ -257,10 +355,21 @@ function DetailItem({
 }
 
 export function SolicitacoesWorkspace() {
-  const [loading, setLoading] = useState(true);
+  const hasCachedPage = Boolean(solicitacoesPageCache);
+  const [loading, setLoading] = useState(!hasCachedPage);
   const [actionLoading, setActionLoading] = useState(false);
-  const [solicitacoes, setSolicitacoes] = useState<EnrichedInscricao[]>([]);
-  const [instituicoes, setInstituicoes] = useState<Instituicao[]>([]);
+  const [solicitacoes, setSolicitacoes] = useState<EnrichedInscricao[]>(
+    () => solicitacoesPageCache?.solicitacoes ?? [],
+  );
+  const [cursos, setCursos] = useState<Curso[]>(
+    () => solicitacoesPageCache?.cursos ?? [],
+  );
+  const [instituicoes, setInstituicoes] = useState<Instituicao[]>(
+    () => solicitacoesPageCache?.instituicoes ?? [],
+  );
+  const [linhas, setLinhas] = useState<Linha[]>(
+    () => solicitacoesPageCache?.linhas ?? [],
+  );
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [query, setQuery] = useState("");
@@ -279,6 +388,9 @@ export function SolicitacoesWorkspace() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectReasonError, setRejectReasonError] = useState("");
+  const showPageSkeleton = useMinimumVisibleLoading(
+    loading && !solicitacoesPageCache,
+  );
 
   const institutionNamesById = useMemo(
     () =>
@@ -288,15 +400,36 @@ export function SolicitacoesWorkspace() {
     [instituicoes],
   );
 
-  const loadSolicitacoes = useCallback(async () => {
+  const lineNamesById = useMemo(
+    () => new Map(linhas.map((linha) => [linha.id, linha.name])),
+    [linhas],
+  );
+
+  const institutionLineIdsById = useMemo(
+    () =>
+      new Map(
+        instituicoes.map((instituicao) => [
+          instituicao.id,
+          normalizeLineIds(instituicao.linhas_ids),
+        ]),
+      ),
+    [instituicoes],
+  );
+
+  const loadSolicitacoes = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       setError("");
 
-      const [nextInscricoes, nextInstituicoes] = await Promise.all([
-        inscricaoService.listInscricoes(),
-        inscricaoService.listInstituicoes(),
-      ]);
+      const [nextInscricoes, nextCursos, nextInstituicoes, nextLinhas] =
+        await Promise.all([
+          inscricaoService.listInscricoes(),
+          inscricaoService.listCursos(),
+          inscricaoService.listInstituicoes(),
+          inscricaoService.listLinhas().catch(() => []),
+        ]);
 
       const enrichedSolicitacoes = await Promise.all(
         nextInscricoes.map(async (inscricao) => {
@@ -315,8 +448,16 @@ export function SolicitacoesWorkspace() {
         }),
       );
 
+      setCursos(nextCursos);
       setInstituicoes(nextInstituicoes);
+      setLinhas(nextLinhas);
       setSolicitacoes(enrichedSolicitacoes);
+      solicitacoesPageCache = {
+        cursos: nextCursos,
+        instituicoes: nextInstituicoes,
+        linhas: nextLinhas,
+        solicitacoes: enrichedSolicitacoes,
+      };
     } catch (currentError) {
       setSolicitacoes([]);
       setError(
@@ -326,12 +467,14 @@ export function SolicitacoesWorkspace() {
         ),
       );
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    void loadSolicitacoes();
+    void loadSolicitacoes(!solicitacoesPageCache);
   }, [loadSolicitacoes]);
 
   const currentSolicitacoes = useMemo(
@@ -361,17 +504,13 @@ export function SolicitacoesWorkspace() {
   );
 
   const institutionOptions = useMemo(
-    () =>
-      buildFilterOptions(
-        currentSolicitacoes,
-        (solicitacao) =>
-          solicitacao.instituicaoAcademica?.instituicao_id
-            ? String(solicitacao.instituicaoAcademica.instituicao_id)
-            : "",
-        (solicitacao) => getInstitutionLabel(solicitacao, institutionNamesById),
-      ),
-    [currentSolicitacoes, institutionNamesById],
+    () => buildInstitutionOptions(instituicoes),
+    [instituicoes],
   );
+
+  const courseOptions = useMemo(() => buildCourseOptions(cursos), [cursos]);
+
+  const lineOptions = useMemo(() => buildLineOptions(linhas), [linhas]);
 
   const filteredSolicitacoes = useMemo(() => {
     const normalizedQuery = normalizeText(query);
@@ -381,6 +520,18 @@ export function SolicitacoesWorkspace() {
       const institutionId = solicitacao.instituicaoAcademica?.instituicao_id
         ? String(solicitacao.instituicaoAcademica.instituicao_id)
         : "";
+      const courseValue =
+        solicitacao.instituicaoAcademica?.course?.trim() ?? "";
+      const semesterValue = getSemesterFilterValue(solicitacao);
+      const solicitationLineIds = solicitacao.instituicaoAcademica
+        ?.instituicao_id
+        ? (institutionLineIdsById.get(
+            solicitacao.instituicaoAcademica.instituicao_id,
+          ) ?? [])
+        : [];
+      const solicitationLineLabels = solicitationLineIds
+        .map((lineId) => lineNamesById.get(Number(lineId)))
+        .filter(Boolean);
 
       const matchesQuery =
         !normalizedQuery ||
@@ -391,6 +542,7 @@ export function SolicitacoesWorkspace() {
           getSemesterLabel(solicitacao),
           getInstitutionLabel(solicitacao, institutionNamesById),
           getStatusLabel(solicitacao.status),
+          ...solicitationLineLabels,
         ].some((value) => normalizeText(value ?? "").includes(normalizedQuery));
 
       const matchesStatus =
@@ -398,10 +550,33 @@ export function SolicitacoesWorkspace() {
       const matchesInstitution =
         filters.institutionIds.length === 0 ||
         filters.institutionIds.includes(institutionId);
+      const matchesCourse =
+        filters.courseValues.length === 0 ||
+        filters.courseValues.includes(courseValue);
+      const matchesSemester =
+        filters.semesterValues.length === 0 ||
+        filters.semesterValues.includes(semesterValue);
+      const matchesLine =
+        filters.lineIds.length === 0 ||
+        filters.lineIds.some((lineId) => solicitationLineIds.includes(lineId));
 
-      return matchesQuery && matchesStatus && matchesInstitution;
+      return (
+        matchesQuery &&
+        matchesStatus &&
+        matchesInstitution &&
+        matchesCourse &&
+        matchesSemester &&
+        matchesLine
+      );
     });
-  }, [currentSolicitacoes, filters, institutionNamesById, query]);
+  }, [
+    currentSolicitacoes,
+    filters,
+    institutionLineIdsById,
+    institutionNamesById,
+    lineNamesById,
+    query,
+  ]);
 
   const paginatedSolicitacoes = useMemo(() => {
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
@@ -485,6 +660,10 @@ export function SolicitacoesWorkspace() {
     }
   }
 
+  if (showPageSkeleton) {
+    return <SolicitacoesPageSkeleton />;
+  }
+
   return (
     <>
       <div className="mb-5">
@@ -507,12 +686,15 @@ export function SolicitacoesWorkspace() {
             value={query}
           />
           <SolicitationsFilterDropdown
+            courseOptions={courseOptions}
             filters={filters}
             institutionOptions={institutionOptions}
+            lineOptions={lineOptions}
             onFiltersChange={(nextFilters) => {
               setFilters(nextFilters);
               setPage(1);
             }}
+            semesterOptions={SEMESTER_FILTER_OPTIONS}
             statusOptions={statusOptions}
           />
         </div>
@@ -628,8 +810,8 @@ export function SolicitacoesWorkspace() {
         title="Confirmar aprovação"
       >
         <p className="text-sm font-medium text-slate-800">
-          Deseja aprovar a inscrição de {approveTarget?.name}? A inscrição será
-          movida para lista de espera.
+          Deseja aprovar a inscrição de {approveTarget?.name}? O status será
+          atualizado para aprovado.
         </p>
         {actionError && (
           <p className="mt-3 rounded-md bg-danger-600/10 px-3 py-2 text-sm font-medium text-danger-600">
@@ -653,6 +835,7 @@ export function SolicitacoesWorkspace() {
             Informe o motivo da rejeição da inscrição de {rejectTarget?.name}.
           </p>
           <Textarea
+            className="min-h-36 max-h-64"
             error={rejectReasonError}
             label="Motivo da rejeição"
             onChange={(event) => {
