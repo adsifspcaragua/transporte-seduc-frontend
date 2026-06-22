@@ -49,10 +49,12 @@ export type InscricaoInstituicao = {
   semester: string | null;
   expected_completion: string | null;
   instituicao_id: number | null;
+  instituicao?: Instituicao | null;
   shift_label?: string | null;
   city_destination: string | null;
   used_transport: boolean | null;
   days_of_week_labels?: string[];
+  line_id?: number | null;
   has_scholarship: boolean | null;
   scholarship_type: string | null;
   inscricao_id: number;
@@ -103,3 +105,15 @@ export type CepAddress = {
   address: string;
   complement: string;
 };
+
+export type InscricaoAnalisePayload =
+  | {
+      decisao: "Aprovado";
+      documentos: null;
+      motivo?: null;
+    }
+  | {
+      decisao: "Rejeitado";
+      documentos: string[] | null;
+      motivo: string;
+    };

@@ -28,6 +28,7 @@ import type {
   UpdateEstudantePayload,
 } from "@/types/estudante";
 import type { Instituicao } from "@/types/inscricao";
+import { cn } from "@/utils/cn";
 
 type ApiErrorPayload = {
   message?: string;
@@ -98,10 +99,24 @@ function getStatusLabel(status: string | null) {
   const normalizedStatus = normalizeFilterText(status);
 
   if (
+    normalizedStatus.includes("lista") ||
     normalizedStatus.includes("espera") ||
-    normalizedStatus.includes("lista_espera")
+    normalizedStatus.includes("pendente") ||
+    normalizedStatus.includes("analise") ||
+    normalizedStatus.includes("incompleto")
   ) {
-    return "Em espera";
+    return "Lista de espera";
+  }
+
+  if (
+    normalizedStatus.includes("reprov") ||
+    normalizedStatus.includes("rejeit")
+  ) {
+    return "Rejeitado";
+  }
+
+  if (normalizedStatus.includes("aprov")) {
+    return "Aprovado";
   }
 
   if (
@@ -126,6 +141,26 @@ function getStatusLabel(status: string | null) {
     .replace(/^\p{L}/u, (letter) => letter.toUpperCase());
 }
 
+function getStatusBadgeClass(status: string | null) {
+  const normalizedStatus = normalizeFilterText(status ?? "");
+
+  if (
+    normalizedStatus.includes("aprov") ||
+    normalizedStatus.includes("ativo")
+  ) {
+    return "bg-approve-default/10 text-approve-default";
+  }
+
+  if (
+    normalizedStatus.includes("reprov") ||
+    normalizedStatus.includes("rejeit")
+  ) {
+    return "bg-danger-600/10 text-danger-600";
+  }
+
+  return "bg-amber-100 text-amber-700";
+}
+
 function normalizeFilterText(value: string) {
   return value
     .normalize("NFD")
@@ -140,10 +175,24 @@ function getStudentStatusFilterValue(status: string | null) {
   const normalizedStatus = normalizeFilterText(status);
 
   if (
-    normalizedStatus.includes("lista") &&
-    normalizedStatus.includes("espera")
+    normalizedStatus.includes("lista") ||
+    normalizedStatus.includes("espera") ||
+    normalizedStatus.includes("pendente") ||
+    normalizedStatus.includes("analise") ||
+    normalizedStatus.includes("incompleto")
   ) {
     return "lista_espera";
+  }
+
+  if (normalizedStatus.includes("aprov")) {
+    return "aprovado";
+  }
+
+  if (
+    normalizedStatus.includes("reprov") ||
+    normalizedStatus.includes("rejeit")
+  ) {
+    return "rejeitado";
   }
 
   if (
@@ -567,7 +616,12 @@ export function StudentsWorkspace() {
               </span>
             </div>
             <div>
-              <span className="inline-flex rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+              <span
+                className={cn(
+                  "inline-flex rounded px-2 py-1 text-xs font-semibold",
+                  getStatusBadgeClass(student.status),
+                )}
+              >
                 {getStatusLabel(student.status)}
               </span>
             </div>

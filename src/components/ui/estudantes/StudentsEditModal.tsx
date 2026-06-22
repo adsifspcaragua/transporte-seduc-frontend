@@ -128,8 +128,10 @@ const WEEKDAYS = [
 ];
 
 const STATUS_OPTIONS = [
+  { label: "Lista de espera", value: "LISTA DE ESPERA" },
+  { label: "Aprovado", value: "APROVADO" },
+  { label: "Rejeitado", value: "REJEITADO" },
   { label: "Ativo", value: "ATIVO" },
-  { label: "Em espera", value: "EM ESPERA" },
   { label: "Inativo", value: "INATIVO" },
 ];
 
@@ -275,7 +277,19 @@ function normalizeStatusValue(status: string | null) {
     .toUpperCase()
     .trim();
 
-  if (normalizedStatus.includes("ESPERA")) return "EM ESPERA";
+  if (
+    normalizedStatus.includes("ESPERA") ||
+    normalizedStatus.includes("PENDENTE") ||
+    normalizedStatus.includes("ANALISE") ||
+    normalizedStatus.includes("INCOMPLETO")
+  )
+    return "LISTA DE ESPERA";
+  if (normalizedStatus.includes("APROV")) return "APROVADO";
+  if (
+    normalizedStatus.includes("REPROV") ||
+    normalizedStatus.includes("REJEIT")
+  )
+    return "REJEITADO";
   if (normalizedStatus.includes("INATIVO")) return "INATIVO";
   if (normalizedStatus.includes("ATIVO")) return "ATIVO";
 

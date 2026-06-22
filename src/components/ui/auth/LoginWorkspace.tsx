@@ -401,7 +401,7 @@ export function LoginWorkspace() {
             width={240}
             height={90}
             alt="Logo da Prefeitura Municipal de Caraguatatuba"
-            style={{ width: 240, height: "auto" }}
+            style={{ width: "240px", height: "auto" }}
           />
         </div>
 

@@ -7,27 +7,26 @@ import { Button } from "@/components/buttons";
 import { Checkbox, SearchInput } from "@/components/form/inputs";
 import { cn } from "@/utils/cn";
 
-export type StudentFilterOption = {
+export type SolicitationFilterOption = {
   label: string;
   value: string;
 };
 
-export type StudentFilters = {
+export type SolicitationFilters = {
   institutionIds: string[];
-  lineIds: string[];
   statuses: string[];
 };
 
-type StudentsFilterDropdownProps = {
-  filters: StudentFilters;
-  institutionOptions: StudentFilterOption[];
-  lineOptions: StudentFilterOption[];
-  onFiltersChange: (filters: StudentFilters) => void;
+type SolicitationsFilterDropdownProps = {
+  filters: SolicitationFilters;
+  institutionOptions: SolicitationFilterOption[];
+  onFiltersChange: (filters: SolicitationFilters) => void;
+  statusOptions: SolicitationFilterOption[];
 };
 
 type FilterSectionProps = {
   emptyMessage: string;
-  options: StudentFilterOption[];
+  options: SolicitationFilterOption[];
   searchPlaceholder?: string;
   searchable?: boolean;
   selectedValues: string[];
@@ -35,26 +34,13 @@ type FilterSectionProps = {
   onToggle: (value: string) => void;
 };
 
-export const EMPTY_STUDENT_FILTERS: StudentFilters = {
+export const EMPTY_SOLICITATION_FILTERS: SolicitationFilters = {
   institutionIds: [],
-  lineIds: [],
   statuses: [],
 };
 
-export const STUDENT_STATUS_OPTIONS: StudentFilterOption[] = [
-  { label: "Lista de espera", value: "lista_espera" },
-  { label: "Aprovado", value: "aprovado" },
-  { label: "Rejeitado", value: "rejeitado" },
-  { label: "Ativo", value: "ativo" },
-  { label: "Inativo", value: "inativo" },
-];
-
-function hasActiveFilters(filters: StudentFilters) {
-  return (
-    filters.statuses.length > 0 ||
-    filters.institutionIds.length > 0 ||
-    filters.lineIds.length > 0
-  );
+function hasActiveFilters(filters: SolicitationFilters) {
+  return filters.statuses.length > 0 || filters.institutionIds.length > 0;
 }
 
 function toggleFilterValue(values: string[], value: string) {
@@ -142,14 +128,15 @@ function FilterSection({
   );
 }
 
-export function StudentsFilterDropdown({
+export function SolicitationsFilterDropdown({
   filters,
   institutionOptions,
-  lineOptions,
   onFiltersChange,
-}: StudentsFilterDropdownProps) {
+  statusOptions,
+}: SolicitationsFilterDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [draftFilters, setDraftFilters] = useState<StudentFilters>(filters);
+  const [draftFilters, setDraftFilters] =
+    useState<SolicitationFilters>(filters);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -188,7 +175,10 @@ export function StudentsFilterDropdown({
     });
   }
 
-  function updateDraftFilters(key: keyof StudentFilters, nextValues: string[]) {
+  function updateDraftFilters(
+    key: keyof SolicitationFilters,
+    nextValues: string[],
+  ) {
     setDraftFilters((currentFilters) => ({
       ...currentFilters,
       [key]: nextValues,
@@ -201,8 +191,8 @@ export function StudentsFilterDropdown({
   }
 
   function handleClearFilters() {
-    setDraftFilters(EMPTY_STUDENT_FILTERS);
-    onFiltersChange(EMPTY_STUDENT_FILTERS);
+    setDraftFilters(EMPTY_SOLICITATION_FILTERS);
+    onFiltersChange(EMPTY_SOLICITATION_FILTERS);
   }
 
   return (
@@ -221,7 +211,7 @@ export function StudentsFilterDropdown({
 
       {isOpen && (
         <div
-          aria-label="Filtros de estudantes"
+          aria-label="Filtros de solicitações"
           className="absolute left-0 top-[calc(100%+0.5rem)] z-50 flex max-h-[min(42rem,calc(100vh-8rem))] w-[min(26rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-brand-600/10 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.18)]"
           role="dialog"
         >
@@ -238,7 +228,7 @@ export function StudentsFilterDropdown({
                   toggleFilterValue(draftFilters.statuses, value),
                 )
               }
-              options={STUDENT_STATUS_OPTIONS}
+              options={statusOptions}
               selectedValues={draftFilters.statuses}
               title="Status"
             />
@@ -257,44 +247,25 @@ export function StudentsFilterDropdown({
               selectedValues={draftFilters.institutionIds}
               title="Instituição"
             />
-
-            <FilterSection
-              emptyMessage="Nenhuma linha encontrada."
-              onToggle={(value) =>
-                updateDraftFilters(
-                  "lineIds",
-                  toggleFilterValue(draftFilters.lineIds, value),
-                )
-              }
-              options={lineOptions}
-              searchable={lineOptions.length > 6}
-              searchPlaceholder="Buscar linha..."
-              selectedValues={draftFilters.lineIds}
-              title="Linha"
-            />
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-border-default bg-white px-5 py-4">
+          <div className="flex flex-col-reverse gap-3 border-t border-border-default px-5 py-4 sm:flex-row sm:justify-end">
             <Button
-              className="h-11 px-4 text-sm"
-              disabled={
-                !hasActiveFilters(filters) && !hasActiveFilters(draftFilters)
-              }
+              className="h-10 px-4 text-sm"
+              disabled={!hasActiveFilters(draftFilters)}
               fullWidth={false}
               onClick={handleClearFilters}
-              size="sm"
-              variant="secondary"
+              variant="ghost"
             >
               Limpar
             </Button>
             <Button
-              className="h-11 px-4 text-sm"
+              className="h-10 px-4 text-sm"
               fullWidth={false}
               onClick={handleApplyFilters}
-              size="sm"
               variant="primary"
             >
-              Aplicar
+              Aplicar filtros
             </Button>
           </div>
         </div>

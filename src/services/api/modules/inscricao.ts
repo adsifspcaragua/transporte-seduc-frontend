@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "@/services/api/endpoints";
 import type {
   Curso,
   Inscricao,
+  InscricaoAnalisePayload,
   InscricaoDocumento,
   InscricaoInstituicao,
   InscricaoInstituicaoPayload,
@@ -35,7 +36,7 @@ type LaravelDocumentListResponse =
 type LaravelCollectionResponse<T> =
   | T[]
   | {
-      data:
+      data?:
         | T[]
         | {
             data?: T[];
@@ -59,6 +60,10 @@ function unwrapData<T>(payload: T | LaravelDataResponse<T>) {
 function unwrapCollection<T>(payload: LaravelCollectionResponse<T>) {
   if (Array.isArray(payload)) return payload;
 
+  if (!payload.data) {
+    return [];
+  }
+
   if (Array.isArray(payload.data)) {
     return payload.data;
   }
@@ -67,6 +72,22 @@ function unwrapCollection<T>(payload: LaravelCollectionResponse<T>) {
 }
 
 export const inscricaoService = {
+  async listInscricoes() {
+    const { data } = await api.get<LaravelCollectionResponse<Inscricao>>(
+      API_ENDPOINTS.INSCRICOES.BASE,
+    );
+
+    return unwrapCollection(data);
+  },
+
+  async getInscricao(id: number) {
+    const { data } = await api.get<LaravelDataResponse<Inscricao>>(
+      API_ENDPOINTS.INSCRICOES.BY_ID(id),
+    );
+
+    return unwrapData(data);
+  },
+
   async validateStep(payload: ValidateInscricaoStepPayload) {
     await api.post(API_ENDPOINTS.INSCRICOES.VALIDATE_STEP, payload);
   },
@@ -114,6 +135,14 @@ export const inscricaoService = {
     return unwrapData(data);
   },
 
+  async listInscricaoInstituicoes(inscricaoId: number) {
+    const { data } = await api.get<
+      LaravelCollectionResponse<InscricaoInstituicao>
+    >(API_ENDPOINTS.INSCRICOES.INSTITUICOES(inscricaoId));
+
+    return unwrapCollection(data);
+  },
+
   async listInstituicoes() {
     const { data } = await publicApi.get<
       LaravelCollectionResponse<Instituicao>
@@ -137,6 +166,17 @@ export const inscricaoService = {
 
     if (typeof data === "string") return [];
     return data.documento ?? [];
+  },
+
+  async analisarInscricao(id: number, payload: InscricaoAnalisePayload) {
+    await api.put<{ message?: string }>(
+      API_ENDPOINTS.INSCRICOES.ANALISE(id),
+      payload,
+    );
+  },
+
+  async ativarRecadastro() {
+    await api.post<{ message?: string }>(API_ENDPOINTS.INSCRICOES.RECADASTRO);
   },
 
   async uploadDocumento(

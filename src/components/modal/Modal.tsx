@@ -21,6 +21,7 @@ type ModalProps = {
   saveVariant?: ModalSaveVariant;
   saveLoading?: boolean;
   saveDisabled?: boolean;
+  hideSave?: boolean;
   className?: string;
   contentClassName?: string;
 };
@@ -42,6 +43,7 @@ type ModalFooterProps = {
   saveVariant?: ModalSaveVariant;
   saveLoading?: boolean;
   saveDisabled?: boolean;
+  hideSave?: boolean;
   onClose: () => void;
   onSave?: () => void;
 };
@@ -80,6 +82,7 @@ function ModalFooter({
   saveVariant = "primary",
   saveLoading,
   saveDisabled,
+  hideSave = false,
   onClose,
   onSave,
 }: ModalFooterProps) {
@@ -93,16 +96,18 @@ function ModalFooter({
       >
         {cancelLabel}
       </Button>
-      <Button
-        className="min-h-10 px-4 py-2 text-sm"
-        disabled={saveDisabled}
-        fullWidth={false}
-        loading={saveLoading}
-        onClick={onSave}
-        variant={saveVariant}
-      >
-        {saveLabel}
-      </Button>
+      {!hideSave && (
+        <Button
+          className="min-h-10 px-4 py-2 text-sm"
+          disabled={saveDisabled}
+          fullWidth={false}
+          loading={saveLoading}
+          onClick={onSave}
+          variant={saveVariant}
+        >
+          {saveLabel}
+        </Button>
+      )}
     </footer>
   );
 }
@@ -172,6 +177,7 @@ export function Modal({
   saveVariant = "primary",
   saveLoading = false,
   saveDisabled = false,
+  hideSave = false,
   className,
   contentClassName,
 }: ModalProps) {
@@ -218,6 +224,7 @@ export function Modal({
           cancelLabel={cancelLabel}
           onClose={onClose}
           onSave={onSave}
+          hideSave={hideSave}
           saveDisabled={saveDisabled}
           saveLabel={saveLabel}
           saveLoading={saveLoading}

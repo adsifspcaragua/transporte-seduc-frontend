@@ -7,6 +7,8 @@ export const API_ENDPOINTS = {
   },
   INSCRICOES: {
     BASE: "/inscricoes",
+    ANALISE: (id: number | string) => `/inscricoes/analise/${id}`,
+    RECADASTRO: "/inscricoes/recadastro",
     VALIDATE_STEP: "/inscricoes/validar-step",
     BY_ID: (id: number | string) => `/inscricoes/${id}`,
     DOCUMENTOS: (inscricaoId: number | string) =>
