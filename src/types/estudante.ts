@@ -6,8 +6,14 @@ export type Estudante = {
   birth_date: string | null;
   phone: string | null;
   address: string | null;
-  start_time: string | null;
-  end_time: string | null;
+  rg?: string | null;
+  mother_name?: string | null;
+  father_name?: string | null;
+  cep?: string | null;
+  city?: string | null;
+  neighborhood?: string | null;
+  number?: string | null;
+  complement?: string | null;
   days_of_week: number[] | string[] | null;
   observation: string | null;
   status: string | null;
@@ -15,6 +21,14 @@ export type Estudante = {
   user_id: number | null;
   instituicao_id: number | null;
   inscricao_id: number | null;
+  course?: string | null;
+  semester?: string | null;
+  expected_completion?: string | null;
+  shift?: number | null;
+  city_destination?: string | null;
+  used_transport?: boolean | null;
+  has_scholarship?: boolean | null;
+  scholarship_type?: string | null;
 };
 
 export type PaginatedEstudantes = {
@@ -33,4 +47,33 @@ export type PaginatedEstudantes = {
     prev?: string | null;
     next?: string | null;
   };
+};
+
+export type UpdateEstudantePayload = {
+  address?: string;
+  birth_date?: string;
+  cep?: string;
+  city?: string;
+  city_destination?: string | null;
+  complement?: string | null;
+  course?: string | null;
+  cpf?: string;
+  days_of_week?: number[];
+  email?: string;
+  expected_completion?: string | null;
+  father_name?: string | null;
+  has_scholarship?: boolean | null;
+  instituicao_id?: number;
+  mother_name?: string | null;
+  name?: string;
+  neighborhood?: string;
+  number?: string | null;
+  observation?: string | null;
+  phone?: string;
+  rg?: string | null;
+  scholarship_type?: string | null;
+  semester?: string | null;
+  shift?: number | null;
+  status?: string;
+  used_transport?: boolean | null;
 };

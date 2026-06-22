@@ -8,3 +8,5 @@ export { default as PasswordInput } from "./PasswordInput";
 export { default as PhoneInput } from "./PhoneInput";
 export { default as SearchInput } from "./SearchInput";
 export { default as Select } from "./Select";
+export type { TextareaProps } from "./Textarea";
+export { default as Textarea } from "./Textarea";

@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 
 import { Button } from "@/components/buttons";
@@ -28,6 +28,7 @@ type ModalProps = {
 type ModalHeaderProps = {
   title: string;
   onClose: () => void;
+  titleId: string;
 };
 
 type ModalContentProps = {
@@ -45,24 +46,32 @@ type ModalFooterProps = {
   onSave?: () => void;
 };
 
-function ModalHeader({ title, onClose }: ModalHeaderProps) {
+function ModalHeader({ title, onClose, titleId }: ModalHeaderProps) {
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-border-subtle px-5 py-4">
-      <h2 className="text-base font-bold text-brand-600">{title}</h2>
-      <button
-        aria-label="Fechar modal"
-        className="flex size-9 cursor-pointer items-center justify-center rounded-md text-content-muted transition-colors hover:bg-surface-muted hover:text-content-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-        onClick={onClose}
-        type="button"
-      >
-        <X className="size-5" />
-      </button>
+    <header className="shrink-0 border-b border-border-subtle px-5 py-4">
+      <div className="flex items-center justify-between gap-4">
+        <h2 id={titleId} className="text-base font-bold text-brand-600">
+          {title}
+        </h2>
+        <button
+          aria-label="Fechar modal"
+          className="flex size-9 cursor-pointer items-center justify-center rounded-md text-content-muted transition-colors hover:bg-surface-muted hover:text-content-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+          onClick={onClose}
+          type="button"
+        >
+          <X className="size-5" />
+        </button>
+      </div>
     </header>
   );
 }
 
 function ModalContent({ children, className }: ModalContentProps) {
-  return <div className={cn("px-5 py-5", className)}>{children}</div>;
+  return (
+    <div className={cn("min-h-0 flex-1 overflow-y-auto px-5 py-5", className)}>
+      {children}
+    </div>
+  );
 }
 
 function ModalFooter({
@@ -75,7 +84,7 @@ function ModalFooter({
   onSave,
 }: ModalFooterProps) {
   return (
-    <footer className="flex flex-col-reverse gap-3 border-t border-border-subtle px-5 py-4 sm:flex-row sm:justify-end">
+    <footer className="flex shrink-0 flex-col-reverse gap-3 border-t border-border-subtle px-5 py-4 sm:flex-row sm:justify-end">
       <Button
         className="min-h-10 px-4 py-2 text-sm"
         fullWidth={false}
@@ -98,6 +107,60 @@ function ModalFooter({
   );
 }
 
+export function ModalTitle({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <h3 className={cn("text-base font-bold text-brand-700", className)}>
+      {children}
+    </h3>
+  );
+}
+
+export function ModalSection({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn("rounded-lg border border-border-subtle", className)}
+    >
+      {children}
+    </section>
+  );
+}
+
+export function ModalSectionHeader({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("border-b border-border-subtle px-5 py-4", className)}>
+      {children}
+    </div>
+  );
+}
+
+export function ModalSectionContent({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={cn("px-5 py-5", className)}>{children}</div>;
+}
+
 export function Modal({
   open,
   title,
@@ -112,6 +175,8 @@ export function Modal({
   className,
   contentClassName,
 }: ModalProps) {
+  const titleId = useId();
+
   useEffect(() => {
     if (!open) return;
 
@@ -139,15 +204,15 @@ export function Modal({
         type="button"
       />
       <section
-        aria-labelledby="modal-title"
+        aria-labelledby={titleId}
         aria-modal="true"
         className={cn(
-          "relative z-10 max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-hidden rounded-md bg-surface-primary shadow-[0_18px_50px_var(--color-modal-shadow)]",
+          "relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-md bg-surface-primary shadow-[0_18px_50px_var(--color-modal-shadow)]",
           className,
         )}
         role="dialog"
       >
-        <ModalHeader onClose={onClose} title={title} />
+        <ModalHeader onClose={onClose} title={title} titleId={titleId} />
         <ModalContent className={contentClassName}>{children}</ModalContent>
         <ModalFooter
           cancelLabel={cancelLabel}

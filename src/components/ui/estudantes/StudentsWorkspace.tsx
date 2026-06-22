@@ -1,15 +1,18 @@
 "use client";
 
 import axios from "axios";
-import { AlertCircle, Pencil, RefreshCw, Trash2 } from "lucide-react";
-import type { ReactNode } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/components/buttons";
 import { SearchInput } from "@/components/form/inputs";
 import { Skeleton } from "@/components/loading";
 import { Modal } from "@/components/modal";
-import { Pagination } from "@/components/pagination";
+import {
+  DataTable,
+  type DataTableColumn,
+  TableActionButton,
+} from "@/components/table";
+import { StudentsEditModal } from "@/components/ui/estudantes/StudentsEditModal";
 import { StudentsExportDropdown } from "@/components/ui/estudantes/StudentsExportDropdown";
 import {
   EMPTY_STUDENT_FILTERS,
@@ -18,7 +21,11 @@ import {
   StudentsFilterDropdown,
 } from "@/components/ui/estudantes/StudentsFilterDropdown";
 import { estudanteService } from "@/services/api/modules/estudante";
-import type { Estudante, PaginatedEstudantes } from "@/types/estudante";
+import type {
+  Estudante,
+  PaginatedEstudantes,
+  UpdateEstudantePayload,
+} from "@/types/estudante";
 
 type ApiErrorPayload = {
   message?: string;
@@ -34,6 +41,17 @@ const DEFAULT_STUDENTS_PAGINATION_META: StudentsPaginationMeta = {
   to: null,
   total: 0,
 };
+
+const STUDENTS_TABLE_GRID_CLASS =
+  "md:grid-cols-[1.45fr_1fr_0.65fr_0.55fr_0.55fr]";
+
+const STUDENTS_TABLE_COLUMNS: DataTableColumn[] = [
+  { key: "name", label: "Nome / Email" },
+  { key: "course", label: "Curso / Semestre" },
+  { key: "institution", label: "Instituição" },
+  { key: "line", label: "Linha" },
+  { key: "actions", label: "Ações" },
+];
 
 function getLineLabel(estudante: Estudante) {
   return estudante.linha_id ? `Linha ${estudante.linha_id}` : "Sem linha";
@@ -117,6 +135,31 @@ function getStudentDeleteErrorMessage(error: unknown) {
   return "Não foi possível deletar o estudante.";
 }
 
+function getStudentUpdateErrorMessage(error: unknown) {
+  if (axios.isAxiosError<ApiErrorPayload>(error)) {
+    if (error.response?.status === 403) {
+      return "Você não tem permissão para editar este estudante.";
+    }
+
+    if (error.response?.status === 404) {
+      return "Este estudante não foi encontrado.";
+    }
+
+    if (error.response?.status === 422) {
+      return (
+        error.response?.data?.message ??
+        "Confira os dados informados antes de salvar."
+      );
+    }
+
+    return (
+      error.response?.data?.message ?? "Não foi possível atualizar o estudante."
+    );
+  }
+
+  return "Não foi possível atualizar o estudante.";
+}
+
 function buildStudentFilterOptions(
   students: Estudante[],
   getValue: (student: Estudante) => number | null,
@@ -189,49 +232,15 @@ function StudentsTableSkeleton({ rows = 6 }: { rows?: number }) {
   );
 }
 
-type StudentActionButtonProps = {
-  ariaLabel: string;
-  icon: ReactNode;
-  loading?: boolean;
-  onClick?: () => void;
-  tooltip: string;
-  variant: "primary" | "danger";
-};
-
-function StudentActionButton({
-  ariaLabel,
-  icon,
-  loading = false,
-  onClick,
-  tooltip,
-  variant,
-}: StudentActionButtonProps) {
-  return (
-    <span className="group relative inline-flex">
-      <Button
-        aria-label={ariaLabel}
-        className="size-8 rounded-md p-0 [&>span>svg]:size-4"
-        fullWidth={false}
-        leftIcon={icon}
-        loading={loading}
-        onClick={onClick}
-        size="icon"
-        title={tooltip}
-        variant={variant}
-      />
-      <span className="pointer-events-none absolute right-[calc(100%+0.5rem)] top-1/2 z-20 -translate-y-1/2 whitespace-nowrap rounded bg-slate-950 px-2 py-1 text-[11px] font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-        {tooltip}
-      </span>
-    </span>
-  );
-}
-
 export function StudentsWorkspace() {
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
   const [students, setStudents] = useState<Estudante[]>([]);
   const [studentsError, setStudentsError] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  const [editError, setEditError] = useState("");
+  const [studentToEdit, setStudentToEdit] = useState<Estudante | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<Estudante | null>(
     null,
   );
@@ -319,6 +328,18 @@ export function StudentsWorkspace() {
     setStudentToDelete(student);
   }
 
+  function openEditModal(student: Estudante) {
+    setEditError("");
+    setStudentToEdit(student);
+  }
+
+  function closeEditModal() {
+    if (editLoading) return;
+
+    setEditError("");
+    setStudentToEdit(null);
+  }
+
   function closeDeleteModal() {
     if (deleteLoadingId) return;
 
@@ -339,6 +360,31 @@ export function StudentsWorkspace() {
       setDeleteError(getStudentDeleteErrorMessage(error));
     } finally {
       setDeleteLoadingId(null);
+    }
+  }
+
+  async function handleSaveStudent(payload: UpdateEstudantePayload) {
+    if (!studentToEdit) return;
+
+    try {
+      setEditError("");
+      setEditLoading(true);
+
+      const updatedStudent = await estudanteService.update(
+        studentToEdit.id,
+        payload,
+      );
+
+      setStudents((currentStudents) =>
+        currentStudents.map((student) =>
+          student.id === updatedStudent.id ? updatedStudent : student,
+        ),
+      );
+      setStudentToEdit(null);
+    } catch (error) {
+      setEditError(getStudentUpdateErrorMessage(error));
+    } finally {
+      setEditLoading(false);
     }
   }
 
@@ -373,114 +419,83 @@ export function StudentsWorkspace() {
         <StudentsExportDropdown />
       </div>
 
-      <section className="overflow-hidden rounded-md bg-white shadow-[0_3px_12px_rgba(0,0,0,0.2)]">
-        <div className="hidden bg-brand-600 px-5 py-3 text-xs font-semibold text-white md:grid md:grid-cols-[1.45fr_1fr_0.65fr_0.55fr_0.55fr]">
-          <span>Nome / Email</span>
-          <span>Curso / Semestre</span>
-          <span>Instituição</span>
-          <span>Linha</span>
-          <span>Ações</span>
-        </div>
+      <DataTable
+        columns={STUDENTS_TABLE_COLUMNS}
+        data={filteredStudents}
+        emptyMessage="Nenhum estudante encontrado."
+        errorMessage={studentsError}
+        errorTitle="Não foi possível carregar os estudantes"
+        getRowKey={(student) => student.id}
+        gridClassName={STUDENTS_TABLE_GRID_CLASS}
+        loading={studentsLoading}
+        onRetry={() => loadStudents(page)}
+        pagination={{
+          currentPage: page,
+          disabled: studentsLoading || Boolean(studentsError),
+          from: paginationMeta.from,
+          lastPage: paginationMeta.last_page,
+          onPageChange: setPage,
+          onPerPageChange: handlePerPageChange,
+          perPage,
+          to: paginationMeta.to,
+          total: paginationMeta.total,
+        }}
+        renderRow={(student) => (
+          <article className="grid gap-3 border-b border-brand-600/15 px-5 py-3 last:border-b-0 md:min-h-16 md:grid-cols-[1.45fr_1fr_0.65fr_0.55fr_0.55fr] md:items-center">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-950">
+                {student.name}
+              </h3>
+              <p className="text-xs text-slate-600">
+                {student.email ?? "Email não informado"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-950">
+                Não informado
+              </p>
+              <p className="text-xs text-slate-600">
+                Status: {student.status ?? "Sem status"}
+              </p>
+            </div>
+            <div>
+              <span className="inline-flex rounded bg-brand-600 px-2 py-1 text-[10px] font-bold text-white">
+                {getInstitutionLabel(student)}
+              </span>
+            </div>
+            <p className="text-xs font-medium text-slate-600">
+              {getLineLabel(student)}
+            </p>
+            <div className="flex items-center gap-2">
+              <TableActionButton
+                ariaLabel={`Editar ${student.name}`}
+                icon={<Pencil />}
+                onClick={() => openEditModal(student)}
+                tooltip="Editar estudante"
+                variant="primary"
+              />
+              <TableActionButton
+                ariaLabel={`Deletar ${student.name}`}
+                icon={<Trash2 />}
+                loading={deleteLoadingId === student.id}
+                onClick={() => openDeleteModal(student)}
+                tooltip="Deletar estudante"
+                variant="danger"
+              />
+            </div>
+          </article>
+        )}
+        skeleton={<StudentsTableSkeleton />}
+      />
 
-        <Skeleton
-          fallback={<StudentsTableSkeleton />}
-          loading={studentsLoading}
-        >
-          <div>
-            {studentsError ? (
-              <div
-                className="flex flex-col items-center gap-4 px-5 py-14 text-center"
-                role="alert"
-              >
-                <span className="flex size-11 items-center justify-center rounded-full bg-danger-600/10 text-danger-600">
-                  <AlertCircle className="size-5" />
-                </span>
-                <div>
-                  <h2 className="text-sm font-bold text-slate-950">
-                    Não foi possível carregar os estudantes
-                  </h2>
-                  <p className="mt-1 text-sm font-medium text-slate-500">
-                    {studentsError}
-                  </p>
-                </div>
-                <Button
-                  className="min-h-9 rounded px-4 py-1 text-sm"
-                  fullWidth={false}
-                  leftIcon={<RefreshCw />}
-                  onClick={() => loadStudents(page)}
-                  size="sm"
-                  variant="secondary"
-                >
-                  Tentar novamente
-                </Button>
-              </div>
-            ) : filteredStudents.length === 0 ? (
-              <div className="px-5 py-14 text-center text-sm font-medium text-slate-500">
-                Nenhum estudante encontrado.
-              </div>
-            ) : (
-              filteredStudents.map((student) => (
-                <article
-                  className="grid gap-3 border-b border-brand-600/15 px-5 py-3 last:border-b-0 md:min-h-16 md:grid-cols-[1.45fr_1fr_0.65fr_0.55fr_0.55fr] md:items-center"
-                  key={student.id}
-                >
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-950">
-                      {student.name}
-                    </h3>
-                    <p className="text-xs text-slate-600">
-                      {student.email ?? "Email não informado"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">
-                      Não informado
-                    </p>
-                    <p className="text-xs text-slate-600">
-                      Status: {student.status ?? "Sem status"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="inline-flex rounded bg-brand-600 px-2 py-1 text-[10px] font-bold text-white">
-                      {getInstitutionLabel(student)}
-                    </span>
-                  </div>
-                  <p className="text-xs font-medium text-slate-600">
-                    {getLineLabel(student)}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <StudentActionButton
-                      ariaLabel={`Editar ${student.name}`}
-                      icon={<Pencil />}
-                      tooltip="Editar estudante"
-                      variant="primary"
-                    />
-                    <StudentActionButton
-                      ariaLabel={`Deletar ${student.name}`}
-                      icon={<Trash2 />}
-                      loading={deleteLoadingId === student.id}
-                      onClick={() => openDeleteModal(student)}
-                      tooltip="Deletar estudante"
-                      variant="danger"
-                    />
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
-        </Skeleton>
-        <Pagination
-          currentPage={page}
-          disabled={studentsLoading || Boolean(studentsError)}
-          from={paginationMeta.from}
-          lastPage={paginationMeta.last_page}
-          onPageChange={setPage}
-          onPerPageChange={handlePerPageChange}
-          perPage={perPage}
-          to={paginationMeta.to}
-          total={paginationMeta.total}
-        />
-      </section>
+      <StudentsEditModal
+        error={editError}
+        loading={editLoading}
+        onClose={closeEditModal}
+        onSave={handleSaveStudent}
+        open={Boolean(studentToEdit)}
+        student={studentToEdit}
+      />
 
       <Modal
         cancelLabel="Cancelar"

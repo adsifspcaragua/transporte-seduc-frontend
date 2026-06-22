@@ -35,7 +35,11 @@ type LaravelDocumentListResponse =
 type LaravelCollectionResponse<T> =
   | T[]
   | {
-      data: T[];
+      data:
+        | T[]
+        | {
+            data?: T[];
+          };
       message?: string;
     };
 
@@ -54,7 +58,12 @@ function unwrapData<T>(payload: T | LaravelDataResponse<T>) {
 
 function unwrapCollection<T>(payload: LaravelCollectionResponse<T>) {
   if (Array.isArray(payload)) return payload;
-  return payload.data ?? [];
+
+  if (Array.isArray(payload.data)) {
+    return payload.data;
+  }
+
+  return payload.data?.data ?? [];
 }
 
 export const inscricaoService = {

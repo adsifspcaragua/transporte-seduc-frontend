@@ -1,6 +1,10 @@
 import { api } from "@/services/api/client";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
-import type { PaginatedEstudantes } from "@/types/estudante";
+import type {
+  Estudante,
+  PaginatedEstudantes,
+  UpdateEstudantePayload,
+} from "@/types/estudante";
 
 type EmptyMessageResponse = {
   message: string;
@@ -12,6 +16,11 @@ type CountResponse =
       data?: number;
       message?: string;
     };
+
+type LaravelDataResponse<T> = {
+  data: T;
+  message?: string;
+};
 
 function isEmptyMessageResponse(
   payload: PaginatedEstudantes | EmptyMessageResponse,
@@ -55,6 +64,15 @@ export const estudanteService = {
 
     if (typeof data === "number") return data;
     return data.data ?? 0;
+  },
+
+  async update(id: number, payload: UpdateEstudantePayload) {
+    const { data } = await api.put<LaravelDataResponse<Estudante>>(
+      API_ENDPOINTS.ESTUDANTES.BY_ID(id),
+      payload,
+    );
+
+    return data.data;
   },
 
   async remove(id: number) {

@@ -18,6 +18,7 @@ type DateInputProps = Omit<
   InputProps,
   "defaultValue" | "onChange" | "type" | "value"
 > & {
+  calendarAlign?: "left" | "right";
   defaultValue?: string;
   maxYear?: number;
   minYear?: number;
@@ -280,6 +281,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       name,
       id,
       variant = "dark",
+      calendarAlign = "left",
       ...props
     },
     ref,
@@ -865,7 +867,10 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             role="dialog"
             aria-label="Selecionar data"
             onMouseDown={(event) => event.preventDefault()}
-            className="absolute left-0 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] rounded-2xl border border-brand-100 bg-surface-primary p-4 text-brand-700 shadow-xl shadow-brand-700/15"
+            className={cn(
+              "absolute top-full z-50 mt-2 w-[min(20.5rem,calc(100vw-2rem))] rounded-2xl border border-brand-100 bg-surface-primary p-4 text-brand-700 shadow-xl shadow-brand-700/15",
+              calendarAlign === "right" ? "right-0" : "left-0",
+            )}
           >
             <div className="mb-3 flex items-center justify-between gap-3">
               {renderCalendarHeader()}

@@ -203,6 +203,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     );
     const hasSelectedValue = Boolean(selectedValue && selectedOption);
     const displayLabel = selectedOption?.label ?? "";
+    const displayText = displayLabel || (!label ? placeholder : "");
     const shouldFloatLabel = isOpen || hasSelectedValue;
 
     function setSelectRef(node: HTMLSelectElement | null) {
@@ -379,7 +380,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 !hasSelectedValue && variantClasses[variant].placeholder,
               )}
             >
-              {displayLabel}
+              {displayText}
             </span>
           </button>
 
