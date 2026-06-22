@@ -179,6 +179,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id ?? generatedId;
     const listboxId = `${selectId}-listbox`;
     const rootRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
     const selectRef = useRef<HTMLSelectElement | null>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(-1);
@@ -205,6 +206,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const displayLabel = selectedOption?.label ?? "";
     const displayText = displayLabel || (!label ? placeholder : "");
     const shouldFloatLabel = isOpen || hasSelectedValue;
+    const hasError = Boolean(error);
 
     function setSelectRef(node: HTMLSelectElement | null) {
       selectRef.current = node;
@@ -320,6 +322,32 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       };
     }, [allOptions, isOpen, selectedValue]);
 
+    useEffect(() => {
+      const trigger = triggerRef.current;
+
+      if (!trigger) return;
+
+      const triggerElement = trigger;
+
+      function handleOpenSelectListbox() {
+        if (!triggerElement.disabled) {
+          setIsOpen(true);
+        }
+      }
+
+      triggerElement.addEventListener(
+        "open-select-listbox",
+        handleOpenSelectListbox,
+      );
+
+      return () => {
+        triggerElement.removeEventListener(
+          "open-select-listbox",
+          handleOpenSelectListbox,
+        );
+      };
+    }, []);
+
     return (
       <div
         ref={rootRef}
@@ -327,6 +355,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           "relative flex w-full flex-col gap-2",
           containerClassName,
         )}
+        data-field-container={hasError ? "true" : undefined}
       >
         <div className="relative w-full">
           <select
@@ -355,19 +384,22 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </select>
 
           <button
+            ref={triggerRef}
             id={selectId}
             type="button"
             disabled={disabled}
             aria-controls={listboxId}
             aria-expanded={isOpen}
             aria-haspopup="listbox"
-            aria-invalid={Boolean(error)}
+            aria-invalid={hasError}
+            data-field-error={hasError ? "true" : undefined}
+            data-field-role="select"
             onClick={() => setIsOpen((current) => !current && !disabled)}
             onKeyDown={handleKeyDown}
             className={cn(
               "peer flex h-11 w-full cursor-pointer items-center justify-between gap-4 px-4 text-left text-sm font-normal outline-none transition-all duration-200 disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
               variantClasses[variant].field,
-              error
+              hasError
                 ? "border-danger-600 focus:border-danger-600"
                 : variantClasses[variant].state,
               "pr-12",

@@ -21,11 +21,13 @@ import {
   StudentsFilterDropdown,
 } from "@/components/ui/estudantes/StudentsFilterDropdown";
 import { estudanteService } from "@/services/api/modules/estudante";
+import { inscricaoService } from "@/services/api/modules/inscricao";
 import type {
   Estudante,
   PaginatedEstudantes,
   UpdateEstudantePayload,
 } from "@/types/estudante";
+import type { Instituicao } from "@/types/inscricao";
 
 type ApiErrorPayload = {
   message?: string;
@@ -43,12 +45,13 @@ const DEFAULT_STUDENTS_PAGINATION_META: StudentsPaginationMeta = {
 };
 
 const STUDENTS_TABLE_GRID_CLASS =
-  "md:grid-cols-[1.45fr_1fr_0.65fr_0.55fr_0.55fr]";
+  "md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.55fr]";
 
 const STUDENTS_TABLE_COLUMNS: DataTableColumn[] = [
   { key: "name", label: "Nome / Email" },
   { key: "course", label: "Curso / Semestre" },
   { key: "institution", label: "Instituição" },
+  { key: "status", label: "Status" },
   { key: "line", label: "Linha" },
   { key: "actions", label: "Ações" },
 ];
@@ -57,8 +60,70 @@ function getLineLabel(estudante: Estudante) {
   return estudante.linha_id ? `Linha ${estudante.linha_id}` : "Sem linha";
 }
 
-function getInstitutionLabel(estudante: Estudante) {
-  return estudante.instituicao_id ? `Inst. ${estudante.instituicao_id}` : "N/I";
+function getInstitutionLabel(
+  estudante: Estudante,
+  institutionNamesById: Map<number, string>,
+) {
+  const institutionName =
+    estudante.instituicao?.name ??
+    estudante.institution?.name ??
+    estudante.instituicao_name ??
+    estudante.institution_name;
+
+  if (institutionName) return institutionName;
+
+  if (estudante.instituicao_id) {
+    return (
+      institutionNamesById.get(estudante.instituicao_id) ??
+      "Instituição não carregada"
+    );
+  }
+
+  return "Instituição não informada";
+}
+
+function getCourseLabel(estudante: Estudante) {
+  return estudante.course?.trim() || "Curso não informado";
+}
+
+function getSemesterLabel(estudante: Estudante) {
+  if (!estudante.semester?.trim()) return "Semestre não informado";
+
+  return `${estudante.semester}º semestre`;
+}
+
+function getStatusLabel(status: string | null) {
+  if (!status?.trim()) return "Sem status";
+
+  const normalizedStatus = normalizeFilterText(status);
+
+  if (
+    normalizedStatus.includes("espera") ||
+    normalizedStatus.includes("lista_espera")
+  ) {
+    return "Em espera";
+  }
+
+  if (
+    normalizedStatus.includes("inativo") ||
+    normalizedStatus.includes("inactive")
+  ) {
+    return "Inativo";
+  }
+
+  if (
+    normalizedStatus.includes("ativo") ||
+    normalizedStatus.includes("active")
+  ) {
+    return "Ativo";
+  }
+
+  return status
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^\p{L}/u, (letter) => letter.toUpperCase());
 }
 
 function normalizeFilterText(value: string) {
@@ -209,7 +274,7 @@ function StudentsTableSkeleton({ rows = 6 }: { rows?: number }) {
     <div>
       {Array.from({ length: rows }, (_, index) => (
         <article
-          className="grid gap-3 border-b border-brand-600/15 px-5 py-3 last:border-b-0 md:min-h-16 md:grid-cols-[1.45fr_1fr_0.65fr_0.55fr_0.55fr] md:items-center"
+          className="grid gap-3 border-b border-brand-600/15 px-5 py-3 last:border-b-0 md:min-h-16 md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.55fr] md:items-center"
           key={index.toString()}
         >
           <div>
@@ -220,6 +285,7 @@ function StudentsTableSkeleton({ rows = 6 }: { rows?: number }) {
             <Skeleton className="h-4 w-36 max-w-full rounded-full bg-skeleton" />
             <Skeleton className="mt-2 h-3 w-28 max-w-full rounded-full bg-skeleton" />
           </div>
+          <Skeleton className="h-7 w-28 rounded bg-skeleton" />
           <Skeleton className="h-7 w-20 rounded bg-skeleton" />
           <Skeleton className="h-3 w-16 rounded-full bg-skeleton" />
           <div className="flex items-center gap-2">
@@ -238,6 +304,7 @@ export function StudentsWorkspace() {
   const [editLoading, setEditLoading] = useState(false);
   const [students, setStudents] = useState<Estudante[]>([]);
   const [studentsError, setStudentsError] = useState("");
+  const [instituicoes, setInstituicoes] = useState<Instituicao[]>([]);
   const [deleteError, setDeleteError] = useState("");
   const [editError, setEditError] = useState("");
   const [studentToEdit, setStudentToEdit] = useState<Estudante | null>(null);
@@ -252,6 +319,14 @@ export function StudentsWorkspace() {
   );
   const [query, setQuery] = useState("");
 
+  const institutionNamesById = useMemo(
+    () =>
+      new Map(
+        instituicoes.map((instituicao) => [instituicao.id, instituicao.name]),
+      ),
+    [instituicoes],
+  );
+
   const filteredStudents = useMemo(() => {
     const normalizedQuery = normalizeFilterText(query);
 
@@ -261,8 +336,11 @@ export function StudentsWorkspace() {
         [
           student.name,
           student.email,
+          student.course,
+          student.semester,
+          getStatusLabel(student.status),
           getLineLabel(student),
-          getInstitutionLabel(student),
+          getInstitutionLabel(student, institutionNamesById),
         ]
           .filter(Boolean)
           .some((value) =>
@@ -271,16 +349,16 @@ export function StudentsWorkspace() {
 
       return matchesQuery && hasStudentMatchingFilters(student, filters);
     });
-  }, [students, query, filters]);
+  }, [students, query, filters, institutionNamesById]);
 
   const institutionOptions = useMemo(
     () =>
       buildStudentFilterOptions(
         students,
         (student) => student.instituicao_id,
-        getInstitutionLabel,
+        (student) => getInstitutionLabel(student, institutionNamesById),
       ),
-    [students],
+    [students, institutionNamesById],
   );
 
   const lineOptions = useMemo(
@@ -322,6 +400,30 @@ export function StudentsWorkspace() {
   useEffect(() => {
     void loadStudents(page);
   }, [loadStudents, page]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadInstituicoes() {
+      try {
+        const nextInstituicoes = await inscricaoService.listInstituicoes();
+
+        if (!ignore) {
+          setInstituicoes(nextInstituicoes);
+        }
+      } catch {
+        if (!ignore) {
+          setInstituicoes([]);
+        }
+      }
+    }
+
+    void loadInstituicoes();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   function openDeleteModal(student: Estudante) {
     setDeleteError("");
@@ -380,6 +482,7 @@ export function StudentsWorkspace() {
           student.id === updatedStudent.id ? updatedStudent : student,
         ),
       );
+      await loadStudents(page);
       setStudentToEdit(null);
     } catch (error) {
       setEditError(getStudentUpdateErrorMessage(error));
@@ -405,7 +508,7 @@ export function StudentsWorkspace() {
             containerClassName="max-w-xl"
             onClear={() => setQuery("")}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Pesquise por estudantes, instituições ou linhas..."
+            placeholder="Pesquise por estudantes, cursos, instituições ou status..."
             value={query}
           />
           <StudentsFilterDropdown
@@ -441,7 +544,7 @@ export function StudentsWorkspace() {
           total: paginationMeta.total,
         }}
         renderRow={(student) => (
-          <article className="grid gap-3 border-b border-brand-600/15 px-5 py-3 last:border-b-0 md:min-h-16 md:grid-cols-[1.45fr_1fr_0.65fr_0.55fr_0.55fr] md:items-center">
+          <article className="grid gap-3 border-b border-brand-600/15 px-5 py-3 last:border-b-0 md:min-h-16 md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.55fr] md:items-center">
             <div>
               <h3 className="text-sm font-semibold text-slate-950">
                 {student.name}
@@ -452,15 +555,20 @@ export function StudentsWorkspace() {
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-950">
-                Não informado
+                {getCourseLabel(student)}
               </p>
               <p className="text-xs text-slate-600">
-                Status: {student.status ?? "Sem status"}
+                {getSemesterLabel(student)}
               </p>
             </div>
             <div>
-              <span className="inline-flex rounded bg-brand-600 px-2 py-1 text-[10px] font-bold text-white">
-                {getInstitutionLabel(student)}
+              <span className="inline-flex rounded bg-brand-600 px-2 py-1 text-xs font-semibold text-white">
+                {getInstitutionLabel(student, institutionNamesById)}
+              </span>
+            </div>
+            <div>
+              <span className="inline-flex rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                {getStatusLabel(student.status)}
               </span>
             </div>
             <p className="text-xs font-medium text-slate-600">

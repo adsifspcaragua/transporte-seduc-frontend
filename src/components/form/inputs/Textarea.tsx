@@ -70,9 +70,13 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ) => {
     const generatedId = useId();
     const textareaId = id ?? generatedId;
+    const hasError = Boolean(error);
 
     return (
-      <div className={cn("flex w-full flex-col gap-2", containerClassName)}>
+      <div
+        className={cn("flex w-full flex-col gap-2", containerClassName)}
+        data-field-container={hasError ? "true" : undefined}
+      >
         <div className="relative w-full">
           <textarea
             ref={ref}
@@ -80,11 +84,12 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             required={required}
             rows={rows}
             placeholder=" "
+            data-field-error={hasError ? "true" : undefined}
             data-input-variant={variant}
             className={cn(
               "peer w-full resize-y px-4 py-3 text-sm outline-none transition-colors duration-200 placeholder:text-transparent disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
               variantClasses[variant].textarea,
-              error
+              hasError
                 ? "border-danger-600 focus:border-danger-600"
                 : variantClasses[variant].state,
               className,

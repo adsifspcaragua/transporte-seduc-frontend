@@ -14,20 +14,35 @@ export type Estudante = {
   neighborhood?: string | null;
   number?: string | null;
   complement?: string | null;
-  days_of_week: number[] | string[] | null;
+  days_of_week:
+    | number[]
+    | string[]
+    | { day?: number | string; id?: number | string; value?: number | string }[]
+    | string
+    | null;
   observation: string | null;
   status: string | null;
   linha_id: number | null;
   user_id: number | null;
   instituicao_id: number | null;
+  instituicao?: {
+    id?: number | null;
+    name?: string | null;
+  } | null;
+  instituicao_name?: string | null;
+  institution?: {
+    id?: number | null;
+    name?: string | null;
+  } | null;
+  institution_name?: string | null;
   inscricao_id: number | null;
   course?: string | null;
   semester?: string | null;
   expected_completion?: string | null;
   shift?: number | null;
   city_destination?: string | null;
-  used_transport?: boolean | null;
-  has_scholarship?: boolean | null;
+  used_transport?: boolean | number | string | null;
+  has_scholarship?: boolean | number | string | null;
   scholarship_type?: string | null;
 };
 

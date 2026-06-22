@@ -80,20 +80,25 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const generatedId = useId();
     const inputId = id ?? generatedId;
+    const hasError = Boolean(error);
 
     return (
-      <div className={cn("flex w-full flex-col gap-2", containerClassName)}>
+      <div
+        className={cn("flex w-full flex-col gap-2", containerClassName)}
+        data-field-container={hasError ? "true" : undefined}
+      >
         <div className="relative w-full">
           <input
             ref={ref}
             id={inputId}
             required={required}
             placeholder=" "
+            data-field-error={hasError ? "true" : undefined}
             data-input-variant={variant}
             className={cn(
               "peer h-11 w-full px-4 py-0 text-sm outline-none transition-colors duration-200 placeholder:text-transparent disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
               variantClasses[variant].input,
-              error
+              hasError
                 ? "border-danger-600 focus:border-danger-600"
                 : variantClasses[variant].state,
               Boolean(rightElement) && "pr-12",

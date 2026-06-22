@@ -35,6 +35,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   ) => {
     const generatedId = useId();
     const inputId = id ?? generatedId;
+    const hasError = Boolean(error);
 
     function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
       onKeyDown?.(event);
@@ -48,7 +49,10 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     }
 
     return (
-      <div className={cn("flex flex-col gap-2", containerClassName)}>
+      <div
+        className={cn("flex flex-col gap-2", containerClassName)}
+        data-field-container={hasError ? "true" : undefined}
+      >
         <label
           htmlFor={inputId}
           className={cn(
@@ -61,6 +65,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             ref={ref}
             id={inputId}
             type="checkbox"
+            data-field-error={hasError ? "true" : undefined}
             className="peer sr-only"
             {...props}
             onKeyDown={handleKeyDown}

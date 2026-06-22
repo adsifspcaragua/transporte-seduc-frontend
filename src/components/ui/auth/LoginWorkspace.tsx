@@ -5,12 +5,13 @@ import { ArrowRight, LogIn } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/buttons";
 import { Checkbox, CpfInput, PasswordInput } from "@/components/form/inputs";
 import LoginCarousel from "@/components/ui/auth/LoginCarousel";
 import { useAuth } from "@/hooks/use-auth";
 import { cleanCpf, isValidCpf } from "@/utils/cpf";
+import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
 
 type LoginFormData = {
   login: string;
@@ -111,6 +112,7 @@ function validatePasswordField(
 export function LoginWorkspace() {
   const router = useRouter();
   const { signIn } = useAuth();
+  const formElementRef = useRef<HTMLFormElement | null>(null);
 
   const [form, setForm] = useState<LoginFormData>({
     login: "",
@@ -315,7 +317,10 @@ export function LoginWorkspace() {
     event.preventDefault();
 
     if (isSubmitDisabled) return;
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      scheduleFocusFirstFieldError(formElementRef.current);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -341,6 +346,7 @@ export function LoginWorkspace() {
             password: apiErrors.password?.[0] ?? prev.password,
             form: error.response?.data?.message,
           }));
+          scheduleFocusFirstFieldError(formElementRef.current);
         } else if (error.response?.status === 401) {
           setErrors((prev) => ({
             ...prev,
@@ -413,6 +419,7 @@ export function LoginWorkspace() {
 
           <div>
             <form
+              ref={formElementRef}
               onSubmit={handleSubmit}
               noValidate
               className="flex flex-col gap-5"

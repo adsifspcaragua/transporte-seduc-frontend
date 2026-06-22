@@ -49,6 +49,7 @@ import type {
 import { cleanCep, isValidCep } from "@/utils/cep";
 import { cn } from "@/utils/cn";
 import { cleanCpf, isValidCpf } from "@/utils/cpf";
+import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
 import { cleanPhone, isValidPhone } from "@/utils/phone";
 
 type StepIndex = 0 | 1 | 2 | 3 | 4;
@@ -1225,6 +1226,10 @@ export function RegisterWorkspace() {
       : undefined;
   }
 
+  function focusFirstErrorField() {
+    scheduleFocusFirstFieldError(registrationFormRef.current);
+  }
+
   function getStepFields(stepIndex: StepIndex): (keyof RegistrationForm)[] {
     if (stepIndex === 0) {
       const civilFields: (keyof RegistrationForm)[] = [
@@ -1434,6 +1439,7 @@ export function RegisterWorkspace() {
         type: "error",
         message: getStepValidationMessage(step),
       });
+      focusFirstErrorField();
       return;
     }
 
@@ -1458,6 +1464,7 @@ export function RegisterWorkspace() {
         type: "error",
         message: getErrorMessage(error),
       });
+      focusFirstErrorField();
     } finally {
       setSaving(false);
     }
@@ -1495,11 +1502,21 @@ export function RegisterWorkspace() {
         latestErrors.accepted_terms ||
         latestErrors.accepted_terms_2
       ) {
+        const firstIncompleteStep = latestStatuses.findIndex(
+          (status) => status !== "complete",
+        );
+
+        if (firstIncompleteStep >= 0 && firstIncompleteStep <= 3) {
+          setStep(firstIncompleteStep as StepIndex);
+          setEditingStep(null);
+        }
+
         setFeedback({
           type: "error",
           message:
             "Revise as seções incompletas e aceite os termos antes de enviar.",
         });
+        focusFirstErrorField();
         return;
       }
 
@@ -1528,6 +1545,7 @@ export function RegisterWorkspace() {
         type: "error",
         message: getErrorMessage(error),
       });
+      focusFirstErrorField();
     } finally {
       setSaving(false);
     }
@@ -2908,8 +2926,10 @@ function SegmentedQuestion({
   error?: string;
   onChange: (value: BinaryAnswer) => void;
 }) {
+  const hasError = Boolean(error);
+
   return (
-    <div>
+    <div data-field-container={hasError ? "true" : undefined}>
       <span className="text-xs font-bold uppercase text-brand-600">
         {label}
         {required && <span className="ml-1 text-danger-600">*</span>}
@@ -2922,6 +2942,9 @@ function SegmentedQuestion({
           <button
             key={option.value}
             type="button"
+            data-field-error={
+              hasError && option.value === "true" ? "true" : undefined
+            }
             onClick={() => onChange(option.value)}
             className={cn(
               "h-11 cursor-pointer rounded-md text-sm font-bold transition",

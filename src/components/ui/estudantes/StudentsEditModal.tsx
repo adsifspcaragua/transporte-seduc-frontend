@@ -32,6 +32,7 @@ import type { Curso, Instituicao } from "@/types/inscricao";
 import { cleanCep } from "@/utils/cep";
 import { cn } from "@/utils/cn";
 import { cleanCpf, isValidCpf } from "@/utils/cpf";
+import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
 import { cleanPhone } from "@/utils/phone";
 
 type StudentsEditModalProps = {
@@ -156,9 +157,102 @@ const CITY_DESTINATION_OPTIONS = [
   { value: "Ilha Bela", label: "Ilha Bela" },
 ];
 
+function normalizeBooleanAnswer(value: unknown) {
+  if (value === null || value === undefined) return "";
+
+  if (typeof value === "boolean") return value ? "true" : "false";
+
+  if (typeof value === "number") {
+    if (value === 1) return "true";
+    if (value === 0) return "false";
+  }
+
+  if (typeof value === "string") {
+    const normalizedValue = value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+
+    if (["1", "true", "sim", "yes"].includes(normalizedValue)) {
+      return "true";
+    }
+
+    if (["0", "false", "nao", "no"].includes(normalizedValue)) {
+      return "false";
+    }
+  }
+
+  return "";
+}
+
+function normalizeDayValue(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (typeof value !== "string") return "";
+
+  const normalizedValue = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+  const weekdayByLabel: Record<string, string> = {
+    dom: "0",
+    domingo: "0",
+    seg: "1",
+    segunda: "1",
+    "segunda-feira": "1",
+    ter: "2",
+    terca: "2",
+    "terca-feira": "2",
+    qua: "3",
+    quarta: "3",
+    "quarta-feira": "3",
+    qui: "4",
+    quinta: "4",
+    "quinta-feira": "4",
+    sex: "5",
+    sexta: "5",
+    "sexta-feira": "5",
+    sab: "6",
+    sabado: "6",
+  };
+
+  return weekdayByLabel[normalizedValue] ?? normalizedValue;
+}
+
 function normalizeDaysOfWeek(value: Estudante["days_of_week"]) {
   if (!value) return [];
-  return value.map((day) => String(day));
+
+  if (typeof value === "string") {
+    try {
+      const parsedValue = JSON.parse(value);
+
+      if (Array.isArray(parsedValue)) {
+        return normalizeDaysOfWeek(parsedValue as Estudante["days_of_week"]);
+      }
+    } catch {
+      return value
+        .split(",")
+        .map((day) => normalizeDayValue(day))
+        .filter(Boolean);
+    }
+  }
+
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((day) => {
+      if (day && typeof day === "object") {
+        return normalizeDayValue(day.value ?? day.day ?? day.id);
+      }
+
+      return normalizeDayValue(day);
+    })
+    .filter(Boolean);
 }
 
 function numberOrUndefined(value: string) {
@@ -204,10 +298,7 @@ function getStudentForm(student: Estudante | null): EditStudentForm {
     email: student.email ?? "",
     expected_completion: student.expected_completion ?? "",
     father_name: student.father_name ?? "",
-    has_scholarship:
-      student.has_scholarship === null || student.has_scholarship === undefined
-        ? ""
-        : String(student.has_scholarship),
+    has_scholarship: normalizeBooleanAnswer(student.has_scholarship),
     instituicao_id: student.instituicao_id
       ? String(student.instituicao_id)
       : "",
@@ -222,10 +313,7 @@ function getStudentForm(student: Estudante | null): EditStudentForm {
     semester: student.semester ?? "",
     shift: student.shift ? String(student.shift) : "",
     status: normalizeStatusValue(student.status),
-    used_transport:
-      student.used_transport === null || student.used_transport === undefined
-        ? ""
-        : String(student.used_transport),
+    used_transport: normalizeBooleanAnswer(student.used_transport),
   };
 }
 
@@ -298,8 +386,10 @@ function SegmentedQuestion({
   required?: boolean;
   value: string;
 }) {
+  const hasError = Boolean(error);
+
   return (
-    <div>
+    <div data-field-container={hasError ? "true" : undefined}>
       <span className="text-xs font-bold uppercase text-brand-600">
         {label}
         {required && <span className="ml-1 text-danger-600">*</span>}
@@ -307,9 +397,7 @@ function SegmentedQuestion({
       <div
         className={cn(
           "mt-3 grid grid-cols-2 gap-1 rounded-lg border p-1",
-          error
-            ? "border-danger-600 bg-danger-600/5"
-            : "border-transparent bg-slate-100",
+          "border-transparent bg-slate-100",
         )}
       >
         {[
@@ -321,12 +409,14 @@ function SegmentedQuestion({
           return (
             <button
               aria-pressed={selected}
+              data-field-error={
+                hasError && option.value === "true" ? "true" : undefined
+              }
               className={cn(
                 "h-11 cursor-pointer rounded-md text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2",
                 selected
                   ? "bg-brand-600 text-white shadow-sm"
                   : "text-brand-700 hover:bg-white/70",
-                error && "focus-visible:outline-danger-600",
               )}
               key={option.value}
               onClick={() => onChange(option.value)}
@@ -572,6 +662,7 @@ export function StudentsEditModal({
           current.personal ||
           Boolean(nextErrors.name || nextErrors.email || nextErrors.cpf),
       }));
+      scheduleFocusFirstFieldError();
       return;
     }
 
@@ -594,9 +685,7 @@ export function StudentsEditModal({
     if (form.complement.trim()) payload.complement = form.complement.trim();
     if (form.course.trim()) payload.course = form.course.trim();
     if (cleanCpf(form.cpf)) payload.cpf = cleanCpf(form.cpf);
-    if (form.days_of_week.length > 0) {
-      payload.days_of_week = form.days_of_week.map(Number);
-    }
+    payload.days_of_week = form.days_of_week.map(Number);
     if (form.expected_completion) {
       payload.expected_completion = form.expected_completion;
     }
@@ -754,7 +843,7 @@ export function StudentsEditModal({
             <Input
               autoComplete="address-line1"
               className="bg-white"
-              containerClassName="md:col-span-6"
+              containerClassName="md:col-span-5"
               label="Logradouro"
               onChange={(event) => setField("address", event.target.value)}
               value={form.address}
@@ -770,7 +859,7 @@ export function StudentsEditModal({
             <Input
               autoComplete="address-line3"
               className="bg-white"
-              containerClassName="md:col-span-4"
+              containerClassName="md:col-span-5"
               label="Complemento"
               onChange={(event) => setField("complement", event.target.value)}
               value={form.complement}
