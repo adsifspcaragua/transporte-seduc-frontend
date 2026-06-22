@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { Check, Clock3, Eye, X } from "lucide-react";
+import { Check, Clock3, Eye, Filter, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/buttons";
@@ -50,6 +50,9 @@ const SOLICITACOES_TABLE_COLUMNS: DataTableColumn[] = [
   { key: "actions", label: "Ações" },
 ];
 
+const FILTER_LABEL_CLASS =
+  "mb-1.5 block text-xs font-bold text-content-secondary";
+
 const ITEMS_PER_PAGE = 10;
 
 let solicitacoesPageCache: {
@@ -85,11 +88,15 @@ function getStatusKey(status: string | null) {
     normalizedStatus.includes("rejeit")
   )
     return "reprovado";
-  if (normalizedStatus.includes("lista")) return "lista_espera";
+  if (
+    normalizedStatus.includes("lista") ||
+    normalizedStatus.includes("analise") ||
+    normalizedStatus.includes("pendente") ||
+    normalizedStatus.includes("incompleto")
+  ) {
+    return "lista_espera";
+  }
   if (normalizedStatus.includes("aprov")) return "aprovado";
-  if (normalizedStatus.includes("analise")) return "em_analise";
-  if (normalizedStatus.includes("pendente")) return "pendente";
-  if (normalizedStatus.includes("incompleto")) return "incompleto";
 
   return normalizedStatus.replace(/\s+/g, "_");
 }
@@ -208,29 +215,6 @@ function getErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
-function buildFilterOptions(
-  solicitacoes: EnrichedInscricao[],
-  getValue: (solicitacao: EnrichedInscricao) => string,
-  getLabel: (solicitacao: EnrichedInscricao) => string,
-) {
-  const options = new Map<string, string>();
-
-  for (const solicitacao of solicitacoes) {
-    const value = getValue(solicitacao);
-
-    if (!value) continue;
-
-    options.set(value, getLabel(solicitacao));
-  }
-
-  return Array.from(options, ([value, label]) => ({ label, value })).sort(
-    (firstOption, secondOption) =>
-      firstOption.label.localeCompare(secondOption.label, "pt-BR", {
-        numeric: true,
-      }),
-  );
-}
-
 function buildInstitutionOptions(instituicoes: Instituicao[]) {
   return instituicoes
     .map((instituicao) => ({
@@ -308,16 +292,42 @@ function SolicitacoesTableSkeleton({ rows = 6 }: { rows?: number }) {
 function SolicitacoesPageSkeleton() {
   return (
     <div aria-busy="true" aria-live="polite">
-      <div className="mb-5">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <Skeleton className="h-8 w-40 rounded-full bg-skeleton" />
+        <Skeleton className="h-11 w-32 rounded-lg bg-skeleton" />
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex w-full max-w-[calc(36rem+3.25rem)] items-center gap-3">
-          <Skeleton className="h-11 w-full max-w-xl rounded-lg bg-skeleton" />
-          <Skeleton className="h-11 w-28 rounded-lg bg-skeleton" />
+      <div className="mb-6 rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <Skeleton className="size-4 rounded bg-skeleton" />
+          <Skeleton className="h-5 w-20 rounded-full bg-skeleton" />
         </div>
-        <Skeleton className="h-11 w-32 rounded-lg bg-skeleton" />
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-12 xl:items-end">
+          <div className="min-w-0 sm:col-span-2 xl:col-span-4">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="min-w-0 xl:col-span-4">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="min-w-0 xl:col-span-4">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="min-w-0 xl:col-span-4">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="min-w-0 xl:col-span-2">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="pt-5 xl:col-start-12">
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg bg-white shadow-md">
@@ -493,16 +503,6 @@ export function SolicitacoesWorkspace() {
     [solicitacoes],
   );
 
-  const statusOptions = useMemo(
-    () =>
-      buildFilterOptions(
-        currentSolicitacoes,
-        (solicitacao) => getStatusKey(solicitacao.status),
-        (solicitacao) => getStatusLabel(solicitacao.status),
-      ),
-    [currentSolicitacoes],
-  );
-
   const institutionOptions = useMemo(
     () => buildInstitutionOptions(instituicoes),
     [instituicoes],
@@ -666,39 +666,8 @@ export function SolicitacoesWorkspace() {
 
   return (
     <>
-      <div className="mb-5">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-brand-600">Solicitações</h1>
-      </div>
-
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex w-full max-w-[calc(36rem+3.25rem)] items-center gap-3">
-          <SearchInput
-            containerClassName="max-w-xl"
-            onClear={() => {
-              setQuery("");
-              setPage(1);
-            }}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setPage(1);
-            }}
-            placeholder="Pesquise por estudante, curso, instituição ou status..."
-            value={query}
-          />
-          <SolicitationsFilterDropdown
-            courseOptions={courseOptions}
-            filters={filters}
-            institutionOptions={institutionOptions}
-            lineOptions={lineOptions}
-            onFiltersChange={(nextFilters) => {
-              setFilters(nextFilters);
-              setPage(1);
-            }}
-            semesterOptions={SEMESTER_FILTER_OPTIONS}
-            statusOptions={statusOptions}
-          />
-        </div>
-
         <Button
           className="h-11 px-4"
           fullWidth={false}
@@ -709,6 +678,44 @@ export function SolicitacoesWorkspace() {
           Histórico
         </Button>
       </div>
+
+      <section className="mb-6 rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 text-brand-600">
+          <Filter className="size-4" />
+          <h2 className="text-base font-bold">Filtros</h2>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-12 xl:items-end">
+          <div className="min-w-0 sm:col-span-2 xl:col-span-4">
+            <span className={FILTER_LABEL_CLASS}>Buscar</span>
+            <SearchInput
+              onClear={() => {
+                setQuery("");
+                setPage(1);
+              }}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Pesquise por estudante, curso ou instituição..."
+              value={query}
+            />
+          </div>
+
+          <SolicitationsFilterDropdown
+            courseOptions={courseOptions}
+            filters={filters}
+            institutionOptions={institutionOptions}
+            labelClassName={FILTER_LABEL_CLASS}
+            lineOptions={lineOptions}
+            onFiltersChange={(nextFilters) => {
+              setFilters(nextFilters);
+              setPage(1);
+            }}
+            semesterOptions={SEMESTER_FILTER_OPTIONS}
+          />
+        </div>
+      </section>
 
       <DataTable
         columns={SOLICITACOES_TABLE_COLUMNS}
@@ -770,7 +777,7 @@ export function SolicitacoesWorkspace() {
                 icon={<Eye />}
                 onClick={() => setSelectedSolicitacao(solicitacao)}
                 tooltip="Visualizar solicitação"
-                variant="primary"
+                variant="secondary"
               />
               <TableActionButton
                 ariaLabel={`Aprovar ${solicitacao.name}`}

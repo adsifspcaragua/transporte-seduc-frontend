@@ -1,12 +1,12 @@
 "use client";
 
 import axios from "axios";
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, Filter, Pencil, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { SearchInput } from "@/components/form/inputs";
 import { Skeleton } from "@/components/loading";
-import { Modal } from "@/components/modal";
+import { Modal, ModalSection, ModalSectionContent } from "@/components/modal";
 import {
   DataTable,
   type DataTableColumn,
@@ -47,7 +47,7 @@ const DEFAULT_STUDENTS_PAGINATION_META: StudentsPaginationMeta = {
 };
 
 const STUDENTS_TABLE_GRID_CLASS =
-  "md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.55fr]";
+  "md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.7fr]";
 
 const STUDENTS_TABLE_COLUMNS: DataTableColumn[] = [
   { key: "name", label: "Nome / Email" },
@@ -57,6 +57,9 @@ const STUDENTS_TABLE_COLUMNS: DataTableColumn[] = [
   { key: "line", label: "Linha" },
   { key: "actions", label: "Ações" },
 ];
+
+const FILTER_LABEL_CLASS =
+  "mb-1.5 block text-xs font-bold text-content-secondary";
 
 let studentsPageCache: {
   cursos: Curso[];
@@ -119,6 +122,41 @@ function getSemesterLabel(estudante: Estudante) {
   if (!estudante.semester?.trim()) return "Semestre não informado";
 
   return `${estudante.semester}º semestre`;
+}
+
+function getAddressLabel(estudante: Estudante) {
+  return [
+    estudante.address,
+    estudante.number,
+    estudante.neighborhood,
+    estudante.city,
+    estudante.cep,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function formatBoolean(value?: boolean | number | string | null) {
+  if (value === null || value === undefined || value === "") {
+    return "Não informado";
+  }
+
+  if (value === true || value === 1 || value === "1") return "Sim";
+  if (value === false || value === 0 || value === "0") return "Não";
+
+  return String(value);
+}
+
+function getShiftLabel(value?: number | null) {
+  const labels: Record<number, string> = {
+    1: "Manhã",
+    2: "Tarde",
+    3: "Noite",
+  };
+
+  if (!value) return "Não informado";
+
+  return labels[value] ?? String(value);
 }
 
 function getSemesterFilterValue(semester?: string | null) {
@@ -263,6 +301,25 @@ function getStudentsListErrorMessage(error: unknown) {
   return "Não foi possível carregar os estudantes.";
 }
 
+function DetailItem({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | null;
+}) {
+  return (
+    <div>
+      <dt className="text-[11px] font-bold uppercase text-brand-600">
+        {label}
+      </dt>
+      <dd className="mt-1 text-sm font-medium text-slate-800">
+        {value || "Não informado"}
+      </dd>
+    </div>
+  );
+}
+
 function getStudentDeleteErrorMessage(error: unknown) {
   if (axios.isAxiosError<ApiErrorPayload>(error)) {
     if (error.response?.status === 403) {
@@ -383,20 +440,50 @@ function hasStudentMatchingFilters(
 function StudentsPageSkeleton() {
   return (
     <div aria-busy="true" aria-live="polite">
-      <div className="mb-5">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <Skeleton className="h-8 w-40 rounded-full bg-skeleton" />
+        <Skeleton className="h-11 w-11 rounded-lg bg-skeleton" />
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex w-full max-w-[calc(36rem+3.25rem)] items-center gap-3">
-          <Skeleton className="h-11 w-full max-w-xl rounded-lg bg-skeleton" />
-          <Skeleton className="h-11 w-28 rounded-lg bg-skeleton" />
+      <div className="mb-6 rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <Skeleton className="size-4 rounded bg-skeleton" />
+          <Skeleton className="h-5 w-20 rounded-full bg-skeleton" />
         </div>
-        <Skeleton className="h-11 w-28 rounded-lg bg-skeleton" />
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-12 xl:items-end">
+          <div className="min-w-0 sm:col-span-2 xl:col-span-4">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="min-w-0 xl:col-span-4">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="min-w-0 xl:col-span-2">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="min-w-0 xl:col-span-2">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="min-w-0 xl:col-span-4">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="min-w-0 xl:col-span-2">
+            <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+          <div className="pt-5 xl:col-start-12">
+            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+          </div>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg bg-white shadow-md">
-        <div className="grid gap-3 bg-brand-600 px-5 py-4 md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.55fr]">
+        <div className="grid gap-3 bg-brand-600 px-5 py-4 md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.7fr]">
           {STUDENTS_TABLE_COLUMNS.map((column) => (
             <Skeleton
               className="h-4 w-24 rounded-full bg-white/30"
@@ -415,7 +502,7 @@ function StudentsTableSkeleton({ rows = 6 }: { rows?: number }) {
     <div>
       {Array.from({ length: rows }, (_, index) => (
         <article
-          className="grid gap-3 border-b border-brand-600/15 px-5 py-3 last:border-b-0 md:min-h-16 md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.55fr] md:items-center"
+          className="grid gap-3 border-b border-brand-600/15 px-5 py-3 last:border-b-0 md:min-h-16 md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.7fr] md:items-center"
           key={index.toString()}
         >
           <div>
@@ -430,6 +517,7 @@ function StudentsTableSkeleton({ rows = 6 }: { rows?: number }) {
           <Skeleton className="h-7 w-20 rounded bg-skeleton" />
           <Skeleton className="h-3 w-16 rounded-full bg-skeleton" />
           <div className="flex items-center gap-2">
+            <Skeleton className="size-8 rounded-md bg-skeleton" />
             <Skeleton className="size-8 rounded-md bg-skeleton" />
             <Skeleton className="size-8 rounded-md bg-skeleton" />
           </div>
@@ -459,6 +547,9 @@ export function StudentsWorkspace() {
   );
   const [deleteError, setDeleteError] = useState("");
   const [editError, setEditError] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState<Estudante | null>(
+    null,
+  );
   const [studentToEdit, setStudentToEdit] = useState<Estudante | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<Estudante | null>(
     null,
@@ -687,23 +778,33 @@ export function StudentsWorkspace() {
 
   return (
     <>
-      <div className="mb-5">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-brand-600">Estudantes</h1>
+        <StudentsExportDropdown />
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex w-full max-w-[calc(36rem+3.25rem)] items-center gap-3">
-          <SearchInput
-            containerClassName="max-w-xl"
-            onClear={() => setQuery("")}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Pesquise por estudantes, cursos, instituições ou status..."
-            value={query}
-          />
+      <section className="mb-6 rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 text-brand-600">
+          <Filter className="size-4" />
+          <h2 className="text-base font-bold">Filtros</h2>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-12 xl:items-end">
+          <div className="min-w-0 sm:col-span-2 xl:col-span-4">
+            <span className={FILTER_LABEL_CLASS}>Buscar</span>
+            <SearchInput
+              onClear={() => setQuery("")}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Pesquise por estudantes, cursos, instituições ou status..."
+              value={query}
+            />
+          </div>
+
           <StudentsFilterDropdown
             courseOptions={courseOptions}
             filters={filters}
             institutionOptions={institutionOptions}
+            labelClassName={FILTER_LABEL_CLASS}
             lineOptions={lineOptions}
             onFiltersChange={(nextFilters) => {
               setFilters(nextFilters);
@@ -712,9 +813,7 @@ export function StudentsWorkspace() {
             semesterOptions={SEMESTER_FILTER_OPTIONS}
           />
         </div>
-
-        <StudentsExportDropdown />
-      </div>
+      </section>
 
       <DataTable
         columns={STUDENTS_TABLE_COLUMNS}
@@ -738,7 +837,7 @@ export function StudentsWorkspace() {
           total: paginationMeta.total,
         }}
         renderRow={(student) => (
-          <article className="grid gap-3 border-b border-brand-600/15 px-5 py-3 last:border-b-0 md:min-h-16 md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.55fr] md:items-center">
+          <article className="grid gap-3 border-b border-brand-600/15 px-5 py-3 last:border-b-0 md:min-h-16 md:grid-cols-[1.35fr_1fr_0.85fr_0.6fr_0.55fr_0.7fr] md:items-center">
             <div>
               <h3 className="text-sm font-semibold text-slate-950">
                 {student.name}
@@ -775,6 +874,13 @@ export function StudentsWorkspace() {
             </p>
             <div className="flex items-center gap-2">
               <TableActionButton
+                ariaLabel={`Visualizar ${student.name}`}
+                icon={<Eye />}
+                onClick={() => setSelectedStudent(student)}
+                tooltip="Visualizar estudante"
+                variant="secondary"
+              />
+              <TableActionButton
                 ariaLabel={`Editar ${student.name}`}
                 icon={<Pencil />}
                 onClick={() => openEditModal(student)}
@@ -793,6 +899,14 @@ export function StudentsWorkspace() {
           </article>
         )}
         skeleton={<StudentsTableSkeleton />}
+      />
+
+      <StudentDetailsModal
+        institutionNamesById={institutionNamesById}
+        lineNamesById={lineNamesById}
+        onClose={() => setSelectedStudent(null)}
+        open={Boolean(selectedStudent)}
+        student={selectedStudent}
       />
 
       <StudentsEditModal
@@ -830,5 +944,117 @@ export function StudentsWorkspace() {
         )}
       </Modal>
     </>
+  );
+}
+
+function StudentDetailsModal({
+  institutionNamesById,
+  lineNamesById,
+  onClose,
+  open,
+  student,
+}: {
+  institutionNamesById: Map<number, string>;
+  lineNamesById: Map<number, string>;
+  onClose: () => void;
+  open: boolean;
+  student: Estudante | null;
+}) {
+  return (
+    <Modal
+      cancelLabel="Fechar"
+      className="max-w-4xl"
+      contentClassName="space-y-4 bg-slate-50/80"
+      hideSave
+      onClose={onClose}
+      open={open}
+      title="Detalhes do estudante"
+    >
+      {student && (
+        <>
+          <ModalSection className="bg-white">
+            <ModalSectionContent>
+              <h3 className="text-lg font-bold text-brand-600">
+                {student.name}
+              </h3>
+              <p className="mt-1 text-sm font-medium text-slate-600">
+                {getAddressLabel(student) || "Endereço não informado"}
+              </p>
+              <dl className="mt-5 grid gap-4 md:grid-cols-4">
+                <DetailItem label="CPF" value={student.cpf} />
+                <DetailItem label="RG" value={student.rg} />
+                <DetailItem
+                  label="Data de nascimento"
+                  value={student.birth_date}
+                />
+                <DetailItem label="Mãe" value={student.mother_name} />
+                <DetailItem label="Pai" value={student.father_name} />
+                <DetailItem label="E-mail" value={student.email} />
+                <DetailItem label="Telefone" value={student.phone} />
+                <DetailItem
+                  label="Status"
+                  value={getStatusLabel(student.status)}
+                />
+              </dl>
+            </ModalSectionContent>
+          </ModalSection>
+
+          <ModalSection className="bg-white">
+            <ModalSectionContent>
+              <h3 className="text-lg font-bold text-brand-600">
+                {getCourseLabel(student)}
+              </h3>
+              <dl className="mt-5 grid gap-4 md:grid-cols-4">
+                <DetailItem
+                  label="Instituição"
+                  value={getInstitutionLabel(student, institutionNamesById)}
+                />
+                <DetailItem
+                  label="Linha"
+                  value={getLineLabel(student, lineNamesById)}
+                />
+                <DetailItem
+                  label="Semestre"
+                  value={getSemesterLabel(student)}
+                />
+                <DetailItem
+                  label="Turno"
+                  value={getShiftLabel(student.shift)}
+                />
+                <DetailItem
+                  label="Cidade de destino"
+                  value={student.city_destination}
+                />
+                <DetailItem
+                  label="Previsão de conclusão"
+                  value={student.expected_completion}
+                />
+                <DetailItem
+                  label="Já utiliza transporte"
+                  value={formatBoolean(student.used_transport)}
+                />
+                <DetailItem
+                  label="Possui bolsa"
+                  value={formatBoolean(student.has_scholarship)}
+                />
+                <DetailItem
+                  label="Tipo de bolsa"
+                  value={student.scholarship_type}
+                />
+              </dl>
+            </ModalSectionContent>
+          </ModalSection>
+
+          <ModalSection className="bg-white">
+            <ModalSectionContent>
+              <h3 className="text-lg font-bold text-brand-600">Observações</h3>
+              <p className="mt-3 text-sm font-medium text-slate-700">
+                {student.observation || "Nenhuma observação cadastrada."}
+              </p>
+            </ModalSectionContent>
+          </ModalSection>
+        </>
+      )}
+    </Modal>
   );
 }
