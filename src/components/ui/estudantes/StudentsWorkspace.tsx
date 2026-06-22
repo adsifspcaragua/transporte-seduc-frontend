@@ -1,12 +1,27 @@
 "use client";
 
 import axios from "axios";
-import { Eye, Filter, Pencil, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  Eye,
+  Filter,
+  GraduationCap,
+  IdCard,
+  MessageSquareText,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { SearchInput } from "@/components/form/inputs";
 import { Skeleton } from "@/components/loading";
-import { Modal, ModalSection, ModalSectionContent } from "@/components/modal";
+import {
+  Modal,
+  ModalSection,
+  ModalSectionContent,
+  ModalSectionHeader,
+} from "@/components/modal";
 import {
   DataTable,
   type DataTableColumn,
@@ -29,13 +44,25 @@ import type {
   UpdateEstudantePayload,
 } from "@/types/estudante";
 import type { Curso, Instituicao, Linha } from "@/types/inscricao";
+import { formatCep } from "@/utils/cep";
 import { cn } from "@/utils/cn";
+import { formatCpf } from "@/utils/cpf";
+import { formatPhone } from "@/utils/phone";
 
 type ApiErrorPayload = {
   message?: string;
 };
 
 type StudentsPaginationMeta = NonNullable<PaginatedEstudantes["meta"]>;
+
+type DetailsSectionProps = {
+  children: ReactNode;
+  icon: ReactNode;
+  isOpen: boolean;
+  onToggle: () => void;
+  subtitle: string;
+  title: string;
+};
 
 const DEFAULT_STUDENTS_PAGINATION_META: StudentsPaginationMeta = {
   current_page: 1,
@@ -83,6 +110,16 @@ const SEMESTER_FILTER_OPTIONS: StudentFilterOption[] = Array.from(
   },
 );
 
+const WEEKDAY_LABELS: Record<string, string> = {
+  "0": "Dom",
+  "1": "Seg",
+  "2": "Ter",
+  "3": "Qua",
+  "4": "Qui",
+  "5": "Sex",
+  "6": "Sáb",
+};
+
 function getLineLabel(
   estudante: Estudante,
   lineNamesById?: Map<number, string>,
@@ -124,16 +161,57 @@ function getSemesterLabel(estudante: Estudante) {
   return `${estudante.semester}º semestre`;
 }
 
-function getAddressLabel(estudante: Estudante) {
-  return [
-    estudante.address,
-    estudante.number,
-    estudante.neighborhood,
-    estudante.city,
-    estudante.cep,
-  ]
+function formatDateLabel(value?: string | null) {
+  if (!value) return "Não informado";
+
+  const [datePart] = value.split("T");
+  const [year, month, day] = datePart.split("-");
+
+  if (year && month && day) return `${day}/${month}/${year}`;
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
+
+function formatCpfLabel(value?: string | null) {
+  if (!value) return "Não informado";
+
+  return formatCpf(value, { eager: false }) || "Não informado";
+}
+
+function formatCepLabel(value?: string | null) {
+  if (!value) return "Não informado";
+
+  return formatCep(value, { eager: false }) || "Não informado";
+}
+
+function formatPhoneLabel(value?: string | null) {
+  if (!value) return "Não informado";
+
+  return formatPhone(value, { eager: false }) || "Não informado";
+}
+
+function getAddressLabel({
+  address,
+  cep,
+  city,
+  complement,
+  neighborhood,
+  number,
+}: Pick<
+  Estudante,
+  "address" | "cep" | "city" | "complement" | "neighborhood" | "number"
+>) {
+  const streetLine = [address, number].filter(Boolean).join(", ");
+  const cityLine = [neighborhood, city].filter(Boolean).join(", ");
+  const cepLine = cep ? `CEP ${formatCepLabel(cep)}` : "";
+
+  return [streetLine, complement, cityLine, cepLine]
     .filter(Boolean)
-    .join(", ");
+    .join(" - ");
 }
 
 function formatBoolean(value?: boolean | number | string | null) {
@@ -145,6 +223,83 @@ function formatBoolean(value?: boolean | number | string | null) {
   if (value === false || value === 0 || value === "0") return "Não";
 
   return String(value);
+}
+
+function normalizeDayValue(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (typeof value !== "string") return "";
+
+  const normalizedValue = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+  const weekdayByLabel: Record<string, string> = {
+    dom: "0",
+    domingo: "0",
+    qua: "3",
+    quarta: "3",
+    "quarta-feira": "3",
+    qui: "4",
+    quinta: "4",
+    "quinta-feira": "4",
+    sab: "6",
+    sabado: "6",
+    seg: "1",
+    segunda: "1",
+    "segunda-feira": "1",
+    sex: "5",
+    sexta: "5",
+    "sexta-feira": "5",
+    ter: "2",
+    terca: "2",
+    "terca-feira": "2",
+  };
+
+  return weekdayByLabel[normalizedValue] ?? normalizedValue;
+}
+
+function normalizeDaysOfWeek(value: Estudante["days_of_week"]) {
+  if (!value) return [];
+
+  if (typeof value === "string") {
+    try {
+      const parsedValue = JSON.parse(value);
+
+      if (Array.isArray(parsedValue)) {
+        return normalizeDaysOfWeek(parsedValue as Estudante["days_of_week"]);
+      }
+    } catch {
+      return value
+        .split(",")
+        .map((day) => normalizeDayValue(day))
+        .filter(Boolean);
+    }
+  }
+
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((day) => {
+      if (day && typeof day === "object") {
+        return normalizeDayValue(day.value ?? day.day ?? day.id);
+      }
+
+      return normalizeDayValue(day);
+    })
+    .filter(Boolean);
+}
+
+function getDaysOfWeekLabel(value: Estudante["days_of_week"]) {
+  const days = normalizeDaysOfWeek(value);
+
+  if (days.length === 0) return "Não informado";
+
+  return days.map((day) => WEEKDAY_LABELS[day] ?? day).join(", ");
 }
 
 function getShiftLabel(value?: number | null) {
@@ -302,20 +457,99 @@ function getStudentsListErrorMessage(error: unknown) {
 }
 
 function DetailItem({
+  className,
   label,
   value,
 }: {
+  className?: string;
   label: string;
-  value?: string | null;
+  value?: ReactNode;
 }) {
+  const hasValue = value !== null && value !== undefined && value !== "";
+
   return (
-    <div>
+    <div className={className}>
       <dt className="text-[11px] font-bold uppercase text-brand-600">
         {label}
       </dt>
       <dd className="mt-1 text-sm font-medium text-slate-800">
-        {value || "Não informado"}
+        {hasValue ? value : "Não informado"}
       </dd>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string | null }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit rounded-md px-2 py-1 text-xs font-bold",
+        getStatusBadgeClass(status),
+      )}
+    >
+      {getStatusLabel(status)}
+    </span>
+  );
+}
+
+function DetailsSection({
+  children,
+  icon,
+  isOpen,
+  onToggle,
+  subtitle,
+  title,
+}: DetailsSectionProps) {
+  return (
+    <ModalSection className="border-brand-600/15 bg-white">
+      <ModalSectionHeader className="p-0">
+        <button
+          aria-expanded={isOpen}
+          className="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-brand-600/[0.03] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-600"
+          onClick={onToggle}
+          type="button"
+        >
+          <span className="flex min-w-0 items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700 [&>svg]:size-5">
+              {icon}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-base font-bold text-brand-700">
+                {title}
+              </span>
+              <span className="mt-0.5 block text-sm font-medium text-content-muted">
+                {subtitle}
+              </span>
+            </span>
+          </span>
+          <ChevronDown
+            className={cn(
+              "size-5 shrink-0 text-brand-700 transition-transform",
+              isOpen && "rotate-180",
+            )}
+          />
+        </button>
+      </ModalSectionHeader>
+
+      {isOpen && <ModalSectionContent>{children}</ModalSectionContent>}
+    </ModalSection>
+  );
+}
+
+function DetailGroup({
+  children,
+  title,
+}: {
+  children: ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <h3 className="text-xs font-bold uppercase text-brand-600">{title}</h3>
+        <span className="h-px flex-1 bg-border-subtle" />
+      </div>
+      {children}
     </div>
   );
 }
@@ -960,6 +1194,29 @@ function StudentDetailsModal({
   open: boolean;
   student: Estudante | null;
 }) {
+  const [openSections, setOpenSections] = useState({
+    academic: true,
+    notes: true,
+    personal: true,
+  });
+
+  useEffect(() => {
+    if (!open) return;
+
+    setOpenSections({
+      academic: true,
+      notes: true,
+      personal: true,
+    });
+  }, [open]);
+
+  function toggleSection(section: keyof typeof openSections) {
+    setOpenSections((current) => ({
+      ...current,
+      [section]: !current[section],
+    }));
+  }
+
   return (
     <Modal
       cancelLabel="Fechar"
@@ -972,87 +1229,202 @@ function StudentDetailsModal({
     >
       {student && (
         <>
-          <ModalSection className="bg-white">
-            <ModalSectionContent>
-              <h3 className="text-lg font-bold text-brand-600">
-                {student.name}
-              </h3>
-              <p className="mt-1 text-sm font-medium text-slate-600">
-                {getAddressLabel(student) || "Endereço não informado"}
-              </p>
-              <dl className="mt-5 grid gap-4 md:grid-cols-4">
-                <DetailItem label="CPF" value={student.cpf} />
-                <DetailItem label="RG" value={student.rg} />
-                <DetailItem
-                  label="Data de nascimento"
-                  value={student.birth_date}
-                />
-                <DetailItem label="Mãe" value={student.mother_name} />
-                <DetailItem label="Pai" value={student.father_name} />
-                <DetailItem label="E-mail" value={student.email} />
-                <DetailItem label="Telefone" value={student.phone} />
-                <DetailItem
-                  label="Status"
-                  value={getStatusLabel(student.status)}
-                />
-              </dl>
-            </ModalSectionContent>
-          </ModalSection>
+          <DetailsSection
+            icon={<IdCard />}
+            isOpen={openSections.personal}
+            onToggle={() => toggleSection("personal")}
+            subtitle="Dados básicos, contato e endereço principal."
+            title="Dados pessoais"
+          >
+            <div className="space-y-7">
+              <DetailGroup title="Identificação">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Nome completo"
+                    value={student.name}
+                  />
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="Data de nascimento"
+                    value={formatDateLabel(student.birth_date)}
+                  />
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="Status"
+                    value={<StatusBadge status={student.status} />}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="CPF"
+                    value={formatCpfLabel(student.cpf)}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="RG"
+                    value={student.rg}
+                  />
+                </dl>
+              </DetailGroup>
 
-          <ModalSection className="bg-white">
-            <ModalSectionContent>
-              <h3 className="text-lg font-bold text-brand-600">
-                {getCourseLabel(student)}
-              </h3>
-              <dl className="mt-5 grid gap-4 md:grid-cols-4">
-                <DetailItem
-                  label="Instituição"
-                  value={getInstitutionLabel(student, institutionNamesById)}
-                />
-                <DetailItem
-                  label="Linha"
-                  value={getLineLabel(student, lineNamesById)}
-                />
-                <DetailItem
-                  label="Semestre"
-                  value={getSemesterLabel(student)}
-                />
-                <DetailItem
-                  label="Turno"
-                  value={getShiftLabel(student.shift)}
-                />
-                <DetailItem
-                  label="Cidade de destino"
-                  value={student.city_destination}
-                />
-                <DetailItem
-                  label="Previsão de conclusão"
-                  value={student.expected_completion}
-                />
-                <DetailItem
-                  label="Já utiliza transporte"
-                  value={formatBoolean(student.used_transport)}
-                />
-                <DetailItem
-                  label="Possui bolsa"
-                  value={formatBoolean(student.has_scholarship)}
-                />
-                <DetailItem
-                  label="Tipo de bolsa"
-                  value={student.scholarship_type}
-                />
-              </dl>
-            </ModalSectionContent>
-          </ModalSection>
+              <DetailGroup title="Filiação">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Nome da mãe"
+                    value={student.mother_name}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Nome do pai"
+                    value={student.father_name}
+                  />
+                </dl>
+              </DetailGroup>
 
-          <ModalSection className="bg-white">
-            <ModalSectionContent>
-              <h3 className="text-lg font-bold text-brand-600">Observações</h3>
-              <p className="mt-3 text-sm font-medium text-slate-700">
-                {student.observation || "Nenhuma observação cadastrada."}
-              </p>
-            </ModalSectionContent>
-          </ModalSection>
+              <DetailGroup title="Endereço">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="CEP"
+                    value={formatCepLabel(student.cep)}
+                  />
+                  <DetailItem
+                    className="md:col-span-4"
+                    label="Cidade"
+                    value={student.city}
+                  />
+                  <DetailItem
+                    className="md:col-span-5"
+                    label="Bairro"
+                    value={student.neighborhood}
+                  />
+                  <DetailItem
+                    className="md:col-span-5"
+                    label="Logradouro"
+                    value={student.address}
+                  />
+                  <DetailItem
+                    className="md:col-span-2"
+                    label="Número"
+                    value={student.number}
+                  />
+                  <DetailItem
+                    className="md:col-span-5"
+                    label="Complemento"
+                    value={student.complement}
+                  />
+                  <DetailItem
+                    className="md:col-span-12"
+                    label="Endereço completo"
+                    value={getAddressLabel(student)}
+                  />
+                </dl>
+              </DetailGroup>
+
+              <DetailGroup title="Contato">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="E-mail"
+                    value={student.email}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Telefone"
+                    value={formatPhoneLabel(student.phone)}
+                  />
+                </dl>
+              </DetailGroup>
+            </div>
+          </DetailsSection>
+
+          <DetailsSection
+            icon={<GraduationCap />}
+            isOpen={openSections.academic}
+            onToggle={() => toggleSection("academic")}
+            subtitle="Curso, instituição, linha, transporte e bolsa."
+            title="Dados acadêmicos"
+          >
+            <div className="space-y-7">
+              <DetailGroup title="Instituição e curso">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Instituição"
+                    value={getInstitutionLabel(student, institutionNamesById)}
+                  />
+                  <DetailItem
+                    className="md:col-span-2"
+                    label="Turno"
+                    value={getShiftLabel(student.shift)}
+                  />
+                  <DetailItem
+                    className="md:col-span-4"
+                    label="Cidade de destino"
+                    value={student.city_destination}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Curso"
+                    value={getCourseLabel(student)}
+                  />
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="Semestre"
+                    value={getSemesterLabel(student)}
+                  />
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="Previsão de conclusão"
+                    value={formatDateLabel(student.expected_completion)}
+                  />
+                </dl>
+              </DetailGroup>
+
+              <DetailGroup title="Transporte e bolsa">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-4"
+                    label="Linha"
+                    value={getLineLabel(student, lineNamesById)}
+                  />
+                  <DetailItem
+                    className="md:col-span-4"
+                    label="Já utiliza transporte"
+                    value={formatBoolean(student.used_transport)}
+                  />
+                  <DetailItem
+                    className="md:col-span-4"
+                    label="Dias de uso do transporte"
+                    value={getDaysOfWeekLabel(student.days_of_week)}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Possui bolsa"
+                    value={formatBoolean(student.has_scholarship)}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Tipo de bolsa"
+                    value={student.scholarship_type}
+                  />
+                </dl>
+              </DetailGroup>
+            </div>
+          </DetailsSection>
+
+          <DetailsSection
+            icon={<MessageSquareText />}
+            isOpen={openSections.notes}
+            onToggle={() => toggleSection("notes")}
+            subtitle="Anotações registradas no cadastro do estudante."
+            title="Observações"
+          >
+            <p className="text-sm font-medium text-slate-700">
+              {student.observation || "Nenhuma observação cadastrada."}
+            </p>
+          </DetailsSection>
         </>
       )}
     </Modal>

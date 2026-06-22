@@ -1,13 +1,31 @@
 "use client";
 
 import axios from "axios";
-import { Check, Clock3, Eye, Filter, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Clock3,
+  Download,
+  ExternalLink,
+  Eye,
+  FileText,
+  Filter,
+  GraduationCap,
+  IdCard,
+  X,
+} from "lucide-react";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/buttons";
 import { SearchInput, Textarea } from "@/components/form/inputs";
 import { Skeleton } from "@/components/loading";
-import { Modal, ModalSection, ModalSectionContent } from "@/components/modal";
+import {
+  Modal,
+  ModalSection,
+  ModalSectionContent,
+  ModalSectionHeader,
+} from "@/components/modal";
 import {
   DataTable,
   type DataTableColumn,
@@ -28,7 +46,10 @@ import type {
   Instituicao,
   Linha,
 } from "@/types/inscricao";
+import { formatCep } from "@/utils/cep";
 import { cn } from "@/utils/cn";
+import { formatCpf } from "@/utils/cpf";
+import { formatPhone } from "@/utils/phone";
 
 type ApiErrorPayload = {
   message?: string;
@@ -37,6 +58,15 @@ type ApiErrorPayload = {
 type EnrichedInscricao = Inscricao & {
   documentos: InscricaoDocumento[];
   instituicaoAcademica: InscricaoInstituicao | null;
+};
+
+type DetailsSectionProps = {
+  children: ReactNode;
+  icon: ReactNode;
+  isOpen: boolean;
+  onToggle: () => void;
+  subtitle: string;
+  title: string;
 };
 
 const SOLICITACOES_TABLE_GRID_CLASS =
@@ -136,6 +166,39 @@ function formatHistoryDate(value?: string | null) {
   }).format(date);
 }
 
+function formatDateLabel(value?: string | null) {
+  if (!value) return "Não informado";
+
+  const [datePart] = value.split("T");
+  const [year, month, day] = datePart.split("-");
+
+  if (year && month && day) return `${day}/${month}/${year}`;
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
+
+function formatCpfLabel(value?: string | null) {
+  if (!value) return "Não informado";
+
+  return formatCpf(value, { eager: false }) || "Não informado";
+}
+
+function formatCepLabel(value?: string | null) {
+  if (!value) return "Não informado";
+
+  return formatCep(value, { eager: false }) || "Não informado";
+}
+
+function formatPhoneLabel(value?: string | null) {
+  if (!value) return "Não informado";
+
+  return formatPhone(value, { eager: false }) || "Não informado";
+}
+
 function getStatusBadgeClass(status: string | null) {
   const statusKey = getStatusKey(status);
 
@@ -190,15 +253,17 @@ function getInstitutionLabel(
 }
 
 function getAddressLabel(inscricao: Inscricao) {
-  return [
-    inscricao.address,
-    inscricao.number,
-    inscricao.neighborhood,
-    inscricao.city,
-    inscricao.cep,
-  ]
+  const streetLine = [inscricao.address, inscricao.number]
     .filter(Boolean)
     .join(", ");
+  const cityLine = [inscricao.neighborhood, inscricao.city]
+    .filter(Boolean)
+    .join(", ");
+  const cepLine = inscricao.cep ? `CEP ${formatCepLabel(inscricao.cep)}` : "";
+
+  return [streetLine, inscricao.complement, cityLine, cepLine]
+    .filter(Boolean)
+    .join(" - ");
 }
 
 function formatBoolean(value: boolean | null) {
@@ -346,20 +411,124 @@ function SolicitacoesPageSkeleton() {
 }
 
 function DetailItem({
+  className,
   label,
   value,
 }: {
+  className?: string;
   label: string;
-  value?: string | null;
+  value?: ReactNode;
 }) {
+  const hasValue = value !== null && value !== undefined && value !== "";
+
   return (
-    <div>
+    <div className={className}>
       <dt className="text-[11px] font-bold uppercase text-brand-600">
         {label}
       </dt>
       <dd className="mt-1 text-sm font-medium text-slate-800">
-        {value || "Não informado"}
+        {hasValue ? value : "Não informado"}
       </dd>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string | null }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit rounded-md px-2 py-1 text-xs font-bold",
+        getStatusBadgeClass(status),
+      )}
+    >
+      {getStatusLabel(status)}
+    </span>
+  );
+}
+
+function DocumentActionLink({
+  children,
+  download,
+  href,
+  icon,
+}: {
+  children: string;
+  download?: boolean;
+  href: string;
+  icon: ReactNode;
+}) {
+  return (
+    <a
+      className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-brand-600/20 bg-surface-primary px-3 text-sm font-semibold text-brand-600 shadow-sm transition-colors hover:bg-brand-600/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+      download={download}
+      href={href}
+      rel="noreferrer"
+      target={download ? undefined : "_blank"}
+    >
+      <span className="[&>svg]:size-4">{icon}</span>
+      {children}
+    </a>
+  );
+}
+
+function DetailsSection({
+  children,
+  icon,
+  isOpen,
+  onToggle,
+  subtitle,
+  title,
+}: DetailsSectionProps) {
+  return (
+    <ModalSection className="border-brand-600/15 bg-white">
+      <ModalSectionHeader className="p-0">
+        <button
+          aria-expanded={isOpen}
+          className="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-brand-600/[0.03] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-600"
+          onClick={onToggle}
+          type="button"
+        >
+          <span className="flex min-w-0 items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700 [&>svg]:size-5">
+              {icon}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-base font-bold text-brand-700">
+                {title}
+              </span>
+              <span className="mt-0.5 block text-sm font-medium text-content-muted">
+                {subtitle}
+              </span>
+            </span>
+          </span>
+          <ChevronDown
+            className={cn(
+              "size-5 shrink-0 text-brand-700 transition-transform",
+              isOpen && "rotate-180",
+            )}
+          />
+        </button>
+      </ModalSectionHeader>
+
+      {isOpen && <ModalSectionContent>{children}</ModalSectionContent>}
+    </ModalSection>
+  );
+}
+
+function DetailGroup({
+  children,
+  title,
+}: {
+  children: ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <h3 className="text-xs font-bold uppercase text-brand-600">{title}</h3>
+        <span className="h-px flex-1 bg-border-subtle" />
+      </div>
+      {children}
     </div>
   );
 }
@@ -882,6 +1051,29 @@ function SolicitacaoDetailsModal({
   open: boolean;
   solicitacao: EnrichedInscricao | null;
 }) {
+  const [openSections, setOpenSections] = useState({
+    academic: true,
+    documents: true,
+    personal: true,
+  });
+
+  useEffect(() => {
+    if (!open) return;
+
+    setOpenSections({
+      academic: true,
+      documents: true,
+      personal: true,
+    });
+  }, [open]);
+
+  function toggleSection(section: keyof typeof openSections) {
+    setOpenSections((current) => ({
+      ...current,
+      [section]: !current[section],
+    }));
+  }
+
   return (
     <Modal
       cancelLabel="Fechar"
@@ -894,116 +1086,253 @@ function SolicitacaoDetailsModal({
     >
       {solicitacao && (
         <>
-          <ModalSection className="bg-white">
-            <ModalSectionContent>
-              <h3 className="text-lg font-bold text-brand-600">
-                {solicitacao.name}
-              </h3>
-              <p className="mt-1 text-sm font-medium text-slate-600">
-                {getAddressLabel(solicitacao) || "Endereço não informado"}
+          <DetailsSection
+            icon={<IdCard />}
+            isOpen={openSections.personal}
+            onToggle={() => toggleSection("personal")}
+            subtitle="Dados básicos, contato e endereço principal."
+            title="Dados pessoais"
+          >
+            <div className="space-y-7">
+              <DetailGroup title="Identificação">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Nome completo"
+                    value={solicitacao.name}
+                  />
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="Data de nascimento"
+                    value={formatDateLabel(solicitacao.birth_date)}
+                  />
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="Status"
+                    value={<StatusBadge status={solicitacao.status} />}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="CPF"
+                    value={formatCpfLabel(solicitacao.cpf)}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="RG"
+                    value={solicitacao.rg}
+                  />
+                </dl>
+              </DetailGroup>
+
+              <DetailGroup title="Filiação">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Nome da mãe"
+                    value={solicitacao.mother_name}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Nome do pai"
+                    value={solicitacao.father_name}
+                  />
+                </dl>
+              </DetailGroup>
+
+              <DetailGroup title="Endereço">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="CEP"
+                    value={formatCepLabel(solicitacao.cep)}
+                  />
+                  <DetailItem
+                    className="md:col-span-4"
+                    label="Cidade"
+                    value={solicitacao.city}
+                  />
+                  <DetailItem
+                    className="md:col-span-5"
+                    label="Bairro"
+                    value={solicitacao.neighborhood}
+                  />
+                  <DetailItem
+                    className="md:col-span-5"
+                    label="Logradouro"
+                    value={solicitacao.address}
+                  />
+                  <DetailItem
+                    className="md:col-span-2"
+                    label="Número"
+                    value={
+                      solicitacao.number === null
+                        ? null
+                        : String(solicitacao.number)
+                    }
+                  />
+                  <DetailItem
+                    className="md:col-span-5"
+                    label="Complemento"
+                    value={solicitacao.complement}
+                  />
+                  <DetailItem
+                    className="md:col-span-12"
+                    label="Endereço completo"
+                    value={getAddressLabel(solicitacao)}
+                  />
+                </dl>
+              </DetailGroup>
+
+              <DetailGroup title="Contato">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="E-mail"
+                    value={solicitacao.email}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Telefone"
+                    value={formatPhoneLabel(solicitacao.phone)}
+                  />
+                </dl>
+              </DetailGroup>
+            </div>
+          </DetailsSection>
+
+          <DetailsSection
+            icon={<GraduationCap />}
+            isOpen={openSections.academic}
+            onToggle={() => toggleSection("academic")}
+            subtitle="Curso, instituição, transporte e bolsa."
+            title="Dados acadêmicos"
+          >
+            <div className="space-y-7">
+              <DetailGroup title="Instituição e curso">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Instituição"
+                    value={getInstitutionLabel(
+                      solicitacao,
+                      institutionNamesById,
+                    )}
+                  />
+                  <DetailItem
+                    className="md:col-span-2"
+                    label="Turno"
+                    value={solicitacao.instituicaoAcademica?.shift_label}
+                  />
+                  <DetailItem
+                    className="md:col-span-4"
+                    label="Cidade de destino"
+                    value={solicitacao.instituicaoAcademica?.city_destination}
+                  />
+                  <DetailItem
+                    className="md:col-span-6"
+                    label="Curso"
+                    value={getCourseLabel(solicitacao)}
+                  />
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="Semestre"
+                    value={getSemesterLabel(solicitacao)}
+                  />
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="Previsão de conclusão"
+                    value={formatDateLabel(
+                      solicitacao.instituicaoAcademica?.expected_completion,
+                    )}
+                  />
+                </dl>
+              </DetailGroup>
+
+              <DetailGroup title="Transporte e bolsa">
+                <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
+                  <DetailItem
+                    className="md:col-span-4"
+                    label="Já utiliza transporte"
+                    value={formatBoolean(
+                      solicitacao.instituicaoAcademica?.used_transport ?? null,
+                    )}
+                  />
+                  <DetailItem
+                    className="md:col-span-4"
+                    label="Possui bolsa"
+                    value={formatBoolean(
+                      solicitacao.instituicaoAcademica?.has_scholarship ?? null,
+                    )}
+                  />
+                  <DetailItem
+                    className="md:col-span-4"
+                    label="Tipo de bolsa"
+                    value={solicitacao.instituicaoAcademica?.scholarship_type}
+                  />
+                </dl>
+              </DetailGroup>
+            </div>
+          </DetailsSection>
+
+          <DetailsSection
+            icon={<FileText />}
+            isOpen={openSections.documents}
+            onToggle={() => toggleSection("documents")}
+            subtitle="Arquivos enviados para análise da solicitação."
+            title="Documentos"
+          >
+            {solicitacao.documentos.length === 0 ? (
+              <p className="text-sm font-medium text-slate-600">
+                Nenhum documento enviado.
               </p>
-              <dl className="mt-5 grid gap-4 md:grid-cols-4">
-                <DetailItem label="CPF" value={solicitacao.cpf} />
-                <DetailItem label="RG" value={solicitacao.rg} />
-                <DetailItem
-                  label="Data de nascimento"
-                  value={solicitacao.birth_date}
-                />
-                <DetailItem label="Mãe" value={solicitacao.mother_name} />
-                <DetailItem label="Pai" value={solicitacao.father_name} />
-                <DetailItem label="E-mail" value={solicitacao.email} />
-                <DetailItem label="Telefone" value={solicitacao.phone} />
-                <DetailItem
-                  label="Status"
-                  value={getStatusLabel(solicitacao.status)}
-                />
-              </dl>
-            </ModalSectionContent>
-          </ModalSection>
-
-          <ModalSection className="bg-white">
-            <ModalSectionContent>
-              <h3 className="text-lg font-bold text-brand-600">
-                {getCourseLabel(solicitacao)}
-              </h3>
-              <dl className="mt-5 grid gap-4 md:grid-cols-4">
-                <DetailItem
-                  label="Instituição"
-                  value={getInstitutionLabel(solicitacao, institutionNamesById)}
-                />
-                <DetailItem
-                  label="Cidade de destino"
-                  value={solicitacao.instituicaoAcademica?.city_destination}
-                />
-                <DetailItem
-                  label="Semestre"
-                  value={getSemesterLabel(solicitacao)}
-                />
-                <DetailItem
-                  label="Turno"
-                  value={solicitacao.instituicaoAcademica?.shift_label}
-                />
-                <DetailItem
-                  label="Previsão de conclusão"
-                  value={solicitacao.instituicaoAcademica?.expected_completion}
-                />
-                <DetailItem
-                  label="Já utiliza transporte"
-                  value={formatBoolean(
-                    solicitacao.instituicaoAcademica?.used_transport ?? null,
-                  )}
-                />
-                <DetailItem
-                  label="Possui bolsa"
-                  value={formatBoolean(
-                    solicitacao.instituicaoAcademica?.has_scholarship ?? null,
-                  )}
-                />
-                <DetailItem
-                  label="Tipo de bolsa"
-                  value={solicitacao.instituicaoAcademica?.scholarship_type}
-                />
-              </dl>
-            </ModalSectionContent>
-          </ModalSection>
-
-          <ModalSection className="bg-white">
-            <ModalSectionContent>
-              <h3 className="text-lg font-bold text-brand-600">Documentos</h3>
-              {solicitacao.documentos.length === 0 ? (
-                <p className="mt-3 text-sm font-medium text-slate-600">
-                  Nenhum documento enviado.
-                </p>
-              ) : (
-                <div className="mt-4 overflow-hidden rounded-md border border-border-subtle">
-                  {solicitacao.documentos.map((documento) => (
-                    <div
-                      className="grid gap-2 border-b border-border-subtle px-4 py-3 last:border-b-0 md:grid-cols-[1fr_0.75fr_0.5fr]"
-                      key={documento.id}
-                    >
-                      <a
-                        className={cn(
-                          "text-sm font-semibold text-brand-600 underline-offset-2",
-                          documento.file_path && "hover:underline",
-                        )}
-                        href={documento.file_path || undefined}
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        {documento.name}
-                      </a>
-                      <span className="text-sm text-slate-700">
-                        {documento.type}
-                      </span>
-                      <span className="text-sm font-medium text-slate-700">
-                        {getStatusLabel(documento.status)}
-                      </span>
-                    </div>
-                  ))}
+            ) : (
+              <div className="mt-4 overflow-hidden rounded-md border border-border-subtle">
+                <div className="hidden grid-cols-[1fr_0.65fr_0.65fr_0.8fr] gap-3 border-b border-border-subtle bg-slate-50 px-4 py-3 text-xs font-bold uppercase text-brand-600 md:grid">
+                  <span>Documento</span>
+                  <span>Tipo</span>
+                  <span>Status</span>
+                  <span>Ações</span>
                 </div>
-              )}
-            </ModalSectionContent>
-          </ModalSection>
+                {solicitacao.documentos.map((documento) => (
+                  <div
+                    className="grid gap-3 border-b border-border-subtle px-4 py-3 last:border-b-0 md:grid-cols-[1fr_0.65fr_0.65fr_0.8fr] md:items-center"
+                    key={documento.id}
+                  >
+                    <span className="text-sm font-semibold text-brand-600">
+                      {documento.name}
+                    </span>
+                    <span className="text-sm font-medium text-slate-700">
+                      {documento.type}
+                    </span>
+                    <StatusBadge status={documento.status} />
+                    <div className="flex flex-wrap gap-2">
+                      {documento.file_path ? (
+                        <>
+                          <DocumentActionLink
+                            href={documento.file_path}
+                            icon={<ExternalLink />}
+                          >
+                            Visualizar
+                          </DocumentActionLink>
+                          <DocumentActionLink
+                            download
+                            href={documento.file_path}
+                            icon={<Download />}
+                          >
+                            Baixar
+                          </DocumentActionLink>
+                        </>
+                      ) : (
+                        <span className="text-sm font-medium text-slate-500">
+                          Arquivo indisponível
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </DetailsSection>
         </>
       )}
     </Modal>
