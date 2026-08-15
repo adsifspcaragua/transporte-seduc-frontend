@@ -40,12 +40,19 @@ import Register, {
 } from "@/components/ui/layout/RegisterLayout";
 import { cepService } from "@/services/api/modules/cep";
 import { inscricaoService } from "@/services/api/modules/inscricao";
+import { recadastroService } from "@/services/api/modules/recadastro";
+import { STUDENT_ACCESS_STORAGE_KEY } from "@/components/ui/area-estudante/AreaEstudanteWorkspace";
 import type {
   Curso,
   InscricaoInstituicaoPayload,
   InscricaoPayload,
   Instituicao,
 } from "@/types/inscricao";
+import type {
+  AcessoEstudanteResponse,
+  DocumentoRecadastroTipo,
+  SituacaoRecadastro,
+} from "@/types/recadastro";
 import { cleanCep, isValidCep } from "@/utils/cep";
 import { cn } from "@/utils/cn";
 import { cleanCpf, isValidCpf } from "@/utils/cpf";
@@ -55,6 +62,7 @@ import { cleanPhone, isValidPhone } from "@/utils/phone";
 type StepIndex = 0 | 1 | 2 | 3 | 4;
 type BinaryAnswer = "" | "true" | "false";
 type SubmissionState = "idle" | "submitting" | "success";
+type StudentFlow = "inscricao" | "lista_espera" | "recadastro";
 
 type RegistrationForm = {
   name: string;
@@ -107,7 +115,7 @@ type RegistrationDocument = {
 
 type FieldErrors = Partial<Record<keyof RegistrationForm, string>>;
 
-const MAX_DOCUMENT_SIZE = 2 * 1024 * 1024;
+const MAX_DOCUMENT_SIZE = 5 * 1024 * 1024;
 const REGISTRATION_DRAFT_STORAGE_KEY = "transporte-seduc:registration-draft";
 const REGISTRATION_DRAFT_VERSION = 1;
 
@@ -186,9 +194,29 @@ const REGISTRATION_DOCUMENTS = [
   },
 ] satisfies RegistrationDocument[];
 
-const REQUIRED_DOCUMENTS = REGISTRATION_DOCUMENTS.filter(
-  (document) => document.required,
-);
+const REREGISTRATION_DOCUMENTS = [
+  {
+    key: "declaracao_matricula",
+    label: "Declaração de matrícula",
+    description: "Declaração atualizada emitida pela instituição.",
+    type: "documento",
+    required: true,
+  },
+  {
+    key: "cronograma_aulas",
+    label: "Cronograma de aulas",
+    description: "Cronograma ou grade semanal atualizada.",
+    type: "documento",
+    required: true,
+  },
+  {
+    key: "comprovante_residencia",
+    label: "Comprovante de residência",
+    description: "Comprovante recente de endereço.",
+    type: "documento",
+    required: true,
+  },
+] satisfies RegistrationDocument[];
 
 const WEEKDAYS = [
   { value: 1, label: "Seg" },
@@ -236,6 +264,52 @@ const initialForm: RegistrationForm = {
   accepted_terms_2: false,
 };
 
+function prefillRegistrationForm(source: Record<string, unknown>) {
+  const text = (key: string) => {
+    const value = source[key];
+    return value === null || value === undefined ? "" : String(value);
+  };
+  const binary = (key: string): BinaryAnswer => {
+    const value = source[key];
+    if (value === true || value === 1) return "true";
+    if (value === false || value === 0) return "false";
+    return "";
+  };
+
+  return {
+    ...initialForm,
+    name: text("name"),
+    birth_date: text("birth_date").split("T")[0],
+    mother_name: text("mother_name"),
+    father_name: text("father_name"),
+    no_father: !text("father_name"),
+    cpf: text("cpf"),
+    rg: text("rg"),
+    cep: text("cep"),
+    city: text("city"),
+    neighborhood: text("neighborhood"),
+    address: text("address"),
+    number: text("number"),
+    complement: text("complement"),
+    email: text("email"),
+    phone: text("phone"),
+    instituicao_id: text("instituicao_id"),
+    course: text("course"),
+    semester: text("semester"),
+    expected_completion: text("expected_completion").split("T")[0],
+    shift: text("shift"),
+    city_destination: text("city_destination"),
+    used_transport: binary("used_transport"),
+    days_of_week: Array.isArray(source.days_of_week)
+      ? source.days_of_week.filter((day): day is number => typeof day === "number")
+      : [],
+    has_scholarship: binary("has_scholarship"),
+    scholarship_type: text("scholarship_type"),
+    accepted_terms: false,
+    accepted_terms_2: false,
+  } satisfies RegistrationForm;
+}
+
 type PersistedDocumentState = Omit<DocumentState, "file" | "uploading">;
 
 type RegistrationDraft = {
@@ -257,17 +331,19 @@ function isStepIndex(value: unknown): value is StepIndex {
 
 function getPersistableDocuments(documents: Record<string, DocumentState>) {
   return Object.fromEntries(
-    Object.entries(documents).map(([key, document]) => [
-      key,
-      {
-        id: document.id,
-        fileName: document.fileName,
-        filePath: document.filePath,
-        status: document.status,
-        type: document.type,
-        error: document.error,
-      },
-    ]),
+    Object.entries(documents)
+      .filter(([, document]) => document.id || document.filePath)
+      .map(([key, document]) => [
+        key,
+        {
+          id: document.id,
+          fileName: document.fileName,
+          filePath: document.filePath,
+          status: document.status,
+          type: document.type,
+          error: document.error,
+        },
+      ]),
   ) as Record<string, PersistedDocumentState>;
 }
 
@@ -493,6 +569,7 @@ function getSectionStatus(
   form: RegistrationForm,
   documents: Record<string, DocumentState>,
   errors: FieldErrors,
+  documentDefinitions: readonly RegistrationDocument[] = REGISTRATION_DOCUMENTS,
 ): RegisterStepStatus[] {
   const civilFields: (keyof RegistrationForm)[] = [
     "name",
@@ -531,9 +608,11 @@ function getSectionStatus(
   const institutionalComplete = institutionalFields.every(
     (field) => !errors[field],
   );
-  const requiredDocumentKeys = REQUIRED_DOCUMENTS.map(
+  const requiredDocumentKeys = documentDefinitions
+    .filter((document) => document.required)
+    .map(
     (document) => document.key,
-  );
+    );
   const uploadedDocumentCount = requiredDocumentKeys.filter(
     (key) => documents[key]?.id || documents[key]?.fileName,
   ).length;
@@ -841,6 +920,37 @@ function buildInstituicaoPayload(
   return payload;
 }
 
+function buildRecadastroPayload(form: RegistrationForm) {
+  return {
+    name: trim(form.name),
+    rg: trim(form.rg) || null,
+    father_name: form.no_father ? null : trim(form.father_name) || null,
+    mother_name: trim(form.mother_name),
+    birth_date: form.birth_date,
+    phone: cleanPhone(form.phone),
+    email: trim(form.email),
+    cep: cleanCep(form.cep),
+    address: trim(form.address),
+    neighborhood: trim(form.neighborhood),
+    complement: trim(form.complement) || null,
+    city: trim(form.city),
+    number: Number(trim(form.number)),
+    course: trim(form.course),
+    semester: form.semester,
+    expected_completion: form.expected_completion,
+    instituicao_id: Number(form.instituicao_id),
+    shift: Number(form.shift),
+    city_destination: trim(form.city_destination),
+    used_transport: form.used_transport === "true",
+    days_of_week: form.days_of_week,
+    has_scholarship: form.has_scholarship === "true",
+    scholarship_type:
+      form.has_scholarship === "true"
+        ? trim(form.scholarship_type) || null
+        : null,
+  };
+}
+
 function fieldClassName() {
   return "rounded-lg";
 }
@@ -851,6 +961,9 @@ export function RegisterWorkspace() {
   const [editingStep, setEditingStep] = useState<StepIndex | null>(null);
   const [form, setForm] = useState<RegistrationForm>(initialForm);
   const [inscricaoId, setInscricaoId] = useState<number | null>(null);
+  const [inscricaoToken, setInscricaoToken] = useState<string | null>(null);
+  const [studentFlow, setStudentFlow] = useState<StudentFlow>("inscricao");
+  const [recadastro, setRecadastro] = useState<SituacaoRecadastro | null>(null);
   const [inscricaoInstituicaoId, setInscricaoInstituicaoId] = useState<
     number | null
   >(null);
@@ -889,6 +1002,10 @@ export function RegisterWorkspace() {
   const successTimeoutRef = useRef<number | null>(null);
 
   const todayIso = useMemo(() => formatLocalIsoDate(new Date()), []);
+  const activeDocuments =
+    studentFlow === "recadastro"
+      ? REREGISTRATION_DOCUMENTS
+      : REGISTRATION_DOCUMENTS;
   const fieldErrors = useMemo(
     () => ({
       ...getFieldErrors(form, todayIso),
@@ -897,10 +1014,10 @@ export function RegisterWorkspace() {
     [apiFieldErrors, form, todayIso],
   );
   const stepStatuses = useMemo(
-    () => getSectionStatus(form, documents, fieldErrors),
-    [documents, fieldErrors, form],
+    () => getSectionStatus(form, documents, fieldErrors, activeDocuments),
+    [activeDocuments, documents, fieldErrors, form],
   );
-  const selectedDocument = REGISTRATION_DOCUMENTS.find(
+  const selectedDocument = activeDocuments.find(
     (document) => document.key === documentDraftKey,
   );
   const isEditing = editingStep !== null && step === editingStep;
@@ -947,9 +1064,90 @@ export function RegisterWorkspace() {
   );
 
   useEffect(() => {
+    let access: AcessoEstudanteResponse | null = null;
+
+    try {
+      access = JSON.parse(
+        window.sessionStorage.getItem(STUDENT_ACCESS_STORAGE_KEY) ?? "null",
+      ) as AcessoEstudanteResponse | null;
+    } catch {
+      access = null;
+    }
+
+    if (access?.fluxo === "inscricao") {
+      setStudentFlow("inscricao");
+      setForm((current) => ({ ...current, cpf: access.data.cpf }));
+    }
+
+    if (access?.fluxo === "lista_espera") {
+      const { inscricao, instituicao, documentos: savedDocuments } = access.data;
+      setStudentFlow("lista_espera");
+      setInscricaoId(inscricao.id);
+      setInscricaoToken(inscricao.token ?? null);
+      setInscricaoInstituicaoId(instituicao?.id ?? null);
+      setForm(
+        prefillRegistrationForm({
+          ...inscricao,
+          ...(instituicao ?? {}),
+        } as unknown as Record<string, unknown>),
+      );
+      setDocuments(
+        Object.fromEntries(
+          savedDocuments.map((documento) => [
+            documento.name,
+            {
+              id: documento.id,
+              fileName: documento.nome_original ?? documento.name,
+              filePath: documento.download_url,
+              status: documento.status,
+              type: documento.type,
+            },
+          ]),
+        ),
+      );
+      if (!access.data.pode_editar) {
+        setSubmissionProgress(100);
+        setSubmissionState("success");
+      }
+    }
+
+    if (access?.fluxo === "recadastro") {
+      setStudentFlow("recadastro");
+      setRecadastro(access.data);
+      setForm(
+        prefillRegistrationForm(
+          access.data.cadastro as unknown as Record<string, unknown>,
+        ),
+      );
+      setDocuments(
+        Object.fromEntries(
+          access.data.documentos
+            .filter((documento) => !documento.pendente)
+            .map((documento) => [
+              documento.type,
+              {
+                fileName: documento.nome_original ?? documento.label,
+                status: documento.status ?? undefined,
+                type: "documento",
+              },
+            ]),
+        ),
+      );
+      if (!access.data.pode_enviar) {
+        setSubmissionProgress(100);
+        setSubmissionState("success");
+      }
+    }
+
     const draft = parseRegistrationDraft(
       window.sessionStorage.getItem(REGISTRATION_DRAFT_STORAGE_KEY),
     );
+
+    if (!access && !draft) {
+      router.replace("/area-aluno");
+      setDraftHydrated(true);
+      return;
+    }
 
     if (draft) {
       setStep(draft.step);
@@ -970,7 +1168,7 @@ export function RegisterWorkspace() {
     }
 
     setDraftHydrated(true);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     return () => {
@@ -1285,11 +1483,13 @@ export function RegisterWorkspace() {
   }
 
   function hasRequiredDocuments() {
-    return REQUIRED_DOCUMENTS.every((document) => {
+    return activeDocuments
+      .filter((document) => document.required)
+      .every((document) => {
       const currentDocument = documents[document.key];
 
       return Boolean(currentDocument?.id || currentDocument?.fileName);
-    });
+      });
   }
 
   function getStepValidationMessage(stepIndex: StepIndex) {
@@ -1321,6 +1521,8 @@ export function RegisterWorkspace() {
   }
 
   async function validateCurrentStep() {
+    if (studentFlow === "recadastro") return;
+
     if (step === 0 || step === 1) {
       await inscricaoService.validateStep({
         step,
@@ -1344,16 +1546,21 @@ export function RegisterWorkspace() {
       const response = await inscricaoService.updateInscricao(
         inscricaoId,
         payload,
+        inscricaoToken ?? undefined,
       );
-      return response.id;
+      return { id: response.id, token: inscricaoToken ?? response.token ?? null };
     }
 
     const response = await inscricaoService.createInscricao(payload);
     setInscricaoId(response.id);
-    return response.id;
+    setInscricaoToken(response.token ?? null);
+    return { id: response.id, token: response.token ?? null };
   }
 
-  async function saveInstituicaoData(targetInscricaoId?: number | null) {
+  async function saveInstituicaoData(
+    targetInscricaoId?: number | null,
+    targetToken?: string | null,
+  ) {
     const id = targetInscricaoId ?? inscricaoId;
     if (!id || !hasAnyInstitutionalData(form)) return null;
 
@@ -1364,17 +1571,22 @@ export function RegisterWorkspace() {
         id,
         inscricaoInstituicaoId,
         payload,
+        targetToken ?? inscricaoToken ?? undefined,
       );
       return response.id;
     }
 
-    const response = await inscricaoService.createInstituicao(id, payload);
+    const response = await inscricaoService.createInstituicao(
+      id,
+      payload,
+      targetToken ?? inscricaoToken ?? undefined,
+    );
     setInscricaoInstituicaoId(response.id);
     return response.id;
   }
 
   async function submitDocuments(targetInscricaoId: number) {
-    for (const document of REGISTRATION_DOCUMENTS) {
+    for (const document of activeDocuments) {
       const currentDocument = documents[document.key];
 
       if (!currentDocument?.file) continue;
@@ -1389,6 +1601,31 @@ export function RegisterWorkspace() {
       }));
 
       try {
+        if (studentFlow === "recadastro") {
+          if (!recadastro?.token) {
+            throw new Error("A sessão do recadastro expirou.");
+          }
+
+          const response = await recadastroService.enviarDocumento(
+            recadastro.solicitacao_id,
+            recadastro.token,
+            document.key as DocumentoRecadastroTipo,
+            currentDocument.file,
+          );
+          setRecadastro(response.data);
+          setDocuments((current) => ({
+            ...current,
+            [document.key]: {
+              ...(current[document.key] ?? {}),
+              fileName: currentDocument.fileName ?? currentDocument.file?.name,
+              status: "Enviado",
+              uploading: false,
+              error: undefined,
+            },
+          }));
+          continue;
+        }
+
         const uploadedDocument = await inscricaoService.uploadDocumento(
           targetInscricaoId,
           {
@@ -1397,6 +1634,7 @@ export function RegisterWorkspace() {
             file: currentDocument.file,
             documentoId: currentDocument.id,
           },
+          inscricaoToken ?? undefined,
         );
 
         setDocuments((current) => ({
@@ -1492,7 +1730,12 @@ export function RegisterWorkspace() {
         ...getFieldErrors(form, todayIso),
         ...apiFieldErrors,
       };
-      const latestStatuses = getSectionStatus(form, documents, latestErrors);
+      const latestStatuses = getSectionStatus(
+        form,
+        documents,
+        latestErrors,
+        activeDocuments,
+      );
       const hasIncompleteSection = latestStatuses
         .slice(0, 4)
         .some((status) => status !== "complete");
@@ -1520,14 +1763,39 @@ export function RegisterWorkspace() {
         return;
       }
 
-      const id = await saveInscricaoBase();
-      await saveInstituicaoData(id);
-      await submitDocuments(id);
+      if (studentFlow === "recadastro") {
+        if (!recadastro?.token) {
+          throw new Error("A sessão do recadastro expirou. Informe o CPF novamente.");
+        }
+
+        await recadastroService.atualizarDados(
+          recadastro.solicitacao_id,
+          recadastro.token,
+          buildRecadastroPayload(form),
+        );
+        await submitDocuments(0);
+        const response = await recadastroService.finalizar(
+          recadastro.solicitacao_id,
+          recadastro.token,
+          {
+            possui_matricula: true,
+            possui_cronograma: true,
+            aceite_veracidade: form.accepted_terms,
+            aceite_ciencia: form.accepted_terms_2,
+          },
+        );
+        setRecadastro(response.data);
+      } else {
+        const inscricao = await saveInscricaoBase();
+        await saveInstituicaoData(inscricao.id, inscricao.token);
+        await submitDocuments(inscricao.id);
+      }
 
       setSubmissionProgress(0);
       setSubmissionState("submitting");
 
       window.sessionStorage.removeItem(REGISTRATION_DRAFT_STORAGE_KEY);
+      window.sessionStorage.removeItem(STUDENT_ACCESS_STORAGE_KEY);
       progressTimeoutRef.current = window.setTimeout(() => {
         setSubmissionProgress(100);
       }, 1500);
@@ -1566,6 +1834,7 @@ export function RegisterWorkspace() {
     setEditingStep(null);
     setForm(initialForm);
     setInscricaoId(null);
+    setInscricaoToken(null);
     setInscricaoInstituicaoId(null);
     setAttemptedSteps(new Set());
     setDocuments({});
@@ -1581,6 +1850,7 @@ export function RegisterWorkspace() {
     setSubmissionState("idle");
     lastCepLookupRef.current = "";
     cepLookupRequestRef.current += 1;
+    router.push("/area-aluno");
   }
 
   function handleBackToLogin() {
@@ -1625,7 +1895,7 @@ export function RegisterWorkspace() {
 
     if (file.size > MAX_DOCUMENT_SIZE) {
       setDocumentDraftFile(null);
-      setDocumentDraftError("O arquivo deve ter no maximo 2MB.");
+      setDocumentDraftError("O arquivo deve ter no máximo 5MB.");
       return false;
     }
 
@@ -1676,7 +1946,7 @@ export function RegisterWorkspace() {
     if (!file) return;
 
     if (file.size > MAX_DOCUMENT_SIZE) {
-      setDocumentDropError("O arquivo deve ter no maximo 2MB.");
+      setDocumentDropError("O arquivo deve ter no máximo 5MB.");
       return;
     }
 
@@ -1852,6 +2122,7 @@ export function RegisterWorkspace() {
               variant="white"
               label="CPF"
               required
+              disabled
               {...registrationFieldProps("cpf")}
               value={form.cpf}
               onChange={(event) => setField("cpf", event.target.value)}
@@ -2259,7 +2530,10 @@ export function RegisterWorkspace() {
   }
 
   function renderDocumentsStep() {
-    const uploadedCount = REQUIRED_DOCUMENTS.filter(
+    const requiredDocuments = activeDocuments.filter(
+      (document) => document.required,
+    );
+    const uploadedCount = requiredDocuments.filter(
       (document) =>
         documents[document.key]?.id || documents[document.key]?.fileName,
     ).length;
@@ -2283,7 +2557,7 @@ export function RegisterWorkspace() {
             <div>
               <h3 className="font-bold text-brand-700">Documentos</h3>
               <p className="text-sm text-slate-500">
-                {uploadedCount} de {REQUIRED_DOCUMENTS.length} obrigatórios
+                {uploadedCount} de {requiredDocuments.length} obrigatórios
                 anexados
               </p>
             </div>
@@ -2302,7 +2576,7 @@ export function RegisterWorkspace() {
           </div>
 
           <div className="divide-y divide-brand-100">
-            {REGISTRATION_DOCUMENTS.map((document) => {
+            {activeDocuments.map((document) => {
               const currentDocument = documents[document.key];
               const isUploaded = Boolean(
                 currentDocument?.id || currentDocument?.fileName,
@@ -2380,9 +2654,9 @@ export function RegisterWorkspace() {
                   Depois escolha o tipo do documento.
                 </p>
                 <p className="mt-6 text-sm leading-6 text-content-muted">
-                  Formatos permitidos: .pdf, .doc, .docx, .png, .jpg
+                  Formatos permitidos: .pdf, .png, .jpg, .jpeg
                   <br />
-                  Tamanho maximo: 2MB
+                  Tamanho máximo: 5MB
                 </p>
               </div>
             </div>
@@ -2419,7 +2693,7 @@ export function RegisterWorkspace() {
         status: stepStatuses[2],
       },
       {
-        title: "Upload de Documentos",
+        title: "Documentação",
         icon: <FileText className="size-5" />,
         step: 3 as StepIndex,
         status: stepStatuses[3],
@@ -2533,12 +2807,19 @@ export function RegisterWorkspace() {
 
             <h1 className="mt-6 text-2xl font-bold text-brand-700">
               {isSuccess
-                ? "Cadastro enviado para análise"
+                ? studentFlow === "recadastro"
+                  ? recadastro && !recadastro.pode_enviar
+                    ? `Recadastro: ${recadastro.status}`
+                    : "Recadastro enviado para análise"
+                  : "Cadastro enviado para análise"
                 : "Enviando cadastro"}
             </h1>
             <p className="mt-3 text-base leading-7 text-content-muted">
               {isSuccess
-                ? "Recebemos sua inscrição. Agora ela seguirá para análise da equipe responsável, e o retorno será feito pelos canais informados no cadastro."
+                ? studentFlow === "recadastro"
+                  ? recadastro?.observacoes ??
+                    "Seus dados foram confirmados e os documentos enviados. O recadastro seguirá para análise da equipe responsável."
+                  : "Recebemos sua inscrição. Agora ela seguirá para análise da equipe responsável, e o retorno será feito pelos canais informados no cadastro."
                 : "Estamos registrando suas informações e anexando os documentos enviados. Mantenha esta tela aberta até a conclusão."}
             </p>
 
@@ -2575,7 +2856,7 @@ export function RegisterWorkspace() {
                   leftIcon={<FilePlus2 className="size-5" />}
                   onClick={handleStartNewRegistration}
                 >
-                  Enviar novo cadastro
+                  Consultar outro CPF
                 </Button>
               </div>
             )}
@@ -2591,24 +2872,36 @@ export function RegisterWorkspace() {
 
   if (submissionState !== "idle") {
     return (
-      <Register step={null} stepStatuses={stepStatuses}>
+      <Register
+        step={null}
+        stepStatuses={stepStatuses}
+        title={studentFlow === "recadastro" ? "Realize seu recadastro" : undefined}
+      >
         {renderSubmissionScreen()}
       </Register>
     );
   }
 
   return (
-    <Register step={step} stepStatuses={stepStatuses}>
+    <Register
+      step={step}
+      stepStatuses={stepStatuses}
+      title={studentFlow === "recadastro" ? "Realize seu recadastro" : undefined}
+    >
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl flex-col">
         <div className="mb-6 rounded-lg bg-brand-600 p-5 text-white lg:hidden">
-          <p className="text-sm text-white/70">Realize seu cadastro</p>
+          <p className="text-sm text-white/70">
+            {studentFlow === "recadastro"
+              ? "Realize seu recadastro"
+              : "Realize seu cadastro"}
+          </p>
           <h1 className="mt-1 text-xl font-bold">
             {
               [
                 "Identidade Civil",
                 "Endereço e Contato",
                 "Dados Institucionais",
-                "Upload de Documentos",
+                "Documentação",
                 "Revisão e Confirmação",
               ][step]
             }
@@ -2737,7 +3030,7 @@ export function RegisterWorkspace() {
                   required
                   value={documentDraftKey}
                   onChange={(event) => setDocumentDraftKey(event.target.value)}
-                  options={REGISTRATION_DOCUMENTS.map((document) => ({
+                  options={activeDocuments.map((document) => ({
                     value: document.key,
                     label: document.label,
                   }))}
@@ -2785,7 +3078,7 @@ export function RegisterWorkspace() {
                   <input
                     id="registration-document-file"
                     type="file"
-                    accept=".pdf,.doc,.docx,.png,.jpg"
+                    accept=".pdf,.png,.jpg,.jpeg"
                     className="sr-only"
                     onChange={handleFileInputChange}
                   />
@@ -2801,9 +3094,9 @@ export function RegisterWorkspace() {
                     </span>
                   )}
                   <span className="mt-6 text-sm leading-6 text-content-muted">
-                    Formatos permitidos: .pdf, .doc, .docx, .png, .jpg
+                    Formatos permitidos: .pdf, .png, .jpg, .jpeg
                     <br />
-                    Tamanho maximo: 2MB
+                    Tamanho máximo: 5MB
                   </span>
                 </label>
               </div>

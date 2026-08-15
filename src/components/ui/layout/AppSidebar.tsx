@@ -28,7 +28,11 @@ const sidebarItems: SidebarItem[] = [
   { label: "Estudantes", icon: GraduationCap, href: "/estudantes" },
   { label: "Linhas", icon: MapIcon },
   { label: "Solicitações", icon: ClipboardEdit, href: "/solicitacoes" },
-  { label: "Recadastramento", icon: ClipboardEdit },
+  {
+    label: "Recadastramento",
+    icon: ClipboardEdit,
+    href: "/recadastramento",
+  },
 ];
 
 type AppSidebarProps = {

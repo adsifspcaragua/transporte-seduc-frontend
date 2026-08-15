@@ -7,7 +7,12 @@ import { useAuthStore } from "@/contexts/auth-store";
 import { authService } from "@/services/api/modules/auth";
 
 const guestOnlyRoutes = ["/login", "/recuperar-senha"];
-const publicRoutes = ["/registro", ...guestOnlyRoutes];
+const publicRoutes = [
+  "/area-aluno",
+  "/recadastro",
+  "/registro",
+  ...guestOnlyRoutes,
+];
 
 type AuthProviderProps = {
   children: ReactNode;

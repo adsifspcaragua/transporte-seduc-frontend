@@ -81,20 +81,21 @@ export const inscricaoService = {
     return unwrapCollection(data);
   },
 
-  async getInscricao(id: number) {
+  async getInscricao(id: number, token?: string) {
     const { data } = await api.get<LaravelDataResponse<Inscricao>>(
       API_ENDPOINTS.INSCRICOES.BY_ID(id),
+      token ? { headers: { "X-Inscricao-Token": token } } : undefined,
     );
 
     return unwrapData(data);
   },
 
   async validateStep(payload: ValidateInscricaoStepPayload) {
-    await api.post(API_ENDPOINTS.INSCRICOES.VALIDATE_STEP, payload);
+    await publicApi.post(API_ENDPOINTS.INSCRICOES.VALIDATE_STEP, payload);
   },
 
   async createInscricao(payload: InscricaoPayload) {
-    const { data } = await api.post<Inscricao>(
+    const { data } = await publicApi.post<Inscricao>(
       API_ENDPOINTS.INSCRICOES.BASE,
       payload,
     );
@@ -102,10 +103,11 @@ export const inscricaoService = {
     return data;
   },
 
-  async updateInscricao(id: number, payload: InscricaoPayload) {
-    const { data } = await api.put<LaravelDataResponse<Inscricao>>(
+  async updateInscricao(id: number, payload: InscricaoPayload, token?: string) {
+    const { data } = await publicApi.put<LaravelDataResponse<Inscricao>>(
       API_ENDPOINTS.INSCRICOES.BY_ID(id),
       payload,
+      token ? { headers: { "X-Inscricao-Token": token } } : undefined,
     );
 
     return unwrapData(data);
@@ -114,10 +116,14 @@ export const inscricaoService = {
   async createInstituicao(
     inscricaoId: number,
     payload: InscricaoInstituicaoPayload,
+    token?: string,
   ) {
-    const { data } = await api.post<LaravelDataResponse<InscricaoInstituicao>>(
+    const { data } = await publicApi.post<
+      LaravelDataResponse<InscricaoInstituicao>
+    >(
       API_ENDPOINTS.INSCRICOES.INSTITUICOES(inscricaoId),
       payload,
+      token ? { headers: { "X-Inscricao-Token": token } } : undefined,
     );
 
     return unwrapData(data);
@@ -127,10 +133,12 @@ export const inscricaoService = {
     inscricaoId: number,
     instituicaoId: number,
     payload: InscricaoInstituicaoPayload,
+    token?: string,
   ) {
     const { data } = await api.put<LaravelDataResponse<InscricaoInstituicao>>(
       API_ENDPOINTS.INSCRICOES.INSTITUICAO_BY_ID(inscricaoId, instituicaoId),
       payload,
+      token ? { headers: { "X-Inscricao-Token": token } } : undefined,
     );
 
     return unwrapData(data);
@@ -168,9 +176,10 @@ export const inscricaoService = {
     return unwrapCollection(data);
   },
 
-  async listDocumentos(inscricaoId: number) {
+  async listDocumentos(inscricaoId: number, token?: string) {
     const { data } = await api.get<LaravelDocumentListResponse>(
       API_ENDPOINTS.INSCRICOES.DOCUMENTOS(inscricaoId),
+      token ? { headers: { "X-Inscricao-Token": token } } : undefined,
     );
 
     if (typeof data === "string") return [];
@@ -184,10 +193,6 @@ export const inscricaoService = {
     );
   },
 
-  async ativarRecadastro() {
-    await api.post<{ message?: string }>(API_ENDPOINTS.INSCRICOES.RECADASTRO);
-  },
-
   async uploadDocumento(
     inscricaoId: number,
     payload: {
@@ -196,29 +201,20 @@ export const inscricaoService = {
       file: File;
       documentoId?: number;
     },
+    token?: string,
   ) {
     const formData = new FormData();
     formData.append("name", payload.name);
     formData.append("type", payload.type);
     formData.append("file_path", payload.file);
 
-    const endpoint = payload.documentoId
-      ? API_ENDPOINTS.INSCRICOES.DOCUMENTO_BY_ID(
-          inscricaoId,
-          payload.documentoId,
-        )
-      : API_ENDPOINTS.INSCRICOES.DOCUMENTOS(inscricaoId);
-
-    if (payload.documentoId) {
-      formData.append("_method", "PUT");
-    }
-
     const { data } = await api.post<LaravelDocumentResponse>(
-      endpoint,
+      API_ENDPOINTS.INSCRICOES.DOCUMENTOS(inscricaoId),
       formData,
       {
         headers: {
           "Content-Type": "multipart/form-data",
+          ...(token ? { "X-Inscricao-Token": token } : {}),
         },
       },
     );

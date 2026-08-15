@@ -8,7 +8,6 @@ export const API_ENDPOINTS = {
   INSCRICOES: {
     BASE: "/inscricoes",
     ANALISE: (id: number | string) => `/inscricoes/analise/${id}`,
-    RECADASTRO: "/inscricoes/recadastro",
     VALIDATE_STEP: "/inscricoes/validar-step",
     BY_ID: (id: number | string) => `/inscricoes/${id}`,
     DOCUMENTOS: (inscricaoId: number | string) =>
@@ -23,6 +22,31 @@ export const API_ENDPOINTS = {
       inscricaoId: number | string,
       instituicaoId: number | string,
     ) => `/inscricoes/${inscricaoId}/instituicoes/${instituicaoId}`,
+  },
+  RECADASTRO: {
+    CONSULTA: "/reecadastro/consulta",
+    SOLICITACOES: "/reecadastro/solicitacoes",
+    SOLICITACAO_BY_ID: (id: number | string) =>
+      `/reecadastro/solicitacoes/${id}`,
+    DOCUMENTOS: (id: number | string) =>
+      `/reecadastro/solicitacoes/${id}/documentos`,
+    FINALIZAR: (id: number | string) =>
+      `/reecadastro/solicitacoes/${id}/finalizar`,
+    ANALISE: (id: number | string) =>
+      `/reecadastro/solicitacoes/${id}/analise`,
+    PERIODOS: "/reecadastro/periodos",
+    PERIODO_BY_ID: (id: number | string) => `/reecadastro/periodos/${id}`,
+    ABRIR_PERIODO: (id: number | string) =>
+      `/reecadastro/periodos/${id}/abrir`,
+    FECHAR_PERIODO: (id: number | string) =>
+      `/reecadastro/periodos/${id}/fechar`,
+    DOWNLOAD_DOCUMENTO: (id: number | string) =>
+      `/reecadastro/documentos/${id}/download`,
+    ATUALIZAR_DADOS: (id: number | string) =>
+      `/reecadastro/solicitacoes/${id}/dados`,
+  },
+  AREA_ESTUDANTE: {
+    ACESSO: "/area-estudante/acesso",
   },
   INSTITUICOES: {
     BASE: "/instituicao",

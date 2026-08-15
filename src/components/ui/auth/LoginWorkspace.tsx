@@ -493,10 +493,10 @@ export function LoginWorkspace() {
               </Button>
 
               <Link
-                href="/registro"
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-brand-600/20 bg-white px-5 text-center text-base font-semibold leading-tight text-brand-600 shadow-sm transition-all duration-200 hover:bg-brand-600/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-brand-600/30 active:bg-brand-600/10 lg:hidden"
+                href="/area-aluno"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-action-light-default bg-action-light-default px-5 text-center text-base font-semibold leading-tight text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
               >
-                <span>Solicitar transporte universitário</span>
+                <span>Área do estudante</span>
                 <ArrowRight className="size-5" />
               </Link>
             </form>

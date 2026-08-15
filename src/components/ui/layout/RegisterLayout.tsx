@@ -11,13 +11,14 @@ type Props = {
   children: ReactNode;
   step: number | null;
   stepStatuses?: RegisterStepStatus[];
+  title?: string;
 };
 
 const steps = [
   "Identidade Civil",
   "Endereço e Contato",
   "Dados Institucionais",
-  "Upload de Documentos",
+  "Documentação",
   "Revisão e Confirmação",
 ];
 
@@ -27,7 +28,12 @@ const statusLabels: Record<RegisterStepStatus, string> = {
   pending: "Pendente",
 };
 
-export default function Register({ children, step, stepStatuses = [] }: Props) {
+export default function Register({
+  children,
+  step,
+  stepStatuses = [],
+  title = "Realize seu cadastro",
+}: Props) {
   const currentStep =
     step === null ? steps.length : Math.min(step + 1, steps.length);
   const progress = Math.round((currentStep / steps.length) * 100);
@@ -48,7 +54,7 @@ export default function Register({ children, step, stepStatuses = [] }: Props) {
         </div>
 
         <div className="mt-16">
-          <h2 className="text-2xl font-bold">Realize seu cadastro</h2>
+          <h2 className="text-2xl font-bold">{title}</h2>
 
           <div className="mt-8">
             <div className="mb-3 flex items-center justify-between text-sm font-bold text-brand-050">

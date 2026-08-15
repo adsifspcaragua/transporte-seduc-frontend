@@ -788,7 +788,6 @@ export function SolicitacoesWorkspace() {
       setActionError("");
       await inscricaoService.analisarInscricao(approveTarget.id, {
         decisao: "Aprovado",
-        documentos: null,
         motivo: null,
       });
       await loadSolicitacoes();
@@ -815,7 +814,6 @@ export function SolicitacoesWorkspace() {
       setActionError("");
       await inscricaoService.analisarInscricao(rejectTarget.id, {
         decisao: "Rejeitado",
-        documentos: null,
         motivo: rejectReason.trim(),
       });
       await loadSolicitacoes();
@@ -1306,17 +1304,17 @@ function SolicitacaoDetailsModal({
                     </span>
                     <StatusBadge status={documento.status} />
                     <div className="flex flex-wrap gap-2">
-                      {documento.file_path ? (
+                      {documento.download_url ?? documento.file_path ? (
                         <>
                           <DocumentActionLink
-                            href={documento.file_path}
+                            href={documento.download_url ?? documento.file_path ?? "#"}
                             icon={<ExternalLink />}
                           >
                             Visualizar
                           </DocumentActionLink>
                           <DocumentActionLink
                             download
-                            href={documento.file_path}
+                            href={documento.download_url ?? documento.file_path ?? "#"}
                             icon={<Download />}
                           >
                             Baixar

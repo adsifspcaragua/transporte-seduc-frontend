@@ -1,7 +1,13 @@
-export type InscricaoStatus = "incompleto" | "Em analise" | string;
+export type InscricaoStatus =
+  | "Incompleto"
+  | "Em analise"
+  | "Aprovado"
+  | "Rejeitado"
+  | string;
 
 export type Inscricao = {
   id: number;
+  token?: string;
   name: string;
   cpf: string;
   rg: string | null;
@@ -51,9 +57,11 @@ export type InscricaoInstituicao = {
   instituicao_id: number | null;
   instituicao?: Instituicao | null;
   shift_label?: string | null;
+  shift?: number | null;
   city_destination: string | null;
   used_transport: boolean | null;
   days_of_week_labels?: string[];
+  days_of_week?: number[];
   line_id?: number | null;
   has_scholarship: boolean | null;
   scholarship_type: string | null;
@@ -79,7 +87,9 @@ export type InscricaoDocumento = {
   id: number;
   name: string;
   type: string;
-  file_path: string;
+  file_path?: string;
+  nome_original?: string | null;
+  download_url?: string;
   status: string;
   inscricao_id: number;
 };
@@ -120,11 +130,9 @@ export type CepAddress = {
 export type InscricaoAnalisePayload =
   | {
       decisao: "Aprovado";
-      documentos: null;
       motivo?: null;
     }
   | {
       decisao: "Rejeitado";
-      documentos: string[] | null;
       motivo: string;
     };
