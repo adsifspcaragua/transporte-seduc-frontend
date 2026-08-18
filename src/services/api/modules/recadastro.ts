@@ -2,6 +2,7 @@ import { api, publicApi } from "@/services/api/client";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
 import type {
   AnaliseRecadastroPayload,
+  AusentesRecadastro,
   AcessoEstudanteResponse,
   CadastroRecadastro,
   DocumentoRecadastroTipo,
@@ -108,6 +109,34 @@ export const recadastroService = {
     const { data } = await api.post<DataResponse<PeriodoRecadastro>>(
       API_ENDPOINTS.RECADASTRO.PERIODOS,
       payload,
+    );
+    return data;
+  },
+
+  // Prorrogar um período é atualizar a data de fim; por isso o payload é
+  // parcial, para a responsável mexer só no que precisa mudar.
+  async updatePeriodo(
+    id: number,
+    payload: Partial<PeriodoRecadastroPayload>,
+  ) {
+    const { data } = await api.put<DataResponse<PeriodoRecadastro>>(
+      API_ENDPOINTS.RECADASTRO.PERIODO_BY_ID(id),
+      payload,
+    );
+    return data;
+  },
+
+  async listAusentes(periodoId: number) {
+    const { data } = await api.get<AusentesRecadastro>(
+      API_ENDPOINTS.RECADASTRO.AUSENTES(periodoId),
+    );
+    return data;
+  },
+
+  async inativarAusentes(periodoId: number, estudantes: number[]) {
+    const { data } = await api.post<{ message: string; inativados: number[] }>(
+      API_ENDPOINTS.RECADASTRO.INATIVAR_AUSENTES(periodoId),
+      { estudantes },
     );
     return data;
   },

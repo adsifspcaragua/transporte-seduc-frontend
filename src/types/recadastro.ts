@@ -43,6 +43,8 @@ export type DocumentoRecadastro = {
   nome_original: string;
   status: string;
   observacoes: string | null;
+  download_url?: string;
+  preview_url?: string;
   created_at?: string;
   updated_at?: string;
 };
@@ -57,11 +59,18 @@ export type EstudanteRecadastro = {
   status?: string;
 };
 
+export type CampoPendenteRecadastro = {
+  campo: string;
+  label: string;
+};
+
 export type SituacaoRecadastro = {
   solicitacao_id: number;
   token: string | null;
   status: RecadastroStatus;
   observacoes: string | null;
+  // Campos do cadastro que a responsável pediu para corrigir, já com o rótulo.
+  campos_pendentes: CampoPendenteRecadastro[];
   pode_enviar: boolean;
   prazo_matricula: boolean;
   prazo_cronograma: boolean;
@@ -121,6 +130,7 @@ export type SolicitacaoRecadastro = {
   periodo_id: number;
   status: RecadastroStatus;
   observacoes: string | null;
+  campos_pendentes: string[];
   prazo_matricula: boolean;
   prazo_cronograma: boolean;
   aceite_veracidade: boolean;
@@ -151,6 +161,7 @@ export type AnaliseRecadastroPayload =
       decisao: "Pendencia";
       motivo: string;
       documentos: DocumentoRecadastroTipo[];
+      campos?: string[];
     };
 
 export type PeriodoRecadastroPayload = {
@@ -159,4 +170,25 @@ export type PeriodoRecadastroPayload = {
   data_inicio: string;
   data_fim: string;
   observacoes?: string | null;
+};
+
+// Estudante ativo que não concluiu o recadastro do período. A solicitação só
+// nasce quando ele acessa pelo CPF, então quem nunca entrou não aparece na tela
+// de solicitações — esta lista é a única forma de enxergá-lo.
+export type EstudanteAusente = {
+  id: number;
+  name: string;
+  cpf: string | null;
+  email: string | null;
+  phone: string | null;
+  situacao: string;
+};
+
+export type AusentesRecadastro = {
+  data: EstudanteAusente[];
+  periodo: {
+    id: number;
+    referencia: string;
+    status: string;
+  };
 };

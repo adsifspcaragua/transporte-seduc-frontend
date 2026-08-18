@@ -1,3 +1,5 @@
+import type { InscricaoDocumento } from "@/types/inscricao";
+
 export type Estudante = {
   id: number;
   name: string;
@@ -44,6 +46,9 @@ export type Estudante = {
   used_transport?: boolean | number | string | null;
   has_scholarship?: boolean | number | string | null;
   scholarship_type?: string | null;
+  // Ficam na inscrição que originou o estudante, para a responsável poder
+  // reconferir o que analisou depois da aprovação.
+  documentos?: InscricaoDocumento[];
 };
 
 export type PaginatedEstudantes = {
