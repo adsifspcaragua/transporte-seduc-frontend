@@ -14,6 +14,7 @@ import type {
 
 type ValidateInscricaoStepPayload = {
   data: InscricaoInstituicaoPayload | InscricaoPayload;
+  inscricao_id?: number;
   step: number;
 };
 
@@ -90,8 +91,12 @@ export const inscricaoService = {
     return unwrapData(data);
   },
 
-  async validateStep(payload: ValidateInscricaoStepPayload) {
-    await publicApi.post(API_ENDPOINTS.INSCRICOES.VALIDATE_STEP, payload);
+  async validateStep(payload: ValidateInscricaoStepPayload, token?: string) {
+    await publicApi.post(
+      API_ENDPOINTS.INSCRICOES.VALIDATE_STEP,
+      payload,
+      token ? { headers: { "X-Inscricao-Token": token } } : undefined,
+    );
   },
 
   async createInscricao(payload: InscricaoPayload) {

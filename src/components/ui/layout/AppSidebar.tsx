@@ -26,7 +26,7 @@ type SidebarItem = {
 const sidebarItems: SidebarItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/" },
   { label: "Estudantes", icon: GraduationCap, href: "/estudantes" },
-  { label: "Linhas", icon: MapIcon },
+  { label: "Linhas", icon: MapIcon, href: "/linhas" },
   { label: "Solicitações", icon: ClipboardEdit, href: "/solicitacoes" },
   {
     label: "Recadastramento",

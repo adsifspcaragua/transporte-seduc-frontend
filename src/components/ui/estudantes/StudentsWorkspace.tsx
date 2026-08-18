@@ -3,7 +3,10 @@
 import axios from "axios";
 import {
   ChevronDown,
+  Download,
+  ExternalLink,
   Eye,
+  FileText,
   Filter,
   GraduationCap,
   IdCard,
@@ -1181,6 +1184,35 @@ export function StudentsWorkspace() {
   );
 }
 
+// `rel` é `noopener` e não `noreferrer` de propósito: a rota do documento
+// identifica a responsável pela sessão, e o Sanctum só a carrega quando reconhece
+// a requisição como vinda do frontend — checagem que depende do Referer, que
+// `noreferrer` removeria. Mesmo motivo do link equivalente em SolicitacoesWorkspace.
+function StudentDocumentLink({
+  children,
+  download,
+  href,
+  icon,
+}: {
+  children: string;
+  download?: boolean;
+  href: string;
+  icon: ReactNode;
+}) {
+  return (
+    <a
+      className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-brand-600/20 bg-surface-primary px-3 text-sm font-semibold text-brand-600 shadow-sm transition-colors hover:bg-brand-600/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+      download={download}
+      href={href}
+      rel="noopener"
+      target={download ? undefined : "_blank"}
+    >
+      <span className="[&>svg]:size-4">{icon}</span>
+      {children}
+    </a>
+  );
+}
+
 function StudentDetailsModal({
   institutionNamesById,
   lineNamesById,
@@ -1196,6 +1228,7 @@ function StudentDetailsModal({
 }) {
   const [openSections, setOpenSections] = useState({
     academic: true,
+    documents: true,
     notes: true,
     personal: true,
   });
@@ -1205,6 +1238,7 @@ function StudentDetailsModal({
 
     setOpenSections({
       academic: true,
+      documents: true,
       notes: true,
       personal: true,
     });
@@ -1412,6 +1446,60 @@ function StudentDetailsModal({
                 </dl>
               </DetailGroup>
             </div>
+          </DetailsSection>
+
+          <DetailsSection
+            icon={<FileText />}
+            isOpen={openSections.documents}
+            onToggle={() => toggleSection("documents")}
+            subtitle="Documentos enviados na inscrição que gerou este cadastro."
+            title="Documentos"
+          >
+            {student.documentos?.length ? (
+              <ul className="divide-y divide-border-subtle">
+                {student.documentos.map((documento) => (
+                  <li
+                    className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                    key={documento.id}
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-brand-600">
+                        {documento.name}
+                      </span>
+                      <span className="text-sm font-medium text-slate-500">
+                        {documento.nome_original ?? documento.type}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StudentDocumentLink
+                        href={
+                          documento.preview_url ??
+                          documento.download_url ??
+                          documento.file_path ??
+                          "#"
+                        }
+                        icon={<ExternalLink />}
+                      >
+                        Visualizar
+                      </StudentDocumentLink>
+                      <StudentDocumentLink
+                        download
+                        href={
+                          documento.download_url ?? documento.file_path ?? "#"
+                        }
+                        icon={<Download />}
+                      >
+                        Baixar
+                      </StudentDocumentLink>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm font-medium text-slate-700">
+                Nenhum documento vinculado a este estudante.
+              </p>
+            )}
           </DetailsSection>
 
           <DetailsSection

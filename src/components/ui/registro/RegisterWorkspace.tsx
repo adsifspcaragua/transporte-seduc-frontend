@@ -961,6 +961,12 @@ export function RegisterWorkspace() {
   const [editingStep, setEditingStep] = useState<StepIndex | null>(null);
   const [form, setForm] = useState<RegistrationForm>(initialForm);
   const [inscricaoId, setInscricaoId] = useState<number | null>(null);
+  // O que a responsável devolveu para corrigir. Vale para a lista de espera e
+  // para o recadastro: os dois devolvem um motivo em texto e os campos apontados.
+  const [pendencia, setPendencia] = useState<{
+    motivo: string | null;
+    campos: { campo: string; label: string }[];
+  } | null>(null);
   const [inscricaoToken, setInscricaoToken] = useState<string | null>(null);
   const [studentFlow, setStudentFlow] = useState<StudentFlow>("inscricao");
   const [recadastro, setRecadastro] = useState<SituacaoRecadastro | null>(null);
@@ -1082,6 +1088,10 @@ export function RegisterWorkspace() {
     if (access?.fluxo === "lista_espera") {
       const { inscricao, instituicao, documentos: savedDocuments } = access.data;
       setStudentFlow("lista_espera");
+      setPendencia({
+        motivo: inscricao.observation,
+        campos: inscricao.campos_pendentes ?? [],
+      });
       setInscricaoId(inscricao.id);
       setInscricaoToken(inscricao.token ?? null);
       setInscricaoInstituicaoId(instituicao?.id ?? null);
@@ -1113,6 +1123,10 @@ export function RegisterWorkspace() {
 
     if (access?.fluxo === "recadastro") {
       setStudentFlow("recadastro");
+      setPendencia({
+        motivo: access.data.observacoes,
+        campos: access.data.campos_pendentes ?? [],
+      });
       setRecadastro(access.data);
       setForm(
         prefillRegistrationForm(
@@ -1523,19 +1537,33 @@ export function RegisterWorkspace() {
   async function validateCurrentStep() {
     if (studentFlow === "recadastro") return;
 
+    // Quem retoma a lista de espera revalida os próprios dados: sem identificar
+    // a inscrição, o backend acusaria o CPF, o telefone e o e-mail dela como
+    // duplicados e travaria a etapa.
+    const emEdicao = inscricaoId ? { inscricao_id: inscricaoId } : {};
+    const token = inscricaoToken ?? undefined;
+
     if (step === 0 || step === 1) {
-      await inscricaoService.validateStep({
-        step,
-        data: buildInscricaoPayload(form),
-      });
+      await inscricaoService.validateStep(
+        {
+          step,
+          data: buildInscricaoPayload(form),
+          ...emEdicao,
+        },
+        token,
+      );
       return;
     }
 
     if (step === 2) {
-      await inscricaoService.validateStep({
-        step,
-        data: buildInstituicaoPayload(form),
-      });
+      await inscricaoService.validateStep(
+        {
+          step,
+          data: buildInstituicaoPayload(form),
+          ...emEdicao,
+        },
+        token,
+      );
     }
   }
 
@@ -2907,6 +2935,39 @@ export function RegisterWorkspace() {
             }
           </h1>
         </div>
+
+        {(pendencia?.motivo || pendencia?.campos.length) && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-5">
+            <p className="font-bold text-slate-800">
+              A responsável pediu correções
+              {studentFlow === "recadastro"
+                ? " no seu recadastro"
+                : " na sua inscrição"}
+            </p>
+            {pendencia.motivo && (
+              <p className="mt-2 text-sm leading-6 text-slate-700">
+                {pendencia.motivo}
+              </p>
+            )}
+            {pendencia.campos.length > 0 && (
+              <>
+                <p className="mt-3 text-sm font-bold text-slate-700">
+                  Corrija estes campos:
+                </p>
+                <ul className="mt-1 flex flex-wrap gap-2">
+                  {pendencia.campos.map((campo) => (
+                    <li
+                      className="rounded-md bg-white px-2 py-1 text-sm font-semibold text-slate-700"
+                      key={campo.campo}
+                    >
+                      {campo.label}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
 
         <form
           ref={registrationFormRef}

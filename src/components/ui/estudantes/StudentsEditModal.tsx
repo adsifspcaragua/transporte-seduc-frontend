@@ -27,8 +27,9 @@ import {
   ModalSectionHeader,
 } from "@/components/modal";
 import { inscricaoService } from "@/services/api/modules/inscricao";
+import { linhaService } from "@/services/api/modules/linha";
 import type { Estudante, UpdateEstudantePayload } from "@/types/estudante";
-import type { Curso, Instituicao } from "@/types/inscricao";
+import type { Curso, Instituicao, Linha } from "@/types/inscricao";
 import { cleanCep } from "@/utils/cep";
 import { cn } from "@/utils/cn";
 import { cleanCpf, isValidCpf } from "@/utils/cpf";
@@ -59,6 +60,7 @@ type EditStudentForm = {
   father_name: string;
   has_scholarship: string;
   instituicao_id: string;
+  linha_id: string;
   mother_name: string;
   name: string;
   neighborhood: string;
@@ -104,6 +106,7 @@ const EMPTY_FORM: EditStudentForm = {
   father_name: "",
   has_scholarship: "",
   instituicao_id: "",
+  linha_id: "",
   mother_name: "",
   name: "",
   neighborhood: "",
@@ -313,6 +316,7 @@ function getStudentForm(student: Estudante | null): EditStudentForm {
     expected_completion: student.expected_completion ?? "",
     father_name: student.father_name ?? "",
     has_scholarship: normalizeBooleanAnswer(student.has_scholarship),
+    linha_id: student.linha_id ? String(student.linha_id) : "",
     instituicao_id: student.instituicao_id
       ? String(student.instituicao_id)
       : "",
@@ -462,6 +466,9 @@ export function StudentsEditModal({
   const [form, setForm] = useState<EditStudentForm>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [instituicoes, setInstituicoes] = useState<Instituicao[]>([]);
+  const [linhas, setLinhas] = useState<Linha[]>([]);
+  const [linhasError, setLinhasError] = useState("");
+  const [linhasLoading, setLinhasLoading] = useState(false);
   const [instituicoesError, setInstituicoesError] = useState("");
   const [instituicoesLoading, setInstituicoesLoading] = useState(false);
   const [cursos, setCursos] = useState<Curso[]>([]);
@@ -482,6 +489,24 @@ export function StudentsEditModal({
         value: String(instituicao.id),
       })),
     [instituicoes],
+  );
+
+  // A linha lotada continua na lista, marcada: esconder a opção deixaria a
+  // responsável sem entender por que a linha sumiu.
+  const linhaOptions = useMemo(
+    () =>
+      linhas.map((linha) => {
+        const vagas = linha.vagas_restantes ?? 0;
+
+        return {
+          label:
+            vagas > 0
+              ? `${linha.name} (${vagas} vaga(s))`
+              : `${linha.name} (lotada)`,
+          value: String(linha.id),
+        };
+      }),
+    [linhas],
   );
 
   const cursoOptions = useMemo(
@@ -536,6 +561,38 @@ export function StudentsEditModal({
       ignore = true;
     };
   }, [instituicoes.length, open]);
+
+  useEffect(() => {
+    if (!open || linhas.length > 0) return;
+
+    let ignore = false;
+
+    async function loadLinhas() {
+      try {
+        setLinhasLoading(true);
+        setLinhasError("");
+        const nextLinhas = await linhaService.list();
+
+        if (!ignore) {
+          setLinhas(nextLinhas);
+        }
+      } catch {
+        if (!ignore) {
+          setLinhasError("Não foi possível carregar as linhas.");
+        }
+      } finally {
+        if (!ignore) {
+          setLinhasLoading(false);
+        }
+      }
+    }
+
+    void loadLinhas();
+
+    return () => {
+      ignore = true;
+    };
+  }, [linhas.length, open]);
 
   useEffect(() => {
     if (!open || cursos.length > 0) return;
@@ -704,6 +761,9 @@ export function StudentsEditModal({
       payload.expected_completion = form.expected_completion;
     }
     if (form.father_name.trim()) payload.father_name = form.father_name.trim();
+    // Enviar null quando nao ha linha e o que desvincula o estudante; omitir o
+    // campo manteria o vinculo antigo.
+    payload.linha_id = form.linha_id ? Number(form.linha_id) : null;
     if (cleanPhone(form.phone)) payload.phone = cleanPhone(form.phone);
     if (form.mother_name.trim()) payload.mother_name = form.mother_name.trim();
     if (form.neighborhood.trim())
@@ -932,6 +992,23 @@ export function StudentsEditModal({
               }
               required
               value={form.instituicao_id}
+            />
+            <Select
+              className="bg-white"
+              containerClassName="md:col-span-4"
+              disabled={linhasLoading || Boolean(linhasError)}
+              hint={linhasError || undefined}
+              label="Linha de transporte"
+              onChange={(event) => setField("linha_id", event.target.value)}
+              options={linhaOptions}
+              placeholder={
+                linhasLoading
+                  ? "Carregando..."
+                  : linhasError
+                    ? "Linhas indisponíveis"
+                    : "Sem linha"
+              }
+              value={form.linha_id}
             />
             <Select
               className="bg-white"

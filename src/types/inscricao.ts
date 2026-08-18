@@ -1,3 +1,8 @@
+export type CampoPendenteInscricao = {
+  campo: string;
+  label: string;
+};
+
 export type InscricaoStatus =
   | "Incompleto"
   | "Em analise"
@@ -26,6 +31,8 @@ export type Inscricao = {
   accepted_terms: boolean | null;
   accepted_terms_2: boolean | null;
   observation: string | null;
+  // Campos que a responsável pediu para corrigir, já com o rótulo pronto.
+  campos_pendentes?: CampoPendenteInscricao[];
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -90,6 +97,7 @@ export type InscricaoDocumento = {
   file_path?: string;
   nome_original?: string | null;
   download_url?: string;
+  preview_url?: string;
   status: string;
   inscricao_id: number;
 };
@@ -115,7 +123,18 @@ export type Linha = {
   departure_time?: string | null;
   return_time?: string | null;
   max_capacity?: number | null;
+  // Lugares tomados e livres. Só estudante ativo ocupa vaga.
+  ocupacao?: number;
+  vagas_restantes?: number;
   [key: string]: unknown;
+};
+
+export type LinhaPayload = {
+  name: string;
+  description?: string | null;
+  departure_time?: string | null;
+  return_time?: string | null;
+  max_capacity: number;
 };
 
 export type CepAddress = {
@@ -135,4 +154,13 @@ export type InscricaoAnalisePayload =
   | {
       decisao: "Rejeitado";
       motivo: string;
+    }
+  | {
+      // Devolver reabre a inscrição para o aluno corrigir, sem soltar o CPF.
+      // `documentos` lista o que precisa ser reenviado; vazio significa que só
+      // os dados preenchidos precisam de ajuste.
+      decisao: "Devolvido";
+      motivo: string;
+      documentos?: string[];
+      campos?: string[];
     };

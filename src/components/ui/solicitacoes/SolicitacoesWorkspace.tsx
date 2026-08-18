@@ -12,6 +12,7 @@ import {
   Filter,
   GraduationCap,
   IdCard,
+  Undo2,
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -457,12 +458,18 @@ function DocumentActionLink({
   href: string;
   icon: ReactNode;
 }) {
+  // `rel` aqui é deliberadamente `noopener`, e não `noreferrer`: este link abre
+  // uma rota do backend que identifica o administrador pela sessão. O Sanctum só
+  // carrega a sessão quando reconhece a requisição como vinda do frontend, e numa
+  // navegação essa checagem depende do Referer — que `noreferrer` removeria,
+  // fazendo o backend responder "Token da inscrição inválido ou ausente".
+  // `noopener` mantém a proteção contra window.opener sem esse efeito colateral.
   return (
     <a
       className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-brand-600/20 bg-surface-primary px-3 text-sm font-semibold text-brand-600 shadow-sm transition-colors hover:bg-brand-600/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
       download={download}
       href={href}
-      rel="noreferrer"
+      rel="noopener"
       target={download ? undefined : "_blank"}
     >
       <span className="[&>svg]:size-4">{icon}</span>
@@ -533,6 +540,34 @@ function DetailGroup({
   );
 }
 
+// Espelha Inscricao::CAMPOS_CORRIGIVEIS no backend: só os campos que o estudante
+// consegue editar na lista de espera. Apontar um campo que ele não pode mexer
+// geraria uma pendência sem saída. O CPF fica de fora porque identifica a
+// inscrição — trocar de CPF é começar outra.
+const CAMPOS_CORRIGIVEIS: { campo: string; label: string }[] = [
+  { campo: "name", label: "Nome completo" },
+  { campo: "rg", label: "RG" },
+  { campo: "father_name", label: "Nome do pai" },
+  { campo: "mother_name", label: "Nome da mãe" },
+  { campo: "birth_date", label: "Data de nascimento" },
+  { campo: "phone", label: "Telefone" },
+  { campo: "email", label: "E-mail" },
+  { campo: "cep", label: "CEP" },
+  { campo: "address", label: "Endereço" },
+  { campo: "number", label: "Número" },
+  { campo: "complement", label: "Complemento" },
+  { campo: "neighborhood", label: "Bairro" },
+  { campo: "city", label: "Cidade" },
+  { campo: "instituicao_id", label: "Instituição" },
+  { campo: "course", label: "Curso" },
+  { campo: "semester", label: "Semestre" },
+  { campo: "expected_completion", label: "Previsão de conclusão" },
+  { campo: "shift", label: "Turno" },
+  { campo: "city_destination", label: "Cidade de destino" },
+  { campo: "days_of_week", label: "Dias de uso do transporte" },
+  { campo: "has_scholarship", label: "Bolsa de estudos" },
+];
+
 export function SolicitacoesWorkspace() {
   const hasCachedPage = Boolean(solicitacoesPageCache);
   const [loading, setLoading] = useState(!hasCachedPage);
@@ -564,9 +599,16 @@ export function SolicitacoesWorkspace() {
   const [rejectTarget, setRejectTarget] = useState<EnrichedInscricao | null>(
     null,
   );
+  const [returnTarget, setReturnTarget] = useState<EnrichedInscricao | null>(
+    null,
+  );
   const [historyOpen, setHistoryOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectReasonError, setRejectReasonError] = useState("");
+  const [returnReason, setReturnReason] = useState("");
+  const [returnReasonError, setReturnReasonError] = useState("");
+  const [returnDocuments, setReturnDocuments] = useState<string[]>([]);
+  const [returnFields, setReturnFields] = useState<string[]>([]);
   const showPageSkeleton = useMinimumVisibleLoading(
     loading && !solicitacoesPageCache,
   );
@@ -780,6 +822,45 @@ export function SolicitacoesWorkspace() {
     setRejectTarget(null);
   }
 
+  function closeReturnModal() {
+    if (actionLoading) return;
+
+    setActionError("");
+    setReturnReason("");
+    setReturnReasonError("");
+    setReturnDocuments([]);
+    setReturnFields([]);
+    setReturnTarget(null);
+  }
+
+  async function handleReturn() {
+    if (!returnTarget) return;
+
+    if (!returnReason.trim()) {
+      setReturnReasonError("Informe o que o estudante precisa corrigir.");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      setActionError("");
+      await inscricaoService.analisarInscricao(returnTarget.id, {
+        decisao: "Devolvido",
+        motivo: returnReason.trim(),
+        documentos: returnDocuments,
+        campos: returnFields,
+      });
+      await loadSolicitacoes();
+      closeReturnModal();
+    } catch (currentError) {
+      setActionError(
+        getErrorMessage(currentError, "Não foi possível devolver a inscrição."),
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function handleApprove() {
     if (!approveTarget) return;
 
@@ -954,6 +1035,13 @@ export function SolicitacoesWorkspace() {
                 variant="approved"
               />
               <TableActionButton
+                ariaLabel={`Devolver ${solicitacao.name} para correção`}
+                icon={<Undo2 />}
+                onClick={() => setReturnTarget(solicitacao)}
+                tooltip="Devolver para correção"
+                variant="secondary"
+              />
+              <TableActionButton
                 ariaLabel={`Rejeitar ${solicitacao.name}`}
                 icon={<X />}
                 onClick={() => setRejectTarget(solicitacao)}
@@ -1020,6 +1108,101 @@ export function SolicitacoesWorkspace() {
             rows={5}
             value={rejectReason}
           />
+          {actionError && (
+            <p className="rounded-md bg-danger-600/10 px-3 py-2 text-sm font-medium text-danger-600">
+              {actionError}
+            </p>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        onClose={closeReturnModal}
+        onSave={handleReturn}
+        open={Boolean(returnTarget)}
+        saveLabel="Devolver para correção"
+        saveLoading={actionLoading}
+        title="Devolver para correção"
+      >
+        <div className="space-y-4">
+          <p className="text-sm font-medium text-slate-800">
+            A inscrição de {returnTarget?.name} volta para edição e o estudante
+            continua com o mesmo CPF. Explique o que precisa ser corrigido.
+          </p>
+          <Textarea
+            className="min-h-32 max-h-64"
+            error={returnReasonError}
+            label="O que precisa ser corrigido"
+            onChange={(event) => {
+              setReturnReason(event.target.value);
+              setReturnReasonError("");
+            }}
+            required
+            rows={4}
+            value={returnReason}
+          />
+          {returnTarget?.documentos?.length ? (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-semibold text-slate-800">
+                Documentos que devem ser reenviados
+              </legend>
+              <p className="text-sm text-content-muted">
+                Marque os documentos com problema. Os que ficarem desmarcados
+                seguem aceitos e o estudante não precisa enviá-los de novo.
+              </p>
+              {returnTarget.documentos.map((documento) => (
+                <label
+                  className="flex items-center gap-2 text-sm font-medium text-slate-700"
+                  key={documento.id}
+                >
+                  <input
+                    checked={returnDocuments.includes(documento.name)}
+                    className="size-4 rounded border-border-subtle text-brand-600"
+                    onChange={(event) => {
+                      setReturnDocuments((current) =>
+                        event.target.checked
+                          ? [...current, documento.name]
+                          : current.filter((name) => name !== documento.name),
+                      );
+                    }}
+                    type="checkbox"
+                  />
+                  {documento.name}
+                </label>
+              ))}
+            </fieldset>
+          ) : null}
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-semibold text-slate-800">
+              Campos do cadastro para corrigir
+            </legend>
+            <p className="text-sm text-content-muted">
+              Marque onde está o erro. O estudante vê exatamente estes campos
+              destacados na tela dele.
+            </p>
+            <div className="grid gap-1 sm:grid-cols-2">
+              {CAMPOS_CORRIGIVEIS.map((item) => (
+                <label
+                  className="flex items-center gap-2 text-sm font-medium text-slate-700"
+                  key={item.campo}
+                >
+                  <input
+                    checked={returnFields.includes(item.campo)}
+                    className="size-4 rounded border-border-subtle text-brand-600"
+                    onChange={(event) => {
+                      setReturnFields((current) =>
+                        event.target.checked
+                          ? [...current, item.campo]
+                          : current.filter((campo) => campo !== item.campo),
+                      );
+                    }}
+                    type="checkbox"
+                  />
+                  {item.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
           {actionError && (
             <p className="rounded-md bg-danger-600/10 px-3 py-2 text-sm font-medium text-danger-600">
               {actionError}
@@ -1307,7 +1490,12 @@ function SolicitacaoDetailsModal({
                       {documento.download_url ?? documento.file_path ? (
                         <>
                           <DocumentActionLink
-                            href={documento.download_url ?? documento.file_path ?? "#"}
+                            href={
+                              documento.preview_url ??
+                              documento.download_url ??
+                              documento.file_path ??
+                              "#"
+                            }
                             icon={<ExternalLink />}
                           >
                             Visualizar
