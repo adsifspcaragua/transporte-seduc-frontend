@@ -84,6 +84,8 @@ export type UpdateEstudantePayload = {
   father_name?: string | null;
   has_scholarship?: boolean | null;
   instituicao_id?: number;
+  // null desvincula o estudante da linha.
+  linha_id?: number | null;
   mother_name?: string | null;
   name?: string;
   neighborhood?: string;

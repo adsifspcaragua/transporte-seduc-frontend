@@ -123,7 +123,18 @@ export type Linha = {
   departure_time?: string | null;
   return_time?: string | null;
   max_capacity?: number | null;
+  // Lugares tomados e livres. Só estudante ativo ocupa vaga.
+  ocupacao?: number;
+  vagas_restantes?: number;
   [key: string]: unknown;
+};
+
+export type LinhaPayload = {
+  name: string;
+  description?: string | null;
+  departure_time?: string | null;
+  return_time?: string | null;
+  max_capacity: number;
 };
 
 export type CepAddress = {

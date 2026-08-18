@@ -57,8 +57,10 @@ export const API_ENDPOINTS = {
   CURSOS: {
     BASE: "/curso",
   },
+  DASHBOARD: "/dashboard",
   LINHAS: {
     BASE: "/linha",
+    BY_ID: (id: number | string) => `/linha/${id}`,
   },
   ESTUDANTES: {
     BASE: "/estudantes",
