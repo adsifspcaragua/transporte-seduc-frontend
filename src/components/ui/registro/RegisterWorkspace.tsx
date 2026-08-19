@@ -1613,7 +1613,10 @@ export function RegisterWorkspace() {
     return response.id;
   }
 
-  async function submitDocuments(targetInscricaoId: number) {
+  async function submitDocuments(
+    targetInscricaoId: number,
+    targetToken?: string | null,
+  ) {
     for (const document of activeDocuments) {
       const currentDocument = documents[document.key];
 
@@ -1662,7 +1665,7 @@ export function RegisterWorkspace() {
             file: currentDocument.file,
             documentoId: currentDocument.id,
           },
-          inscricaoToken ?? undefined,
+          targetToken ?? inscricaoToken ?? undefined,
         );
 
         setDocuments((current) => ({
@@ -1816,7 +1819,7 @@ export function RegisterWorkspace() {
       } else {
         const inscricao = await saveInscricaoBase();
         await saveInstituicaoData(inscricao.id, inscricao.token);
-        await submitDocuments(inscricao.id);
+        await submitDocuments(inscricao.id, inscricao.token);
       }
 
       setSubmissionProgress(0);

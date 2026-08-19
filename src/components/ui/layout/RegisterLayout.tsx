@@ -44,10 +44,11 @@ export default function Register({
         <div className="w-full">
           <Link href="/login">
             <Image
-              src="/logo_educacao_w.svg"
+              src="/logo_caraguatatuba_white.svg"
               alt="Logo da Prefeitura Municipal de Caraguatatuba"
-              width={240}
-              height={90}
+              className="h-auto w-60"
+              width={633}
+              height={175}
               priority
             />
           </Link>

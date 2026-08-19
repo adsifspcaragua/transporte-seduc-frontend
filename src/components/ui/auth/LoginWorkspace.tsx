@@ -397,11 +397,11 @@ export function LoginWorkspace() {
       <div className="flex min-h-screen w-full shrink-0 flex-col justify-between bg-brand-600 px-6 py-7 text-white sm:px-10 lg:h-full lg:min-h-0 lg:w-143.75 lg:p-6">
         <div className="w-full">
           <Image
-            src="/logo_educacao_w.svg"
-            width={240}
-            height={90}
+            src="/logo_caraguatatuba_white.svg"
+            width={633}
+            height={175}
             alt="Logo da Prefeitura Municipal de Caraguatatuba"
-            style={{ width: "240px", height: "auto" }}
+            className="h-auto w-60"
           />
         </div>
 
@@ -494,7 +494,7 @@ export function LoginWorkspace() {
 
               <Link
                 href="/area-aluno"
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-action-light-default bg-action-light-default px-5 text-center text-base font-semibold leading-tight text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
+                className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-action-light-default bg-action-light-default px-5 text-sm font-semibold normal-case tracking-normal text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
               >
                 <span>Área do estudante</span>
                 <ArrowRight className="size-5" />

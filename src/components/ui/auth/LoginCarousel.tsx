@@ -1,8 +1,6 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const slides = [
@@ -73,16 +71,6 @@ export default function LoginCarousel() {
       ))}
 
       <div className="absolute inset-y-0 left-0 z-10 w-px bg-white/20" />
-
-      <div className="absolute right-8 top-8 z-20">
-        <Link
-          href="/area-aluno"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-action-light-default bg-action-light-default px-5 text-sm font-semibold text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
-        >
-          <span>Solicitar transporte universitário</span>
-          <ArrowRight className="size-5" />
-        </Link>
-      </div>
 
       <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2">
         {slides.map((slide, index) => (

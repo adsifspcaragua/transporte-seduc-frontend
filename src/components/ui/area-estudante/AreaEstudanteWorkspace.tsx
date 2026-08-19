@@ -57,12 +57,13 @@ export function AreaEstudanteWorkspace() {
   return (
     <main className="flex min-h-screen bg-brand-600 p-4 sm:p-8">
       <section className="m-auto w-full max-w-md rounded-xl bg-white p-6 shadow-2xl sm:p-8">
-        <div className="mb-8 flex justify-center rounded-lg bg-brand-600 p-5">
+        <div className="mb-8 flex justify-center">
           <Image
             alt="Prefeitura Municipal de Caraguatatuba"
-            height={72}
-            src="/logo_educacao_w.svg"
-            width={190}
+            className="h-auto w-47.5"
+            height={175}
+            src="/logo_caraguatatuba.svg"
+            width={633}
           />
         </div>
         <div className="text-center">

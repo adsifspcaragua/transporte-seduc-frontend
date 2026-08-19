@@ -148,9 +148,9 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
           <Image
             alt="Governo Municipal de Caraguatatuba - Educação"
             className="h-auto w-full"
-            height={96}
-            src="/logo_educacao_w.svg"
-            width={180}
+            height={175}
+            src="/logo_caraguatatuba_white.svg"
+            width={633}
           />
         </div>
       </div>
