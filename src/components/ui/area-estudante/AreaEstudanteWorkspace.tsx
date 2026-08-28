@@ -55,19 +55,28 @@ export function AreaEstudanteWorkspace() {
   }
 
   return (
-    <main className="flex min-h-screen bg-brand-600 p-4 sm:p-8">
-      <section className="m-auto w-full max-w-md rounded-xl bg-white p-6 shadow-2xl sm:p-8">
+    <main className="relative flex min-h-screen overflow-hidden bg-gradient-to-br from-brand-100 via-brand-050 to-surface-muted p-4 sm:p-8">
+      <div
+        aria-hidden="true"
+        className="absolute -left-32 -top-32 size-96 rounded-full bg-brand-600/10 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -bottom-40 -right-28 size-112 rounded-full bg-brand-600/15 blur-3xl"
+      />
+
+      <section className="relative z-10 m-auto w-full max-w-md rounded-2xl border border-white/70 bg-surface-muted/90 p-6 shadow-xl shadow-brand-800/10 backdrop-blur-sm sm:p-8">
         <div className="mb-8 flex justify-center">
           <Image
             alt="Prefeitura Municipal de Caraguatatuba"
-            className="h-auto w-47.5"
+            className="h-auto w-60"
             height={175}
             src="/logo_caraguatatuba.svg"
             width={633}
           />
         </div>
         <div className="text-center">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-white/80 text-brand-700 shadow-sm ring-1 ring-brand-600/10">
             <IdCard className="size-7" />
           </div>
           <h1 className="mt-4 text-2xl font-bold text-brand-700">
@@ -95,6 +104,7 @@ export function AreaEstudanteWorkspace() {
             loading={loading}
             onClick={handleContinue}
             rightIcon={<ArrowRight className="size-5" />}
+            variant="primary"
           >
             Continuar
           </Button>

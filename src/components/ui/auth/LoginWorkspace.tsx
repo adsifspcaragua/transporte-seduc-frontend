@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { ArrowRight, LogIn } from "lucide-react";
+import { ArrowRight, CircleAlert, LogIn } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -113,6 +113,10 @@ export function LoginWorkspace() {
   const router = useRouter();
   const { signIn } = useAuth();
   const formElementRef = useRef<HTMLFormElement | null>(null);
+  const editedFieldsRef = useRef<TouchedFields>({
+    login: false,
+    password: false,
+  });
 
   const [form, setForm] = useState<LoginFormData>({
     login: "",
@@ -207,6 +211,10 @@ export function LoginWorkspace() {
     const { name, value } = event.target;
     const fieldName = name === "cpf" ? "login" : name;
 
+    if (fieldName === "login" || fieldName === "password") {
+      editedFieldsRef.current[fieldName] = true;
+    }
+
     const nextValue = value;
 
     setForm((prev) => ({
@@ -249,6 +257,8 @@ export function LoginWorkspace() {
     const fieldName = name === "cpf" ? "login" : name;
 
     if (fieldName === "login") {
+      if (!editedFieldsRef.current.login) return;
+
       const loginError = validateLoginField(value, {
         showRequired: true,
         showFormat: true,
@@ -266,6 +276,8 @@ export function LoginWorkspace() {
     }
 
     if (fieldName === "password") {
+      if (!editedFieldsRef.current.password) return;
+
       const passwordError = validatePasswordField(value, {
         showRequired: true,
         showFormat: true,
@@ -424,6 +436,35 @@ export function LoginWorkspace() {
               noValidate
               className="flex flex-col gap-5"
             >
+              {(errors.login || errors.password || errors.form) && (
+                <div
+                  className="flex items-start gap-3 rounded-xl bg-white p-4 text-danger-700 shadow-sm"
+                  role="alert"
+                >
+                  <CircleAlert className="mt-0.5 size-5 shrink-0" />
+
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold">
+                      Verifique os dados informados
+                    </p>
+                    <ul className="mt-1 space-y-1 text-sm font-medium">
+                      {errors.login && (
+                        <li>
+                          <span className="font-bold">CPF:</span> {errors.login}
+                        </li>
+                      )}
+                      {errors.password && (
+                        <li>
+                          <span className="font-bold">Senha:</span>{" "}
+                          {errors.password}
+                        </li>
+                      )}
+                      {errors.form && <li>{errors.form}</li>}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
               <CpfInput
                 label="CPF"
                 name="cpf"
@@ -432,6 +473,7 @@ export function LoginWorkspace() {
                 onChange={handleInputChange}
                 onBlur={handleFieldBlur}
                 error={errors.login}
+                errorClassName="hidden"
                 autoComplete="off"
                 variant="dark"
               />
@@ -445,6 +487,7 @@ export function LoginWorkspace() {
                 onChange={handleInputChange}
                 onBlur={handleFieldBlur}
                 error={errors.password}
+                errorClassName="hidden"
                 variant="dark"
               />
 
@@ -465,12 +508,6 @@ export function LoginWorkspace() {
                   Esqueceu a senha?
                 </Link>
               </div>
-
-              {errors.form && (
-                <span className="text-sm font-semibold text-danger-600">
-                  {errors.form}
-                </span>
-              )}
 
               {isRateLimited && (
                 <span className="text-sm font-semibold text-amber-200">
