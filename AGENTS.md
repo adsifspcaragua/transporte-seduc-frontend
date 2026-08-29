@@ -1,14 +1,3 @@
-Usei a estrutura que você anexou como base: seu projeto tem `src/app`, `src/components`, `src/services`, `src/hooks`, `src/contexts`, `src/types` e `src/utils`, além de componentes globais como `Button`, `Input`, `Textarea`, `Modal`, `Skeleton`, `Pagination`, etc. 
-
-Crie um arquivo na raiz do projeto chamado:
-
-```txt
-AGENTS.md
-```
-
-E cole isso dentro:
-
-````md
 # AGENTS.md
 
 ## Objetivo
@@ -789,5 +778,3 @@ Sempre siga primeiro o padrão do sistema.
 Se já existe um jeito de fazer no projeto, replique esse jeito.
 
 Se não existe, crie uma solução nova mantendo a mesma organização, estilo, tipagem e qualidade dos arquivos existentes.
-
-````
