@@ -1,14 +1,13 @@
 "use client";
 
 import axios from "axios";
-import { ArrowRight, CircleAlert, LogIn } from "lucide-react";
+import { ArrowRight, LogIn } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/buttons";
 import { Checkbox, CpfInput, PasswordInput } from "@/components/form/inputs";
-import LoginCarousel from "@/components/ui/auth/LoginCarousel";
 import { useAuth } from "@/hooks/use-auth";
 import { cleanCpf, isValidCpf } from "@/utils/cpf";
 import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
@@ -405,151 +404,141 @@ export function LoginWorkspace() {
   }
 
   return (
-    <div className="flex min-h-screen w-full overflow-hidden bg-brand-600 lg:h-screen">
-      <div className="flex min-h-screen w-full shrink-0 flex-col justify-between bg-brand-600 px-6 py-7 text-white sm:px-10 lg:h-full lg:min-h-0 lg:w-143.75 lg:p-6">
-        <div className="w-full">
-          <Image
-            src="/logo_caraguatatuba_white.svg"
-            width={633}
-            height={175}
-            alt="Logo da Prefeitura Municipal de Caraguatatuba"
-            className="h-auto w-60"
-          />
-        </div>
+    <main className="flex min-h-screen w-full overflow-hidden bg-surface-muted lg:h-screen">
+      <div className="relative order-2 hidden h-full w-[63%] shrink-0 bg-brand-600 lg:block">
+        <Image
+          src="/login/secretaria-foto.png"
+          alt="Fachada da Secretaria de Educação de Caraguatatuba"
+          fill
+          priority
+          unoptimized
+          sizes="63vw"
+          className="rounded-bl-[15%] object-cover"
+        />
+      </div>
 
-        <div className="mx-auto flex w-full max-w-112.5 flex-col gap-6 py-8 lg:py-0">
-          <div className="flex flex-col gap-3">
-            <h1 className="text-center text-2xl font-semibold">
-              Acesso ao sistema
-            </h1>
+      <section className="relative order-1 flex min-h-screen w-full min-w-0 flex-1 items-center justify-center overflow-hidden px-6 py-8 lg:h-full lg:min-h-0 lg:px-12">
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[32%] rounded-tr-[7.5vw_17vh] bg-brand-600"
+          aria-hidden="true"
+        />
 
-            <span className="text-lg leading-relaxed text-white">
-              Gerencie e acompanhe o transporte universitário de forma simples e
-              segura.
-            </span>
+        <div className="relative z-10 flex min-w-0 max-w-128 flex-1 flex-col justify-between gap-8 rounded-2xl bg-surface-primary p-6 text-content-primary shadow-2xl shadow-brand-800/20 sm:p-8 lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto">
+          <div className="flex w-full justify-center">
+            <Image
+              src="/logo_caraguatatuba.svg"
+              width={633}
+              height={175}
+              alt="Logo da Prefeitura Municipal de Caraguatatuba"
+              className="h-auto w-60"
+            />
           </div>
 
-          <div>
-            <form
-              ref={formElementRef}
-              onSubmit={handleSubmit}
-              noValidate
-              className="flex flex-col gap-5"
-            >
-              {(errors.login || errors.password || errors.form) && (
-                <div
-                  className="flex items-start gap-3 rounded-xl bg-white p-4 text-danger-700 shadow-sm"
-                  role="alert"
-                >
-                  <CircleAlert className="mt-0.5 size-5 shrink-0" />
+          <div className="mx-auto flex w-full max-w-112.5 flex-col gap-6">
+            <div className="flex flex-col gap-3">
+              <h1 className="text-center text-2xl font-bold text-brand-600">
+                Acesso ao sistema
+              </h1>
 
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold">
-                      Verifique os dados informados
-                    </p>
-                    <ul className="mt-1 space-y-1 text-sm font-medium">
-                      {errors.login && (
-                        <li>
-                          <span className="font-bold">CPF:</span> {errors.login}
-                        </li>
-                      )}
-                      {errors.password && (
-                        <li>
-                          <span className="font-bold">Senha:</span>{" "}
-                          {errors.password}
-                        </li>
-                      )}
-                      {errors.form && <li>{errors.form}</li>}
-                    </ul>
-                  </div>
-                </div>
-              )}
+              <span className="text-base leading-relaxed text-content-secondary sm:text-lg">
+                Gerencie e acompanhe o transporte universitário de forma simples
+                e segura.
+              </span>
+            </div>
 
-              <CpfInput
-                label="CPF"
-                name="cpf"
-                aria-required="true"
-                value={form.login}
-                onChange={handleInputChange}
-                onBlur={handleFieldBlur}
-                error={errors.login}
-                errorClassName="hidden"
-                autoComplete="off"
-                variant="dark"
-              />
-
-              <PasswordInput
-                label="Senha"
-                name="password"
-                autoComplete="current-password"
-                aria-required="true"
-                value={form.password}
-                onChange={handleInputChange}
-                onBlur={handleFieldBlur}
-                error={errors.password}
-                errorClassName="hidden"
-                variant="dark"
-              />
-
-              <div className="flex items-center justify-between gap-4">
-                <Checkbox
-                  name="rememberLogin"
-                  variant="dark"
-                  label="Lembrar usuário"
-                  checked={rememberLogin}
-                  onChange={handleRememberLoginChange}
-                  labelClassName="text-sm sm:text-base"
+            <div>
+              <form
+                ref={formElementRef}
+                onSubmit={handleSubmit}
+                noValidate
+                className="flex flex-col gap-5"
+              >
+                <CpfInput
+                  label="CPF"
+                  name="cpf"
+                  aria-required="true"
+                  value={form.login}
+                  onChange={handleInputChange}
+                  onBlur={handleFieldBlur}
+                  error={errors.login}
+                  autoComplete="off"
+                  variant="white"
+                  className="rounded-full bg-surface-primary"
+                  labelClassName="ml-3"
                 />
 
-                <Link
-                  href="/recuperar-senha"
-                  className="text-sm transition-colors hover:text-brand-100 sm:text-base"
+                <PasswordInput
+                  label="Senha"
+                  name="password"
+                  autoComplete="current-password"
+                  aria-required="true"
+                  value={form.password}
+                  onChange={handleInputChange}
+                  onBlur={handleFieldBlur}
+                  error={errors.password}
+                  variant="white"
+                  className="rounded-full bg-surface-primary"
+                  labelClassName="ml-3"
+                />
+
+                {errors.form && (
+                  <span
+                    className="text-sm font-medium text-danger-700"
+                    role="alert"
+                  >
+                    {errors.form}
+                  </span>
+                )}
+
+                <div className="flex items-center">
+                  <Checkbox
+                    name="rememberLogin"
+                    variant="white"
+                    label="Lembrar usuário"
+                    checked={rememberLogin}
+                    onChange={handleRememberLoginChange}
+                    labelClassName="text-sm sm:text-base"
+                  />
+                </div>
+
+                {isRateLimited && (
+                  <span className="text-sm font-semibold text-danger-700">
+                    Muitas tentativas. Tente novamente em {retryAfterSeconds}s.
+                  </span>
+                )}
+
+                <Button
+                  type="submit"
+                  variant="light"
+                  size="md"
+                  leftIcon={<LogIn />}
+                  loading={loading}
+                  disabled={isRateLimited}
+                  className="rounded-full text-sm"
                 >
-                  Esqueceu a senha?
+                  {isRateLimited
+                    ? `Tente novamente em ${retryAfterSeconds}s`
+                    : "Entrar"}
+                </Button>
+
+                <Link
+                  href="/area-aluno"
+                  className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-action-light-default bg-action-light-default px-5 text-sm font-semibold normal-case tracking-normal text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
+                >
+                  <span>Área do estudante</span>
+                  <ArrowRight className="size-5" />
                 </Link>
-              </div>
-
-              {isRateLimited && (
-                <span className="text-sm font-semibold text-amber-200">
-                  Muitas tentativas. Tente novamente em {retryAfterSeconds}s.
-                </span>
-              )}
-
-              <Button
-                type="submit"
-                variant="light"
-                size="md"
-                leftIcon={<LogIn />}
-                loading={loading}
-                disabled={isRateLimited}
-                className="rounded-full text-sm"
-              >
-                {isRateLimited
-                  ? `Tente novamente em ${retryAfterSeconds}s`
-                  : "Entrar"}
-              </Button>
-
-              <Link
-                href="/area-aluno"
-                className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-action-light-default bg-action-light-default px-5 text-sm font-semibold normal-case tracking-normal text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
-              >
-                <span>Área do estudante</span>
-                <ArrowRight className="size-5" />
-              </Link>
-            </form>
+              </form>
+            </div>
           </div>
+
+          <p className="text-center text-sm text-content-muted">
+            © 2026 Prefeitura Municipal de Caraguatatuba.
+            <br />
+            Todos os direitos reservados.
+          </p>
         </div>
-
-        <p className="text-center text-sm text-white">
-          © 2026 Prefeitura Municipal de Caraguatatuba.
-          <br />
-          Todos os direitos reservados.
-        </p>
-      </div>
-
-      <div className="hidden h-full w-full lg:block">
-        <LoginCarousel />
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
