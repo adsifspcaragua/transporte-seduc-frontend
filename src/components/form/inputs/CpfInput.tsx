@@ -2,12 +2,30 @@
 
 import type { ChangeEvent, FocusEvent, InputHTMLAttributes } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
+import { cn } from "@/utils/cn";
 import { cleanCpf, formatCpf, isValidCpf } from "@/utils/cpf";
 import Input, { type InputProps } from "./Input";
 
+const CPF_FORMAT_GUIDE = [
+  { character: "_", id: "digit-1" },
+  { character: "_", id: "digit-2" },
+  { character: "_", id: "digit-3" },
+  { character: ".", id: "dot-1" },
+  { character: "_", id: "digit-4" },
+  { character: "_", id: "digit-5" },
+  { character: "_", id: "digit-6" },
+  { character: ".", id: "dot-2" },
+  { character: "_", id: "digit-7" },
+  { character: "_", id: "digit-8" },
+  { character: "_", id: "digit-9" },
+  { character: "-", id: "dash" },
+  { character: "_", id: "digit-10" },
+  { character: "_", id: "digit-11" },
+] as const;
+
 type CpfInputProps = Omit<
   InputProps,
-  "inputMode" | "maxLength" | "onChange" | "type"
+  "formatGuide" | "inputMode" | "maxLength" | "onChange" | "type"
 > & {
   onChange?: InputHTMLAttributes<HTMLInputElement>["onChange"];
   onCpfValidityChange?: (isValid: boolean) => void;
@@ -44,10 +62,13 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
       defaultValue,
       onChange,
       onBlur,
+      onFocus,
       error,
       label = "CPF",
       required,
       onCpfValidityChange,
+      className,
+      formatGuideClassName,
       ...props
     },
     ref,
@@ -57,6 +78,7 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
       formatCpf(defaultValue?.toString() ?? ""),
     );
     const [eagerFormatting, setEagerFormatting] = useState(true);
+    const [isFocused, setIsFocused] = useState(false);
     const [internalError, setInternalError] = useState<string | undefined>();
 
     const formattedValue = useMemo(
@@ -66,6 +88,32 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
         }),
       [eagerFormatting, internalValue, isControlled, value],
     );
+    const formatGuide = CPF_FORMAT_GUIDE.map(({ character, id }, index) => {
+      const isFilled = index < formattedValue.length;
+      const isNextPosition = index === formattedValue.length;
+
+      if (character !== "_") {
+        return (
+          <span key={id} className={isFilled ? "invisible" : undefined}>
+            {character}
+          </span>
+        );
+      }
+
+      return (
+        <span key={id} className="relative inline-block">
+          <span className="invisible">0</span>
+          {!isFilled && (
+            <span
+              className={cn(
+                "absolute bottom-0 right-0 h-px bg-current",
+                isNextPosition ? "left-0.5" : "left-0",
+              )}
+            />
+          )}
+        </span>
+      );
+    });
 
     useEffect(() => {
       if (!isControlled) return;
@@ -99,8 +147,14 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
     }
 
     function handleBlur(event: FocusEvent<HTMLInputElement>) {
+      setIsFocused(false);
       setInternalError(getCpfValidationError(event.target.value));
       onBlur?.(event);
+    }
+
+    function handleFocus(event: FocusEvent<HTMLInputElement>) {
+      setIsFocused(true);
+      onFocus?.(event);
     }
 
     return (
@@ -109,13 +163,21 @@ const CpfInput = forwardRef<HTMLInputElement, CpfInputProps>(
         type="text"
         label={label}
         required={required}
+        formatGuide={
+          isFocused && formattedValue.length < CPF_FORMAT_GUIDE.length
+            ? formatGuide
+            : undefined
+        }
+        formatGuideClassName={cn("tabular-nums", formatGuideClassName)}
         inputMode="numeric"
         autoComplete="off"
         maxLength={14}
         value={formattedValue}
         onChange={handleChange}
         onBlur={handleBlur}
+        onFocus={handleFocus}
         error={error ?? internalError}
+        className={cn("tabular-nums", className)}
         {...props}
       />
     );

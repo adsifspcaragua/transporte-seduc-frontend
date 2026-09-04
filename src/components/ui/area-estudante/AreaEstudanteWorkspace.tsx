@@ -108,6 +108,7 @@ export function AreaEstudanteWorkspace() {
                 value={cpf}
                 variant="white"
                 className="rounded-full bg-surface-primary pl-7"
+                formatGuideClassName="pl-7"
                 labelClassName="ml-3"
               />
 

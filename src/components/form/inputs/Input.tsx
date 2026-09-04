@@ -10,9 +10,11 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   label?: string;
   error?: string;
   hint?: string;
+  formatGuide?: ReactNode;
   rightElement?: ReactNode;
   containerClassName?: string;
   errorClassName?: string;
+  formatGuideClassName?: string;
   hintClassName?: string;
   labelClassName?: string;
   rightElementClassName?: string;
@@ -26,6 +28,7 @@ const variantClasses: Record<
     state: string;
     labelPosition: string;
     label: string;
+    formatGuide: string;
     hint: string;
     error: string;
   }
@@ -39,6 +42,7 @@ const variantClasses: Record<
     label: `
       text-content-inverse/70
     `,
+    formatGuide: "h-14 px-8 pb-1 pt-6 text-base text-content-inverse/40",
     hint: "text-content-inverse/60",
     error: "font-semibold text-danger-600",
   },
@@ -53,6 +57,7 @@ const variantClasses: Record<
       peer-focus:text-brand-600
       peer-[:not(:placeholder-shown)]:text-brand-600
     `,
+    formatGuide: "h-11 px-4 py-0 text-sm text-content-muted/55",
     hint: "text-content-muted",
     error: "font-medium text-danger-700",
   },
@@ -64,10 +69,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       label,
       error,
       hint,
+      formatGuide,
       rightElement,
       className = "",
       containerClassName = "",
       errorClassName = "",
+      formatGuideClassName = "",
       hintClassName = "",
       labelClassName = "",
       rightElementClassName = "",
@@ -106,6 +113,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             )}
             {...props}
           />
+
+          {formatGuide && (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute inset-0 flex items-center whitespace-pre",
+                variantClasses[variant].formatGuide,
+                formatGuideClassName,
+              )}
+            >
+              {formatGuide}
+            </span>
+          )}
 
           {label && (
             <label

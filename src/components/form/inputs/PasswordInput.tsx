@@ -13,6 +13,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
       label = "Senha",
       error,
       hint,
+      placeholder = "••••••••",
       className = "",
       containerClassName = "",
       labelClassName = "",
@@ -31,7 +32,13 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         label={label}
         error={error}
         hint={hint}
-        className={cn(variant === "dark" && "pr-16", className)}
+        placeholder={showPassword ? "12345678" : placeholder}
+        className={cn(
+          variant === "dark"
+            ? "pr-16 focus:placeholder:text-content-inverse/40"
+            : "focus:placeholder:text-content-muted/55",
+          className,
+        )}
         containerClassName={containerClassName}
         labelClassName={labelClassName}
         rightElementClassName={cn(
@@ -42,6 +49,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         rightElement={
           <button
             type="button"
+            onPointerDown={(event) => event.preventDefault()}
             onClick={() => setShowPassword((prev) => !prev)}
             className={cn(
               "flex items-center justify-center transition",
@@ -50,6 +58,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
                 : "text-content-muted hover:text-brand-600",
             )}
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            aria-pressed={showPassword}
           >
             {showPassword ? (
               <EyeOff className="size-6" />
