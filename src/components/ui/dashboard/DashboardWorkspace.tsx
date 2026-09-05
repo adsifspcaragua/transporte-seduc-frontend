@@ -12,6 +12,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 
+import { DashboardSkeleton } from "@/components/ui/dashboard/DashboardSkeleton";
+import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { dashboardService } from "@/services/api/modules/dashboard";
 import type { DashboardLinha, DashboardResumo } from "@/types/dashboard";
 
@@ -111,6 +113,7 @@ export function DashboardWorkspace() {
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
+  const showPageSkeleton = useMinimumVisibleLoading(loading);
 
   const carregar = useCallback(async () => {
     try {
@@ -128,14 +131,8 @@ export function DashboardWorkspace() {
     void carregar();
   }, [carregar]);
 
-  if (loading) {
-    return (
-      <main className="mx-auto max-w-6xl p-4 sm:p-6">
-        <p className="text-sm font-medium text-content-muted">
-          Carregando resumo...
-        </p>
-      </main>
-    );
+  if (showPageSkeleton) {
+    return <DashboardSkeleton />;
   }
 
   if (erro || !resumo) {

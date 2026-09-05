@@ -1,14 +1,25 @@
 "use client";
 
 import axios from "axios";
-import { Bus, Pencil, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Bus, Plus } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/buttons";
-import { Input } from "@/components/form/inputs";
+import { Input, NumberInput, TimeInput } from "@/components/form/inputs";
 import { Modal } from "@/components/modal";
+import { LinhaCard, LinhaCreateCard } from "@/components/ui/linhas/LinhaCard";
+import {
+  LinhasPageSkeleton,
+  LinhasSkeleton,
+} from "@/components/ui/linhas/LinhasSkeleton";
+import {
+  horaParaInput,
+  ocupacaoDe,
+} from "@/components/ui/linhas/linhaPresentation";
+import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { linhaService } from "@/services/api/modules/linha";
 import type { Linha } from "@/types/inscricao";
+import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
 
 type ApiError = { message?: string; errors?: Record<string, string[]> };
 
@@ -32,43 +43,36 @@ const formInicial = {
   max_capacity: "",
 };
 
-/** O backend guarda HH:MM:SS, mas o input de hora só aceita HH:MM. */
-function horaParaInput(valor?: string | null) {
-  return valor ? valor.slice(0, 5) : "";
-}
-
-function ocupacaoDe(linha: Linha) {
-  const ocupacao = linha.ocupacao ?? 0;
-  const capacidade = linha.max_capacity ?? 0;
-  const proporcao = capacidade > 0 ? ocupacao / capacidade : 0;
-
-  return {
-    ocupacao,
-    capacidade,
-    vagas: linha.vagas_restantes ?? Math.max(0, capacidade - ocupacao),
-    lotada: capacidade > 0 && ocupacao >= capacidade,
-    proporcao: Math.min(1, proporcao),
-  };
-}
+type LinhaFormField = keyof typeof formInicial;
+type LinhaFieldErrors = Partial<Record<LinhaFormField, string>>;
 
 export function LinhasWorkspace() {
   const [linhas, setLinhas] = useState<Linha[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [feedback, setFeedback] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<LinhaFieldErrors>({});
+  const formRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState(formInicial);
   const [editando, setEditando] = useState<Linha | null>(null);
   const [modalAberta, setModalAberta] = useState(false);
   const [excluindo, setExcluindo] = useState<Linha | null>(null);
+  const showSkeleton = useMinimumVisibleLoading(loading);
+  const showPageSkeleton = useMinimumVisibleLoading(loading && !hasLoaded);
 
   const carregar = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError("");
       setLinhas(await linhaService.list());
     } catch (error) {
-      setFeedback(errorMessage(error));
+      setLoadError(errorMessage(error));
     } finally {
       setLoading(false);
+      setHasLoaded(true);
     }
   }, []);
 
@@ -79,7 +83,8 @@ export function LinhasWorkspace() {
   function abrirCriacao() {
     setEditando(null);
     setForm(formInicial);
-    setFeedback("");
+    setFormError("");
+    setFieldErrors({});
     setModalAberta(true);
   }
 
@@ -92,7 +97,8 @@ export function LinhasWorkspace() {
       return_time: horaParaInput(linha.return_time),
       max_capacity: String(linha.max_capacity ?? ""),
     });
-    setFeedback("");
+    setFormError("");
+    setFieldErrors({});
     setModalAberta(true);
   }
 
@@ -101,18 +107,42 @@ export function LinhasWorkspace() {
     setModalAberta(false);
     setEditando(null);
     setForm(formInicial);
+    setFormError("");
+    setFieldErrors({});
+  }
+
+  function setField(field: LinhaFormField, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+    setFieldErrors((current) => ({ ...current, [field]: undefined }));
+    setFormError("");
   }
 
   async function salvar() {
+    if (actionLoading) return;
+
+    const nextErrors: LinhaFieldErrors = {};
+    setFormError("");
+
     if (form.name.trim().length < 3) {
-      setFeedback("O nome da linha deve ter ao menos 3 caracteres.");
-      return;
+      nextErrors.name = "O nome da linha deve ter ao menos 3 caracteres.";
     }
 
     const capacidade = Number(form.max_capacity);
 
+    for (const field of ["departure_time", "return_time"] as const) {
+      if (form[field] && !/^([01]\d|2[0-3]):[0-5]\d$/.test(form[field])) {
+        nextErrors[field] = "Informe um horário válido no formato HH:MM.";
+      }
+    }
+
     if (!Number.isInteger(capacidade) || capacidade < 1) {
-      setFeedback("Informe a capacidade em número de lugares (mínimo 1).");
+      nextErrors.max_capacity =
+        "Informe a capacidade em número de lugares (mínimo 1).";
+    }
+
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      scheduleFocusFirstFieldError(formRef.current);
       return;
     }
 
@@ -130,7 +160,6 @@ export function LinhasWorkspace() {
 
     try {
       setActionLoading(true);
-      setFeedback("");
 
       if (editando) {
         await linhaService.update(editando.id, payload);
@@ -143,155 +172,106 @@ export function LinhasWorkspace() {
       setForm(formInicial);
       await carregar();
     } catch (error) {
-      setFeedback(errorMessage(error));
+      const apiErrors = axios.isAxiosError<ApiError>(error)
+        ? error.response?.data?.errors
+        : undefined;
+      const nextFieldErrors: LinhaFieldErrors = {};
+      let unhandledError: string | undefined;
+
+      for (const [field, messages] of Object.entries(apiErrors ?? {})) {
+        if (!messages[0]) continue;
+        if (Object.hasOwn(formInicial, field)) {
+          nextFieldErrors[field as LinhaFormField] = messages[0];
+        } else {
+          unhandledError ??= messages[0];
+        }
+      }
+
+      setFieldErrors(nextFieldErrors);
+      if (Object.keys(nextFieldErrors).length > 0) {
+        setFormError(unhandledError ?? "");
+        scheduleFocusFirstFieldError(formRef.current);
+      } else {
+        setFormError(errorMessage(error));
+      }
     } finally {
       setActionLoading(false);
     }
   }
 
   async function excluir() {
-    if (!excluindo) return;
+    if (!excluindo || actionLoading) return;
 
     try {
       setActionLoading(true);
-      setFeedback("");
+      setDeleteError("");
       await linhaService.remove(excluindo.id);
       setExcluindo(null);
       await carregar();
     } catch (error) {
       // O backend recusa apagar linha com estudantes vinculados; a mensagem
       // dele explica quantos são.
-      setFeedback(errorMessage(error));
-      setExcluindo(null);
+      setDeleteError(errorMessage(error));
     } finally {
       setActionLoading(false);
     }
   }
 
+  if (showPageSkeleton) {
+    return <LinhasPageSkeleton />;
+  }
+
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
-      <section className="rounded-lg bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-brand-700">
-            <Bus className="size-5" />
-            <h1 className="text-lg font-bold">Linhas de transporte</h1>
-          </div>
-          <Button fullWidth={false} onClick={abrirCriacao} size="sm">
-            Nova linha
-          </Button>
+    <>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-brand-600">Linhas</h1>
+        <Button
+          className="h-11 px-4"
+          fullWidth={false}
+          leftIcon={<Plus />}
+          onClick={abrirCriacao}
+          variant="primary"
+        >
+          Nova linha
+        </Button>
+      </div>
+
+      <section className="mb-6 rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
+        <div className="mb-2 flex items-center gap-2 text-brand-600">
+          <Bus className="size-4" />
+          <h2 className="text-base font-bold">Linhas de transporte</h2>
         </div>
-        <p className="mt-2 text-sm text-content-muted">
+        <p className="text-sm text-content-muted">
           Rotas, horários e capacidade. A ocupação conta apenas estudantes
           ativos vinculados à linha.
         </p>
 
-        {feedback && (
-          <p className="mt-4 rounded-md bg-danger-600/10 px-3 py-2 text-sm font-medium text-danger-600">
-            {feedback}
+        {loadError && (
+          <p
+            className="mt-4 rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600"
+            role="alert"
+          >
+            {loadError}
           </p>
         )}
       </section>
 
-      {loading ? (
-        <p className="text-sm font-medium text-content-muted">
-          Carregando linhas...
-        </p>
-      ) : linhas.length === 0 ? (
-        <section className="rounded-lg bg-white p-8 text-center shadow-sm">
-          <p className="font-semibold text-slate-800">
-            Nenhuma linha cadastrada
-          </p>
-          <p className="mt-1 text-sm text-content-muted">
-            Cadastre a primeira linha para poder vincular estudantes a ela.
-          </p>
-        </section>
+      {loading || showSkeleton ? (
+        <LinhasSkeleton />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {linhas.map((linha) => {
-            const { ocupacao, capacidade, vagas, lotada, proporcao } =
-              ocupacaoDe(linha);
-
-            return (
-              <article
-                className="flex flex-col rounded-lg bg-white p-5 shadow-sm"
-                key={linha.id}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="font-bold text-slate-800">{linha.name}</h2>
-                  <span
-                    className={`rounded-md px-2 py-1 text-xs font-bold ${
-                      lotada
-                        ? "bg-danger-600/10 text-danger-600"
-                        : "bg-emerald-100 text-emerald-700"
-                    }`}
-                  >
-                    {lotada ? "Lotada" : `${vagas} vaga(s)`}
-                  </span>
-                </div>
-
-                {linha.description && (
-                  <p className="mt-2 text-sm text-content-muted">
-                    {linha.description}
-                  </p>
-                )}
-
-                <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <dt className="font-semibold text-slate-700">Saída</dt>
-                    <dd className="text-content-muted">
-                      {horaParaInput(linha.departure_time) || "—"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="font-semibold text-slate-700">Retorno</dt>
-                    <dd className="text-content-muted">
-                      {horaParaInput(linha.return_time) || "—"}
-                    </dd>
-                  </div>
-                </dl>
-
-                <div className="mt-4">
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="font-semibold text-slate-700">
-                      Ocupação
-                    </span>
-                    <span className="text-content-muted">
-                      {ocupacao} de {capacidade}
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className={`h-full rounded-full ${
-                        lotada ? "bg-danger-600" : "bg-brand-600"
-                      }`}
-                      style={{ width: `${proporcao * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button
-                    fullWidth={false}
-                    leftIcon={<Pencil className="size-4" />}
-                    onClick={() => abrirEdicao(linha)}
-                    size="sm"
-                    variant="secondary"
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    fullWidth={false}
-                    leftIcon={<Trash2 className="size-4" />}
-                    onClick={() => setExcluindo(linha)}
-                    size="sm"
-                    variant="danger"
-                  >
-                    Excluir
-                  </Button>
-                </div>
-              </article>
-            );
-          })}
+          {linhas.map((linha) => (
+            <LinhaCard
+              key={linha.id}
+              linha={linha}
+              onEdit={abrirEdicao}
+              onDelete={(selected) => {
+                setDeleteError("");
+                setExcluindo(selected);
+              }}
+            />
+          ))}
+          <LinhaCreateCard onCreate={abrirCriacao} />
         </div>
       )}
 
@@ -303,72 +283,62 @@ export function LinhasWorkspace() {
         saveLoading={actionLoading}
         title={editando ? "Editar linha" : "Nova linha"}
       >
-        <div className="space-y-4">
+        <div className="space-y-4" ref={formRef}>
+          {formError && (
+            <div
+              className="rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600"
+              role="alert"
+            >
+              {formError}
+            </div>
+          )}
           <Input
+            aria-invalid={Boolean(fieldErrors.name)}
+            error={fieldErrors.name}
             label="Nome"
-            onChange={(event) =>
-              setForm((current) => ({ ...current, name: event.target.value }))
-            }
+            onChange={(event) => setField("name", event.target.value)}
             required
             value={form.name}
           />
           <Input
+            aria-invalid={Boolean(fieldErrors.description)}
+            error={fieldErrors.description}
             label="Descrição da rota"
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                description: event.target.value,
-              }))
-            }
+            onChange={(event) => setField("description", event.target.value)}
             placeholder="Bairros e instituições atendidas"
             value={form.description}
           />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
+            <TimeInput
+              aria-invalid={Boolean(fieldErrors.departure_time)}
+              error={fieldErrors.departure_time}
               label="Horário de saída"
               onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  departure_time: event.target.value,
-                }))
+                setField("departure_time", event.target.value)
               }
-              type="time"
               value={form.departure_time}
             />
-            <Input
+            <TimeInput
+              aria-invalid={Boolean(fieldErrors.return_time)}
+              error={fieldErrors.return_time}
               label="Horário de retorno"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  return_time: event.target.value,
-                }))
-              }
-              type="time"
+              onChange={(event) => setField("return_time", event.target.value)}
               value={form.return_time}
             />
           </div>
-          <Input
+          <NumberInput
+            aria-invalid={Boolean(fieldErrors.max_capacity)}
+            error={fieldErrors.max_capacity}
             label="Capacidade (lugares)"
             min={1}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                max_capacity: event.target.value,
-              }))
-            }
+            onChange={(event) => setField("max_capacity", event.target.value)}
             required
-            type="number"
             value={form.max_capacity}
           />
           {editando && (
             <p className="text-sm text-content-muted">
               Esta linha tem {ocupacaoDe(editando).ocupacao} estudante(s)
               ativo(s) vinculado(s).
-            </p>
-          )}
-          {feedback && (
-            <p className="rounded-md bg-danger-600/10 px-3 py-2 text-sm font-medium text-danger-600">
-              {feedback}
             </p>
           )}
         </div>
@@ -387,7 +357,15 @@ export function LinhasWorkspace() {
           Excluir a linha {excluindo?.name}? Linhas com estudantes vinculados
           não podem ser excluídas — realoque-os antes.
         </p>
+        {deleteError && (
+          <div
+            className="mt-4 rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600"
+            role="alert"
+          >
+            {deleteError}
+          </div>
+        )}
       </Modal>
-    </main>
+    </>
   );
 }
