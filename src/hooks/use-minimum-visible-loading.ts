@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export const MINIMUM_LOADING_VISIBLE_MS = 1000;
+export const MINIMUM_LOADING_VISIBLE_MS = 0;
 
 export function useMinimumVisibleLoading(
   isLoading: boolean,
@@ -45,5 +45,5 @@ export function useMinimumVisibleLoading(
     };
   }, [isLoading, minVisibleMs]);
 
-  return isVisible;
+  return minVisibleMs <= 0 ? isLoading : isLoading || isVisible;
 }
