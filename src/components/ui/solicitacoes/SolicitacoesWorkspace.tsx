@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/buttons";
 import { SearchInput, Textarea } from "@/components/form/inputs";
@@ -42,8 +42,7 @@ import { inscricaoService } from "@/services/api/modules/inscricao";
 import type {
   Curso,
   Inscricao,
-  InscricaoDocumento,
-  InscricaoInstituicao,
+  InscricaoListItem,
   Instituicao,
   Linha,
 } from "@/types/inscricao";
@@ -56,10 +55,7 @@ type ApiErrorPayload = {
   message?: string;
 };
 
-type EnrichedInscricao = Inscricao & {
-  documentos: InscricaoDocumento[];
-  instituicaoAcademica: InscricaoInstituicao | null;
-};
+type EnrichedInscricao = InscricaoListItem;
 
 type DetailsSectionProps = {
   children: ReactNode;
@@ -569,6 +565,7 @@ const CAMPOS_CORRIGIVEIS: { campo: string; label: string }[] = [
 ];
 
 export function SolicitacoesWorkspace() {
+  const loadVersion = useRef(0);
   const hasCachedPage = Boolean(solicitacoesPageCache);
   const [loading, setLoading] = useState(!hasCachedPage);
   const [actionLoading, setActionLoading] = useState(false);
@@ -637,65 +634,67 @@ export function SolicitacoesWorkspace() {
     [instituicoes],
   );
 
-  const loadSolicitacoes = useCallback(async (showLoading = true) => {
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-      setError("");
+  const loadSolicitacoes = useCallback(
+    async (showLoading = true, reloadOptions = false) => {
+      const version = ++loadVersion.current;
+      const cachedOptions = reloadOptions ? null : solicitacoesPageCache;
+      try {
+        if (showLoading) {
+          setLoading(true);
+        }
+        setError("");
 
-      const [nextInscricoes, nextCursos, nextInstituicoes, nextLinhas] =
-        await Promise.all([
-          inscricaoService.listInscricoes(),
-          inscricaoService.listCursos(),
-          inscricaoService.listInstituicoes(),
-          inscricaoService.listLinhas().catch(() => []),
-        ]);
-
-      const enrichedSolicitacoes = await Promise.all(
-        nextInscricoes.map(async (inscricao) => {
-          const [instituicoesAcademicas, documentos] = await Promise.all([
-            inscricaoService
-              .listInscricaoInstituicoes(inscricao.id)
-              .catch(() => []),
-            inscricaoService.listDocumentos(inscricao.id).catch(() => []),
+        const [nextInscricoes, nextCursos, nextInstituicoes, nextLinhas] =
+          await Promise.all([
+            inscricaoService.listInscricoes(),
+            cachedOptions
+              ? cachedOptions.cursos
+              : inscricaoService.listCursos(),
+            cachedOptions
+              ? cachedOptions.instituicoes
+              : inscricaoService.listInstituicoes(),
+            cachedOptions
+              ? cachedOptions.linhas
+              : inscricaoService.listLinhas().catch(() => []),
           ]);
 
-          return {
-            ...inscricao,
-            documentos,
-            instituicaoAcademica: instituicoesAcademicas[0] ?? null,
-          };
-        }),
-      );
+        if (version !== loadVersion.current) return;
 
-      setCursos(nextCursos);
-      setInstituicoes(nextInstituicoes);
-      setLinhas(nextLinhas);
-      setSolicitacoes(enrichedSolicitacoes);
-      solicitacoesPageCache = {
-        cursos: nextCursos,
-        instituicoes: nextInstituicoes,
-        linhas: nextLinhas,
-        solicitacoes: enrichedSolicitacoes,
-      };
-    } catch (currentError) {
-      setSolicitacoes([]);
-      setError(
-        getErrorMessage(
-          currentError,
-          "Não foi possível carregar as solicitações.",
-        ),
-      );
-    } finally {
-      if (showLoading) {
-        setLoading(false);
+        const enrichedSolicitacoes = nextInscricoes;
+
+        setCursos(nextCursos);
+        setInstituicoes(nextInstituicoes);
+        setLinhas(nextLinhas);
+        setSolicitacoes(enrichedSolicitacoes);
+        solicitacoesPageCache = {
+          cursos: nextCursos,
+          instituicoes: nextInstituicoes,
+          linhas: nextLinhas,
+          solicitacoes: enrichedSolicitacoes,
+        };
+      } catch (currentError) {
+        if (version !== loadVersion.current) return;
+        setSolicitacoes([]);
+        setError(
+          getErrorMessage(
+            currentError,
+            "Não foi possível carregar as solicitações.",
+          ),
+        );
+      } finally {
+        if (showLoading && version === loadVersion.current) {
+          setLoading(false);
+        }
       }
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
-    void loadSolicitacoes(!solicitacoesPageCache);
+    void loadSolicitacoes(!solicitacoesPageCache, true);
+    return () => {
+      loadVersion.current += 1;
+    };
   }, [loadSolicitacoes]);
 
   const currentSolicitacoes = useMemo(
@@ -1487,7 +1486,7 @@ function SolicitacaoDetailsModal({
                     </span>
                     <StatusBadge status={documento.status} />
                     <div className="flex flex-wrap gap-2">
-                      {documento.download_url ?? documento.file_path ? (
+                      {(documento.download_url ?? documento.file_path) ? (
                         <>
                           <DocumentActionLink
                             href={
@@ -1502,7 +1501,11 @@ function SolicitacaoDetailsModal({
                           </DocumentActionLink>
                           <DocumentActionLink
                             download
-                            href={documento.download_url ?? documento.file_path ?? "#"}
+                            href={
+                              documento.download_url ??
+                              documento.file_path ??
+                              "#"
+                            }
                             icon={<Download />}
                           >
                             Baixar
