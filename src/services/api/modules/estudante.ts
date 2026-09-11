@@ -1,5 +1,6 @@
 import { api } from "@/services/api/client";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
+import { sharePendingRequest } from "@/services/api/pending-request";
 import type {
   Estudante,
   PaginatedEstudantes,
@@ -29,7 +30,7 @@ function isEmptyMessageResponse(
 }
 
 export const estudanteService = {
-  async list(page = 1, perPage = 10) {
+  list: sharePendingRequest(async (page = 1, perPage = 10) => {
     const { data } = await api.get<PaginatedEstudantes | EmptyMessageResponse>(
       API_ENDPOINTS.ESTUDANTES.BASE,
       {
@@ -55,16 +56,16 @@ export const estudanteService = {
     }
 
     return data;
-  },
+  }),
 
-  async count() {
+  count: sharePendingRequest(async () => {
     const { data } = await api.get<CountResponse>(
       API_ENDPOINTS.ESTUDANTES.COUNT,
     );
 
     if (typeof data === "number") return data;
     return data.data ?? 0;
-  },
+  }),
 
   async update(id: number, payload: UpdateEstudantePayload) {
     const { data } = await api.put<LaravelDataResponse<Estudante>>(

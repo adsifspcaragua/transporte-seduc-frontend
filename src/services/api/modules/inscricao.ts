@@ -1,5 +1,7 @@
 import { api, publicApi } from "@/services/api/client";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
+import { linhaService } from "@/services/api/modules/linha";
+import { sharePendingRequest } from "@/services/api/pending-request";
 import type {
   Curso,
   Inscricao,
@@ -7,9 +9,9 @@ import type {
   InscricaoDocumento,
   InscricaoInstituicao,
   InscricaoInstituicaoPayload,
+  InscricaoListItem,
   InscricaoPayload,
   Instituicao,
-  Linha,
 } from "@/types/inscricao";
 
 type ValidateInscricaoStepPayload = {
@@ -74,22 +76,22 @@ function unwrapCollection<T>(payload: LaravelCollectionResponse<T>) {
 }
 
 export const inscricaoService = {
-  async listInscricoes() {
-    const { data } = await api.get<LaravelCollectionResponse<Inscricao>>(
-      API_ENDPOINTS.INSCRICOES.BASE,
-    );
+  listInscricoes: sharePendingRequest(async () => {
+    const { data } = await api.get<
+      LaravelCollectionResponse<InscricaoListItem>
+    >(API_ENDPOINTS.INSCRICOES.BASE);
 
     return unwrapCollection(data);
-  },
+  }),
 
-  async getInscricao(id: number, token?: string) {
+  getInscricao: sharePendingRequest(async (id: number, token?: string) => {
     const { data } = await api.get<LaravelDataResponse<Inscricao>>(
       API_ENDPOINTS.INSCRICOES.BY_ID(id),
       token ? { headers: { "X-Inscricao-Token": token } } : undefined,
     );
 
     return unwrapData(data);
-  },
+  }),
 
   async validateStep(payload: ValidateInscricaoStepPayload, token?: string) {
     await publicApi.post(
@@ -149,47 +151,45 @@ export const inscricaoService = {
     return unwrapData(data);
   },
 
-  async listInscricaoInstituicoes(inscricaoId: number) {
-    const { data } = await api.get<
-      LaravelCollectionResponse<InscricaoInstituicao>
-    >(API_ENDPOINTS.INSCRICOES.INSTITUICOES(inscricaoId));
+  listInscricaoInstituicoes: sharePendingRequest(
+    async (inscricaoId: number) => {
+      const { data } = await api.get<
+        LaravelCollectionResponse<InscricaoInstituicao>
+      >(API_ENDPOINTS.INSCRICOES.INSTITUICOES(inscricaoId));
 
-    return unwrapCollection(data);
-  },
+      return unwrapCollection(data);
+    },
+  ),
 
-  async listInstituicoes() {
+  listInstituicoes: sharePendingRequest(async () => {
     const { data } = await publicApi.get<
       LaravelCollectionResponse<Instituicao>
     >(API_ENDPOINTS.INSTITUICOES.BASE);
 
     return unwrapCollection(data);
-  },
+  }),
 
-  async listCursos() {
+  listCursos: sharePendingRequest(async () => {
     const { data } = await publicApi.get<LaravelCollectionResponse<Curso>>(
       API_ENDPOINTS.CURSOS.BASE,
     );
 
     return unwrapCollection(data);
-  },
+  }),
 
-  async listLinhas() {
-    const { data } = await api.get<LaravelCollectionResponse<Linha>>(
-      API_ENDPOINTS.LINHAS.BASE,
-    );
+  listLinhas: linhaService.list,
 
-    return unwrapCollection(data);
-  },
+  listDocumentos: sharePendingRequest(
+    async (inscricaoId: number, token?: string) => {
+      const { data } = await api.get<LaravelDocumentListResponse>(
+        API_ENDPOINTS.INSCRICOES.DOCUMENTOS(inscricaoId),
+        token ? { headers: { "X-Inscricao-Token": token } } : undefined,
+      );
 
-  async listDocumentos(inscricaoId: number, token?: string) {
-    const { data } = await api.get<LaravelDocumentListResponse>(
-      API_ENDPOINTS.INSCRICOES.DOCUMENTOS(inscricaoId),
-      token ? { headers: { "X-Inscricao-Token": token } } : undefined,
-    );
-
-    if (typeof data === "string") return [];
-    return data.documento ?? [];
-  },
+      if (typeof data === "string") return [];
+      return data.documento ?? [];
+    },
+  ),
 
   async analisarInscricao(id: number, payload: InscricaoAnalisePayload) {
     await api.put<{ message?: string }>(

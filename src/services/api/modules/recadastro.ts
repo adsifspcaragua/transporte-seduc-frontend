@@ -1,9 +1,10 @@
 import { api, publicApi } from "@/services/api/client";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
+import { sharePendingRequest } from "@/services/api/pending-request";
 import type {
+  AcessoEstudanteResponse,
   AnaliseRecadastroPayload,
   AusentesRecadastro,
-  AcessoEstudanteResponse,
   CadastroRecadastro,
   DocumentoRecadastroTipo,
   FinalizarRecadastroPayload,
@@ -83,12 +84,12 @@ export const recadastroService = {
     return data;
   },
 
-  async listSolicitacoes() {
+  listSolicitacoes: sharePendingRequest(async () => {
     const { data } = await api.get<CollectionResponse<SolicitacaoRecadastro>>(
       API_ENDPOINTS.RECADASTRO.SOLICITACOES,
     );
     return unwrapCollection(data);
-  },
+  }),
 
   async analisar(id: number, payload: AnaliseRecadastroPayload) {
     const { data } = await api.put<DataResponse<SolicitacaoRecadastro>>(
@@ -98,12 +99,12 @@ export const recadastroService = {
     return data;
   },
 
-  async listPeriodos() {
+  listPeriodos: sharePendingRequest(async () => {
     const { data } = await api.get<CollectionResponse<PeriodoRecadastro>>(
       API_ENDPOINTS.RECADASTRO.PERIODOS,
     );
     return unwrapCollection(data);
-  },
+  }),
 
   async createPeriodo(payload: PeriodoRecadastroPayload) {
     const { data } = await api.post<DataResponse<PeriodoRecadastro>>(
@@ -115,10 +116,7 @@ export const recadastroService = {
 
   // Prorrogar um período é atualizar a data de fim; por isso o payload é
   // parcial, para a responsável mexer só no que precisa mudar.
-  async updatePeriodo(
-    id: number,
-    payload: Partial<PeriodoRecadastroPayload>,
-  ) {
+  async updatePeriodo(id: number, payload: Partial<PeriodoRecadastroPayload>) {
     const { data } = await api.put<DataResponse<PeriodoRecadastro>>(
       API_ENDPOINTS.RECADASTRO.PERIODO_BY_ID(id),
       payload,
@@ -126,12 +124,12 @@ export const recadastroService = {
     return data;
   },
 
-  async listAusentes(periodoId: number) {
+  listAusentes: sharePendingRequest(async (periodoId: number) => {
     const { data } = await api.get<AusentesRecadastro>(
       API_ENDPOINTS.RECADASTRO.AUSENTES(periodoId),
     );
     return data;
-  },
+  }),
 
   async inativarAusentes(periodoId: number, estudantes: number[]) {
     const { data } = await api.post<{ message: string; inativados: number[] }>(

@@ -2,6 +2,7 @@ import axios from "axios";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
 import { env } from "@/services/api/env";
 import { setupInterceptors } from "@/services/api/interceptors";
+import { invalidatePendingRequests } from "@/services/api/pending-request";
 
 function getBackendBaseURL() {
   if (!env.apiUrl) return "";
@@ -39,6 +40,17 @@ const csrfClient = axios.create({
   headers: {
     Accept: "application/json",
   },
+});
+
+publicApi.interceptors.request.use((config) => {
+  if (config.method && config.method !== "get") invalidatePendingRequests();
+  return config;
+});
+publicApi.interceptors.response.use((response) => {
+  if (response.config.method && response.config.method !== "get") {
+    invalidatePendingRequests();
+  }
+  return response;
 });
 
 setupInterceptors(api, {

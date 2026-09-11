@@ -5,6 +5,7 @@ import type {
 } from "axios";
 
 import { useAuthStore } from "@/contexts/auth-store";
+import { invalidatePendingRequests } from "@/services/api/pending-request";
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retryAfterCsrfRefresh?: boolean;
@@ -23,13 +24,19 @@ export function setupInterceptors(
   { refreshCsrfCookie }: SetupInterceptorsOptions,
 ) {
   api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    if (config.method && config.method !== "get") invalidatePendingRequests();
     config.headers.Accept = "application/json";
 
     return config;
   });
 
   api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      if (response.config.method && response.config.method !== "get") {
+        invalidatePendingRequests();
+      }
+      return response;
+    },
     async (error: AxiosError) => {
       const status = error.response?.status;
       const originalRequest = error.config as

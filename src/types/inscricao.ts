@@ -37,6 +37,11 @@ export type Inscricao = {
   updated_at?: string | null;
 };
 
+export type InscricaoListItem = Inscricao & {
+  documentos: InscricaoDocumento[];
+  instituicaoAcademica: InscricaoInstituicao | null;
+};
+
 export type InscricaoPayload = Partial<{
   name: string;
   cpf: string;

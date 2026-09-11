@@ -1,5 +1,6 @@
 import { api } from "@/services/api/client";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
+import { sharePendingRequest } from "@/services/api/pending-request";
 import type { Linha, LinhaPayload } from "@/types/inscricao";
 
 type DataResponse<T> = { data: T; message?: string };
@@ -12,12 +13,12 @@ function unwrapCollection<T>(payload: CollectionResponse<T>) {
 }
 
 export const linhaService = {
-  async list() {
+  list: sharePendingRequest(async () => {
     const { data } = await api.get<CollectionResponse<Linha>>(
       API_ENDPOINTS.LINHAS.BASE,
     );
     return unwrapCollection(data);
-  },
+  }),
 
   async create(payload: LinhaPayload) {
     const { data } = await api.post<DataResponse<Linha>>(

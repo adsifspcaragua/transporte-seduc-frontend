@@ -1,5 +1,6 @@
 import { api, csrfClient } from "@/services/api/client";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
+import { sharePendingRequest } from "@/services/api/pending-request";
 import type { AuthUser, LoginRequest, LoginResponse } from "@/types/auth";
 
 async function ensureCsrfCookie() {
@@ -21,10 +22,10 @@ export const authService = {
     return data;
   },
 
-  async me() {
+  me: sharePendingRequest(async () => {
     const { data } = await api.get<AuthUser>(API_ENDPOINTS.AUTH.ME);
     return data;
-  },
+  }),
 
   async logout() {
     const { data } = await api.post<{ message: string }>(
