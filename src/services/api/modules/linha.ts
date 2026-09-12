@@ -2,6 +2,7 @@ import { api } from "@/services/api/client";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
 import { sharePendingRequest } from "@/services/api/pending-request";
 import type { Linha, LinhaPayload } from "@/types/inscricao";
+import type { PaginatedLinhaEstudantes } from "@/types/linha";
 
 type DataResponse<T> = { data: T; message?: string };
 type CollectionResponse<T> = T[] | { data?: T[] | { data?: T[] } };
@@ -13,6 +14,16 @@ function unwrapCollection<T>(payload: CollectionResponse<T>) {
 }
 
 export const linhaService = {
+  listEstudantes: sharePendingRequest(
+    async (id: number, page = 1, perPage = 10) => {
+      const { data } = await api.get<PaginatedLinhaEstudantes>(
+        API_ENDPOINTS.LINHAS.ESTUDANTES(id),
+        { params: { page, per_page: perPage } },
+      );
+      return data;
+    },
+  ),
+
   list: sharePendingRequest(async () => {
     const { data } = await api.get<CollectionResponse<Linha>>(
       API_ENDPOINTS.LINHAS.BASE,

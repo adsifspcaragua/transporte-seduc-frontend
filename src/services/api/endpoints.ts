@@ -32,15 +32,13 @@ export const API_ENDPOINTS = {
       `/reecadastro/solicitacoes/${id}/documentos`,
     FINALIZAR: (id: number | string) =>
       `/reecadastro/solicitacoes/${id}/finalizar`,
-    ANALISE: (id: number | string) =>
-      `/reecadastro/solicitacoes/${id}/analise`,
+    ANALISE: (id: number | string) => `/reecadastro/solicitacoes/${id}/analise`,
     PERIODOS: "/reecadastro/periodos",
     PERIODO_BY_ID: (id: number | string) => `/reecadastro/periodos/${id}`,
     AUSENTES: (id: number | string) => `/reecadastro/periodos/${id}/ausentes`,
     INATIVAR_AUSENTES: (id: number | string) =>
       `/reecadastro/periodos/${id}/inativar-ausentes`,
-    ABRIR_PERIODO: (id: number | string) =>
-      `/reecadastro/periodos/${id}/abrir`,
+    ABRIR_PERIODO: (id: number | string) => `/reecadastro/periodos/${id}/abrir`,
     FECHAR_PERIODO: (id: number | string) =>
       `/reecadastro/periodos/${id}/fechar`,
     DOWNLOAD_DOCUMENTO: (id: number | string) =>
@@ -61,6 +59,7 @@ export const API_ENDPOINTS = {
   LINHAS: {
     BASE: "/linha",
     BY_ID: (id: number | string) => `/linha/${id}`,
+    ESTUDANTES: (id: number | string) => `/linha/${id}/estudantes`,
   },
   ESTUDANTES: {
     BASE: "/estudantes",
