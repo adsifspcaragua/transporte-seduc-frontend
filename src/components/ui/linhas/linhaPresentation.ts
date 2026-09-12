@@ -1,5 +1,7 @@
 import type { Linha } from "@/types/inscricao";
 
+export type LinhasViewMode = "grid" | "list";
+
 export function horaParaInput(valor?: string | null) {
   return valor ? valor.slice(0, 5) : "";
 }

@@ -1,24 +1,27 @@
 "use client";
 
 import axios from "axios";
-import { Bus, Plus } from "lucide-react";
+import { LayoutGrid, List, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/buttons";
 import { Input, NumberInput, TimeInput } from "@/components/form/inputs";
 import { Modal } from "@/components/modal";
 import { LinhaCard, LinhaCreateCard } from "@/components/ui/linhas/LinhaCard";
+import { LinhaDetailsModal } from "@/components/ui/linhas/LinhaDetailsModal";
 import {
   LinhasPageSkeleton,
   LinhasSkeleton,
 } from "@/components/ui/linhas/LinhasSkeleton";
 import {
   horaParaInput,
+  type LinhasViewMode,
   ocupacaoDe,
 } from "@/components/ui/linhas/linhaPresentation";
 import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { linhaService } from "@/services/api/modules/linha";
 import type { Linha } from "@/types/inscricao";
+import { cn } from "@/utils/cn";
 import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
 
 type ApiError = { message?: string; errors?: Record<string, string[]> };
@@ -47,6 +50,8 @@ type LinhaFormField = keyof typeof formInicial;
 type LinhaFieldErrors = Partial<Record<LinhaFormField, string>>;
 
 export function LinhasWorkspace() {
+  const [viewMode, setViewMode] = useState<LinhasViewMode>("grid");
+  const [detalhes, setDetalhes] = useState<Linha | null>(null);
   const [linhas, setLinhas] = useState<Linha[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -223,47 +228,81 @@ export function LinhasWorkspace() {
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-brand-600">Linhas</h1>
-        <Button
-          className="h-11 px-4"
-          fullWidth={false}
-          leftIcon={<Plus />}
-          onClick={abrirCriacao}
-          variant="primary"
-        >
-          Nova linha
-        </Button>
+        <div className="flex items-center gap-2">
+          <fieldset
+            aria-label="Modo de exibição das linhas"
+            className="inline-flex h-11 shrink-0 overflow-hidden rounded-lg border border-brand-600/20 bg-white"
+          >
+            {(
+              [
+                { value: "list", label: "Visualizar em lista", icon: List },
+                {
+                  value: "grid",
+                  label: "Visualizar em cards",
+                  icon: LayoutGrid,
+                },
+              ] as const
+            ).map((option) => {
+              const selected = viewMode === option.value;
+              const Icon = option.icon;
+              return (
+                <Button
+                  key={option.value}
+                  aria-label={option.label}
+                  aria-pressed={selected}
+                  title={option.label}
+                  className={cn(
+                    "h-full w-14 rounded-none border-0 shadow-none first:border-r first:border-brand-600/20 focus-visible:-outline-offset-2 active:scale-100",
+                    selected
+                      ? "bg-action-light-default text-brand-700 hover:bg-action-light-hover"
+                      : "bg-white text-content-secondary hover:bg-surface-muted",
+                  )}
+                  leftIcon={<Icon aria-hidden="true" />}
+                  onClick={() => setViewMode(option.value)}
+                  size="icon"
+                  variant="ghost"
+                />
+              );
+            })}
+          </fieldset>
+          <Button
+            className="h-11 px-4"
+            fullWidth={false}
+            leftIcon={<Plus />}
+            onClick={abrirCriacao}
+            variant="primary"
+          >
+            Nova linha
+          </Button>
+        </div>
       </div>
 
-      <section className="mb-6 rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
-        <div className="mb-2 flex items-center gap-2 text-brand-600">
-          <Bus className="size-4" />
-          <h2 className="text-base font-bold">Linhas de transporte</h2>
-        </div>
-        <p className="text-sm text-content-muted">
-          Rotas, horários e capacidade. A ocupação conta apenas estudantes
-          ativos vinculados à linha.
+      {loadError && (
+        <p
+          className="mb-5 rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600"
+          role="alert"
+        >
+          {loadError}
         </p>
-
-        {loadError && (
-          <p
-            className="mt-4 rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600"
-            role="alert"
-          >
-            {loadError}
-          </p>
-        )}
-      </section>
+      )}
 
       {loading || showSkeleton ? (
-        <LinhasSkeleton />
+        <LinhasSkeleton viewMode={viewMode} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div
+          className={cn(
+            "grid gap-4",
+            viewMode === "grid" && "md:grid-cols-2 xl:grid-cols-3",
+          )}
+        >
           {linhas.map((linha) => (
             <LinhaCard
               key={linha.id}
               linha={linha}
+              viewMode={viewMode}
+              onDetails={setDetalhes}
               onEdit={abrirEdicao}
               onDelete={(selected) => {
                 setDeleteError("");
@@ -271,8 +310,18 @@ export function LinhasWorkspace() {
               }}
             />
           ))}
-          <LinhaCreateCard onCreate={abrirCriacao} />
+          {(viewMode === "grid" || linhas.length === 0) && (
+            <LinhaCreateCard onCreate={abrirCriacao} />
+          )}
         </div>
+      )}
+
+      {detalhes && (
+        <LinhaDetailsModal
+          key={detalhes.id}
+          linha={detalhes}
+          onClose={() => setDetalhes(null)}
+        />
       )}
 
       <Modal
