@@ -25,12 +25,7 @@ function plain(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function registro(
-  id,
-  situacao,
-  observacao = null,
-  justificativaStatus = null,
-) {
+function registro(id, situacao, observacao = null, justificativaStatus = null) {
   return {
     id: id + 100,
     estudante: { id, name: `Estudante ${id}`, cpf: null },
@@ -68,10 +63,7 @@ test("cria o rascunho preservando marcação e observação", () => {
   const { createChamadaDraft } = loadPresentation();
 
   const draft = createChamadaDraft(
-    chamada([
-      registro(1, "Presente"),
-      registro(2, "Justificada", "Atestado"),
-    ]),
+    chamada([registro(1, "Presente"), registro(2, "Justificada", "Atestado")]),
   );
 
   assert.deepEqual(plain(draft), {
@@ -135,9 +127,7 @@ test("bloqueia somente justificativa que já recebeu decisão", () => {
 
 test("não envia alteração de registro bloqueado", () => {
   const { getChangedEntries } = loadPresentation();
-  const source = chamada([
-    registro(1, "Justificada", "Atestado", "Aprovada"),
-  ]);
+  const source = chamada([registro(1, "Justificada", "Atestado", "Aprovada")]);
   const draft = { 1: { situacao: "Falta", observacao: "" } };
 
   assert.deepEqual(plain(getChangedEntries(source, draft)), []);

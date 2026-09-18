@@ -80,9 +80,7 @@ export function validateDraft(draft: ChamadaDraft): ChamadaDraftErrors {
 }
 
 export function hasPendingEntries(draft: ChamadaDraft) {
-  return Object.values(draft).some(
-    (entry) => entry.situacao === "Pendente",
-  );
+  return Object.values(draft).some((entry) => entry.situacao === "Pendente");
 }
 
 export function getLinhaCallAction(
