@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ClipboardCheck,
   ClipboardEdit,
   GraduationCap,
   LayoutDashboard,
@@ -27,6 +28,7 @@ const sidebarItems: SidebarItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/" },
   { label: "Estudantes", icon: GraduationCap, href: "/estudantes" },
   { label: "Linhas", icon: MapIcon, href: "/linhas" },
+  { label: "Frequência", icon: ClipboardCheck, href: "/frequencias" },
   { label: "Solicitações", icon: ClipboardEdit, href: "/solicitacoes" },
   {
     label: "Recadastramento",
