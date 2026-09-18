@@ -61,6 +61,15 @@ export const API_ENDPOINTS = {
     BY_ID: (id: number | string) => `/linha/${id}`,
     ESTUDANTES: (id: number | string) => `/linha/${id}/estudantes`,
   },
+  FREQUENCIAS: {
+    LINHAS: "/frequencias/linhas",
+    CHAMADAS: "/frequencias/chamadas",
+    CHAMADA_BY_ID: (id: number | string) => `/frequencias/chamadas/${id}`,
+    FECHAR: (id: number | string) =>
+      `/frequencias/chamadas/${id}/fechar`,
+    REABRIR: (id: number | string) =>
+      `/frequencias/chamadas/${id}/reabrir`,
+  },
   ESTUDANTES: {
     BASE: "/estudantes",
     COUNT: "/contar-estudantes",

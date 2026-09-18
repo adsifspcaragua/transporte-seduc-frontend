@@ -1,0 +1,148 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const { test } = require("node:test");
+const vm = require("node:vm");
+const ts = require("typescript");
+
+const linha = {
+  id: 3,
+  name: "Linha Centro",
+  departure_time: "07:00:00",
+  return_time: "18:00:00",
+  motorista: { id: 4, name: "Maria" },
+  chamada_hoje: null,
+};
+
+const chamada = {
+  id: 9,
+  data: "2026-09-18",
+  status: "Aberta",
+  observacoes: null,
+  fechada_em: null,
+  linha: { id: 3, name: "Linha Centro", motorista: linha.motorista },
+  registrada_por: { id: 4, name: "Maria" },
+  contadores: {
+    total: 1,
+    presentes: 0,
+    faltas: 0,
+    justificadas: 0,
+    pendentes: 1,
+  },
+  frequencias: [
+    {
+      id: 12,
+      estudante: { id: 7, name: "Ana", cpf: "12345678900" },
+      estudante_id: 7,
+      situacao: "Pendente",
+      observacao: null,
+      marcada_em: null,
+      justificativa: null,
+    },
+  ],
+  created_at: "2026-09-18T10:00:00.000000Z",
+  updated_at: "2026-09-18T10:00:00.000000Z",
+};
+
+function setup(responseData) {
+  const calls = [];
+  const client = {};
+
+  for (const method of ["get", "post", "put", "patch"]) {
+    client[method] = async (url, body) => {
+      calls.push({ method, url, ...(body === undefined ? {} : { body }) });
+      return { data: responseData };
+    };
+  }
+
+  const modules = new Map();
+  const overrides = {
+    "@/services/api/client": { api: client },
+    "@/services/api/pending-request": {
+      sharePendingRequest: (operation) => operation,
+    },
+  };
+
+  function load(name) {
+    if (overrides[name]) return overrides[name];
+    if (modules.has(name)) return modules.get(name);
+
+    const filename = path.resolve(__dirname, "../src", `${name.slice(2)}.ts`);
+    const source = ts.transpileModule(fs.readFileSync(filename, "utf8"), {
+      compilerOptions: {
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.ES2022,
+      },
+    }).outputText;
+    const exports = {};
+    modules.set(name, exports);
+    vm.runInNewContext(source, { exports, require: load }, { filename });
+    return exports;
+  }
+
+  return {
+    calls,
+    service: load("@/services/api/modules/frequencia").frequenciaService,
+  };
+}
+
+function plain(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+test("lista as linhas disponíveis para chamada", async () => {
+  const { service, calls } = setup({ data: [linha] });
+
+  assert.deepEqual(plain(await service.listLinhas()), [linha]);
+  assert.deepEqual(calls[0], {
+    method: "get",
+    url: "/frequencias/linhas",
+  });
+});
+
+test("abre e salva uma chamada com o contrato do backend", async () => {
+  const { service, calls } = setup({ data: chamada });
+
+  await service.open({ linha_id: 3, data: "2026-09-18" });
+  await service.update(9, {
+    frequencias: [{ estudante_id: 7, situacao: "Presente" }],
+  });
+
+  assert.deepEqual(calls, [
+    {
+      method: "post",
+      url: "/frequencias/chamadas",
+      body: { linha_id: 3, data: "2026-09-18" },
+    },
+    {
+      method: "put",
+      url: "/frequencias/chamadas/9",
+      body: { frequencias: [{ estudante_id: 7, situacao: "Presente" }] },
+    },
+  ]);
+});
+
+test("carrega uma folha existente pelo id", async () => {
+  const { service, calls } = setup({ data: chamada });
+
+  assert.deepEqual(plain((await service.show(9)).data), chamada);
+  assert.deepEqual(calls[0], {
+    method: "get",
+    url: "/frequencias/chamadas/9",
+  });
+});
+
+test("fecha e reabre a chamada pelos endpoints de ação", async () => {
+  const { service, calls } = setup({ data: chamada });
+
+  await service.close(9);
+  await service.reopen(9);
+
+  assert.deepEqual(
+    calls.map(({ method, url }) => ({ method, url })),
+    [
+      { method: "patch", url: "/frequencias/chamadas/9/fechar" },
+      { method: "patch", url: "/frequencias/chamadas/9/reabrir" },
+    ],
+  );
+});
