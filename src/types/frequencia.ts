@@ -69,6 +69,34 @@ export type AbrirChamadaPayload = {
   observacoes?: string | null;
 };
 
+export type ListarChamadasParams = Partial<{
+  linha_id: number;
+  status: ChamadaStatus;
+  data: string;
+  de: string;
+  ate: string;
+  page: number;
+  per_page: 10 | 15 | 20 | 30;
+}>;
+
+export type PaginatedChamadas = {
+  data: Chamada[];
+  meta: {
+    current_page: number;
+    from: number | null;
+    last_page: number;
+    per_page: number;
+    to: number | null;
+    total: number;
+  };
+  links?: {
+    first?: string | null;
+    last?: string | null;
+    prev?: string | null;
+    next?: string | null;
+  };
+};
+
 export type RegistrarFrequenciaItem = {
   estudante_id: number;
   situacao: FrequenciaSituacao;

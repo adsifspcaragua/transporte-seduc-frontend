@@ -100,6 +100,49 @@ test("lista as linhas disponíveis para chamada", async () => {
   });
 });
 
+test("lista chamadas paginadas com filtros", async () => {
+  const paginated = {
+    data: [chamada],
+    meta: {
+      current_page: 2,
+      from: 16,
+      last_page: 3,
+      per_page: 15,
+      to: 30,
+      total: 33,
+    },
+  };
+  const { service, calls } = setup(paginated);
+
+  assert.deepEqual(
+    plain(
+      await service.list({
+        linha_id: 3,
+        status: "Aberta",
+        de: "2026-09-01",
+        ate: "2026-09-18",
+        page: 2,
+        per_page: 15,
+      }),
+    ),
+    paginated,
+  );
+  assert.deepEqual(plain(calls[0]), {
+    method: "get",
+    url: "/frequencias/chamadas",
+    body: {
+      params: {
+        linha_id: 3,
+        status: "Aberta",
+        de: "2026-09-01",
+        ate: "2026-09-18",
+        page: 2,
+        per_page: 15,
+      },
+    },
+  });
+});
+
 test("abre e salva uma chamada com o contrato do backend", async () => {
   const { service, calls } = setup({ data: chamada });
 

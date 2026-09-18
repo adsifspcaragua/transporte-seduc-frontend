@@ -6,6 +6,8 @@ import type {
   Chamada,
   DataResponse,
   FrequenciaLinha,
+  ListarChamadasParams,
+  PaginatedChamadas,
   RegistrarFrequenciasPayload,
   UpdateChamadaResponse,
 } from "@/types/frequencia";
@@ -16,6 +18,14 @@ export const frequenciaService = {
       API_ENDPOINTS.FREQUENCIAS.LINHAS,
     );
     return data.data;
+  }),
+
+  list: sharePendingRequest(async (params: ListarChamadasParams = {}) => {
+    const { data } = await api.get<PaginatedChamadas>(
+      API_ENDPOINTS.FREQUENCIAS.CHAMADAS,
+      { params },
+    );
+    return data;
   }),
 
   async open(payload: AbrirChamadaPayload) {
