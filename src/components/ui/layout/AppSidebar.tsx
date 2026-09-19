@@ -3,6 +3,7 @@
 import {
   ClipboardCheck,
   ClipboardEdit,
+  FileCheck2,
   GraduationCap,
   LayoutDashboard,
   type LucideIcon,
@@ -22,13 +23,24 @@ type SidebarItem = {
   label: string;
   icon: LucideIcon;
   href?: string;
+  exact?: boolean;
 };
 
 const sidebarItems: SidebarItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/" },
   { label: "Estudantes", icon: GraduationCap, href: "/estudantes" },
   { label: "Linhas", icon: MapIcon, href: "/linhas" },
-  { label: "Frequência", icon: ClipboardCheck, href: "/frequencias" },
+  {
+    label: "Frequência",
+    icon: ClipboardCheck,
+    href: "/frequencias",
+    exact: true,
+  },
+  {
+    label: "Justificativas",
+    icon: FileCheck2,
+    href: "/frequencias/justificativas",
+  },
   { label: "Solicitações", icon: ClipboardEdit, href: "/solicitacoes" },
   {
     label: "Recadastramento",
@@ -42,9 +54,9 @@ type AppSidebarProps = {
   onToggle: () => void;
 };
 
-function isPathActive(pathname: string, href?: string) {
+function isPathActive(pathname: string, href?: string, exact = false) {
   if (!href) return false;
-  if (href === "/") return pathname === href;
+  if (href === "/" || exact) return pathname === href;
 
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -87,7 +99,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
           <div className="space-y-1">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
-              const isActive = isPathActive(pathname, item.href);
+              const isActive = isPathActive(pathname, item.href, item.exact);
               const className = cn(
                 "group relative flex h-11 w-full cursor-pointer items-center overflow-hidden rounded-md px-3 text-left text-[15px] font-medium transition-colors hover:bg-brand-700",
                 isActive && "bg-brand-700",
