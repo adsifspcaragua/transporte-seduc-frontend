@@ -397,7 +397,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             onClick={() => setIsOpen((current) => !current && !disabled)}
             onKeyDown={handleKeyDown}
             className={cn(
-              "peer flex h-11 w-full cursor-pointer items-center justify-between gap-4 px-4 text-left text-sm font-normal outline-none transition-all duration-200 disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
+              "peer flex h-10 w-full cursor-pointer items-center justify-between gap-3 px-3.5 text-left text-sm font-normal outline-none transition-all duration-200 disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
               variantClasses[variant].field,
               hasError
                 ? "border-danger-600 focus:border-danger-600"

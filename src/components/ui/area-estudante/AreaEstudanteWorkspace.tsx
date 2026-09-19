@@ -123,7 +123,7 @@ export function AreaEstudanteWorkspace() {
               </Button>
 
               <Link
-                className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-action-light-default bg-action-light-default px-5 text-sm font-semibold normal-case tracking-normal text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
+                className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-action-light-default bg-action-light-default px-4 text-sm font-semibold normal-case tracking-normal text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
                 href="/login"
               >
                 <LogIn className="size-5" />

@@ -431,7 +431,7 @@ function SegmentedQuestion({
                 hasError && option.value === "true" ? "true" : undefined
               }
               className={cn(
-                "h-11 cursor-pointer rounded-md text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2",
+                "h-10 cursor-pointer rounded-md text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2",
                 selected
                   ? "bg-brand-600 text-white shadow-sm"
                   : "text-brand-700 hover:bg-white/70",

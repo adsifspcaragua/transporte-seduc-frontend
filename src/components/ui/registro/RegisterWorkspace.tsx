@@ -3304,7 +3304,7 @@ function SegmentedQuestion({
             }
             onClick={() => onChange(option.value)}
             className={cn(
-              "h-11 cursor-pointer rounded-md text-sm font-bold transition",
+              "h-10 cursor-pointer rounded-md text-sm font-bold transition",
               value === option.value
                 ? "bg-brand-600 text-white shadow-sm"
                 : "text-brand-700 hover:bg-white",

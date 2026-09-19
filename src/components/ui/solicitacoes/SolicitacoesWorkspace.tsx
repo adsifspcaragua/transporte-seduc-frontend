@@ -356,7 +356,7 @@ function SolicitacoesPageSkeleton() {
     <div aria-busy="true" aria-live="polite">
       <div className="mb-5 flex items-center justify-between gap-3">
         <Skeleton className="h-8 w-40 rounded-full bg-skeleton" />
-        <Skeleton className="h-11 w-32 rounded-lg bg-skeleton" />
+        <Skeleton className="h-10 w-32 rounded-lg bg-skeleton" />
       </div>
 
       <div className="mb-6 rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
@@ -368,26 +368,26 @@ function SolicitacoesPageSkeleton() {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-12 xl:items-end">
           <div className="min-w-0 sm:col-span-2 xl:col-span-4">
             <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
-            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+            <Skeleton className="h-10 w-full rounded-lg bg-skeleton" />
           </div>
           <div className="min-w-0 xl:col-span-4">
             <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
-            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+            <Skeleton className="h-10 w-full rounded-lg bg-skeleton" />
           </div>
           <div className="min-w-0 xl:col-span-4">
             <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
-            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+            <Skeleton className="h-10 w-full rounded-lg bg-skeleton" />
           </div>
           <div className="min-w-0 xl:col-span-4">
             <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
-            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+            <Skeleton className="h-10 w-full rounded-lg bg-skeleton" />
           </div>
           <div className="min-w-0 xl:col-span-2">
             <Skeleton className="mb-1.5 h-3 w-16 rounded-full bg-skeleton" />
-            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+            <Skeleton className="h-10 w-full rounded-lg bg-skeleton" />
           </div>
           <div className="pt-5 xl:col-start-12">
-            <Skeleton className="h-11 w-full rounded-lg bg-skeleton" />
+            <Skeleton className="h-10 w-full rounded-lg bg-skeleton" />
           </div>
         </div>
       </div>
@@ -916,7 +916,7 @@ export function SolicitacoesWorkspace() {
       <div className="mb-5 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-brand-600">Solicitações</h1>
         <Button
-          className="h-11 px-4"
+          className="h-10 px-4 text-sm"
           fullWidth={false}
           leftIcon={<Clock3 />}
           onClick={() => setHistoryOpen(true)}

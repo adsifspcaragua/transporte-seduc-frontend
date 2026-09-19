@@ -264,7 +264,7 @@ export function LinhaCreateCard({ onCreate }: { onCreate: () => void }) {
         Cadastre uma nova linha de transporte para atender mais estudantes.
       </p>
       <Button
-        className="h-11 px-4"
+        className="h-10 px-4 text-sm"
         fullWidth={false}
         leftIcon={<Plus />}
         onClick={onCreate}

@@ -9,8 +9,8 @@ export function LinhasPageSkeleton() {
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <Skeleton className="h-8 w-40 rounded-full" />
           <div className="flex items-center gap-2">
-            <Skeleton className="h-11 w-28 rounded-lg" />
-            <Skeleton className="h-11 w-32 rounded-lg" />
+            <Skeleton className="h-10 w-28 rounded-lg" />
+            <Skeleton className="h-10 w-32 rounded-lg" />
           </div>
         </div>
       </div>

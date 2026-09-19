@@ -83,10 +83,10 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-11 px-3.5 text-sm",
-  md: "h-11 px-5 text-base",
-  lg: "h-11 px-6 text-lg",
-  icon: "size-11 p-0",
+  sm: "h-10 px-3 text-sm",
+  md: "h-10 px-4 text-sm",
+  lg: "h-10 px-5 text-base",
+  icon: "size-10 p-0",
 };
 
 const spinnerClasses: Record<ButtonVariant, string> = {

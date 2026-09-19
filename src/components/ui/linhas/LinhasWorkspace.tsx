@@ -233,7 +233,7 @@ export function LinhasWorkspace() {
         <div className="flex items-center gap-2">
           <fieldset
             aria-label="Modo de exibição das linhas"
-            className="inline-flex h-11 shrink-0 overflow-hidden rounded-lg border border-brand-600/20 bg-white"
+            className="inline-flex h-10 shrink-0 overflow-hidden rounded-lg border border-brand-600/20 bg-white"
           >
             {(
               [
@@ -268,7 +268,7 @@ export function LinhasWorkspace() {
             })}
           </fieldset>
           <Button
-            className="h-11 px-4"
+            className="h-10 px-4 text-sm"
             fullWidth={false}
             leftIcon={<Plus />}
             onClick={abrirCriacao}
