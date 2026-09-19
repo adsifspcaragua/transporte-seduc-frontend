@@ -78,3 +78,8 @@ export function formatJustificativaDateTime(
     ...(timeZone ? { timeZone } : {}),
   }).format(date);
 }
+
+export function validateJustificativaDateRange(de: string, ate: string) {
+  if (!de || !ate || ate >= de) return "";
+  return "A data final deve ser igual ou posterior à data inicial.";
+}

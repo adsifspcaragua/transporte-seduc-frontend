@@ -111,3 +111,14 @@ test("formata data e trata valor ausente", () => {
     "18/09/2026, 12:30",
   );
 });
+
+test("impede período com data final anterior à inicial", () => {
+  const { validateJustificativaDateRange } = loadPresentation();
+
+  assert.equal(validateJustificativaDateRange("", ""), "");
+  assert.equal(validateJustificativaDateRange("2026-09-01", "2026-09-18"), "");
+  assert.equal(
+    validateJustificativaDateRange("2026-09-18", "2026-09-01"),
+    "A data final deve ser igual ou posterior à data inicial.",
+  );
+});
