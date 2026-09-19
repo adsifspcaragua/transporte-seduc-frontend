@@ -44,6 +44,31 @@ const chamada = {
   updated_at: "2026-09-18T10:00:00.000000Z",
 };
 
+const justificativa = {
+  id: 21,
+  status: "Em analise",
+  motivo: "Atestado médico entregue na secretaria.",
+  parecer: null,
+  estudante: {
+    id: 7,
+    name: "Ana",
+    cpf: "12345678900",
+    email: "ana@example.com",
+    status: "Ativo",
+  },
+  falta: {
+    frequencia_id: 12,
+    situacao: "Justificada",
+    chamada_id: 9,
+    data: "2026-09-18",
+    linha: { id: 3, name: "Linha Centro" },
+  },
+  enviada_por: { id: 4, name: "Maria" },
+  analisada_por: null,
+  analisada_em: null,
+  created_at: "2026-09-18T10:30:00.000000Z",
+};
+
 function setup(responseData) {
   const calls = [];
   const client = {};
@@ -188,4 +213,77 @@ test("fecha e reabre a chamada pelos endpoints de ação", async () => {
       { method: "patch", url: "/frequencias/chamadas/9/reabrir" },
     ],
   );
+});
+
+test("lista justificativas paginadas com filtros", async () => {
+  const response = {
+    data: [justificativa],
+    meta: {
+      current_page: 2,
+      from: 16,
+      last_page: 3,
+      per_page: 15,
+      to: 30,
+      total: 33,
+    },
+    em_analise: 4,
+  };
+  const { service, calls } = setup(response);
+
+  assert.deepEqual(
+    plain(
+      await service.listJustificativas({
+        status: "Em analise",
+        linha_id: 3,
+        de: "2026-09-01",
+        ate: "2026-09-18",
+        page: 2,
+        per_page: 15,
+      }),
+    ),
+    response,
+  );
+  assert.deepEqual(plain(calls[0]), {
+    method: "get",
+    url: "/frequencias/justificativas",
+    body: {
+      params: {
+        status: "Em analise",
+        linha_id: 3,
+        de: "2026-09-01",
+        ate: "2026-09-18",
+        page: 2,
+        per_page: 15,
+      },
+    },
+  });
+});
+
+test("carrega e analisa uma justificativa", async () => {
+  const response = {
+    data: justificativa,
+    message: "Justificativa rejeitada: a falta passa a contar",
+  };
+  const { service, calls } = setup(response);
+
+  assert.deepEqual(
+    plain((await service.showJustificativa(21)).data),
+    justificativa,
+  );
+  await service.analyzeJustificativa(21, {
+    decisao: "Rejeitada",
+    parecer: "Documento sem data legível.",
+  });
+
+  assert.deepEqual(calls, [
+    { method: "get", url: "/frequencias/justificativas/21" },
+    {
+      method: "put",
+      url: "/frequencias/justificativas/21/analise",
+      body: {
+        decisao: "Rejeitada",
+        parecer: "Documento sem data legível.",
+      },
+    },
+  ]);
 });

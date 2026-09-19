@@ -3,11 +3,15 @@ import { API_ENDPOINTS } from "@/services/api/endpoints";
 import { sharePendingRequest } from "@/services/api/pending-request";
 import type {
   AbrirChamadaPayload,
+  AnaliseJustificativaPayload,
+  AnaliseJustificativaResponse,
   Chamada,
   DataResponse,
   FrequenciaLinha,
   ListarChamadasParams,
+  ListarJustificativasParams,
   PaginatedChamadas,
+  PaginatedJustificativas,
   RegistrarFrequenciasPayload,
   UpdateChamadaResponse,
 } from "@/types/frequencia";
@@ -61,6 +65,31 @@ export const frequenciaService = {
   async reopen(id: number) {
     const { data } = await api.patch<DataResponse<Chamada>>(
       API_ENDPOINTS.FREQUENCIAS.REABRIR(id),
+    );
+    return data;
+  },
+
+  listJustificativas: sharePendingRequest(
+    async (params: ListarJustificativasParams = {}) => {
+      const { data } = await api.get<PaginatedJustificativas>(
+        API_ENDPOINTS.FREQUENCIAS.JUSTIFICATIVAS,
+        { params },
+      );
+      return data;
+    },
+  ),
+
+  showJustificativa: sharePendingRequest(async (id: number) => {
+    const { data } = await api.get<AnaliseJustificativaResponse>(
+      API_ENDPOINTS.FREQUENCIAS.JUSTIFICATIVA_BY_ID(id),
+    );
+    return data;
+  }),
+
+  async analyzeJustificativa(id: number, payload: AnaliseJustificativaPayload) {
+    const { data } = await api.put<AnaliseJustificativaResponse>(
+      API_ENDPOINTS.FREQUENCIAS.ANALISAR_JUSTIFICATIVA(id),
+      payload,
     );
     return data;
   },

@@ -116,3 +116,67 @@ export type UpdateChamadaResponse = DataResponse<Chamada> & {
   ignorados?: number[];
   bloqueados?: number[];
 };
+
+export type JustificativaStatus = "Em analise" | "Aprovada" | "Rejeitada";
+
+export type Justificativa = {
+  id: number;
+  status: JustificativaStatus;
+  motivo: string;
+  parecer: string | null;
+  estudante: {
+    id: number;
+    name: string;
+    cpf: string | null;
+    email: string | null;
+    status: string | null;
+  } | null;
+  falta: {
+    frequencia_id: number;
+    situacao: FrequenciaSituacao;
+    chamada_id: number;
+    data: string;
+    linha: FrequenciaPessoa | null;
+  };
+  enviada_por?: FrequenciaPessoa | null;
+  analisada_por?: FrequenciaPessoa | null;
+  analisada_em: string | null;
+  created_at: string | null;
+};
+
+export type ListarJustificativasParams = Partial<{
+  status: JustificativaStatus;
+  estudante_id: number;
+  linha_id: number;
+  de: string;
+  ate: string;
+  page: number;
+  per_page: 10 | 15 | 20 | 30;
+}>;
+
+export type PaginatedJustificativas = {
+  data: Justificativa[];
+  em_analise: number;
+  meta: {
+    current_page: number;
+    from: number | null;
+    last_page: number;
+    per_page: number;
+    to: number | null;
+    total: number;
+  };
+  links?: {
+    first?: string | null;
+    last?: string | null;
+    prev?: string | null;
+    next?: string | null;
+  };
+};
+
+export type AnaliseJustificativaPayload =
+  | { decisao: "Aprovada"; parecer?: null }
+  | { decisao: "Rejeitada"; parecer: string };
+
+export type AnaliseJustificativaResponse = DataResponse<Justificativa> & {
+  alerta?: string;
+};
