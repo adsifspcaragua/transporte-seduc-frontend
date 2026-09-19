@@ -1,10 +1,10 @@
 "use client";
 
 import axios from "axios";
-import { CalendarDays, Check, Clock3, RefreshCw, X } from "lucide-react";
+import { Check, RefreshCw, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/buttons";
-import { DateInput, Input, Select, Textarea } from "@/components/form/inputs";
+import { Select, Textarea } from "@/components/form/inputs";
 import { Modal } from "@/components/modal";
 import { recadastroService } from "@/services/api/modules/recadastro";
 import type {
@@ -13,6 +13,11 @@ import type {
   PeriodoRecadastro,
   SolicitacaoRecadastro,
 } from "@/types/recadastro";
+import {
+  type PeriodoFormState,
+  RecadastroPeriodosSection,
+} from "./RecadastroPeriodosSection";
+import { RecadastroSolicitacoesSection } from "./RecadastroSolicitacoesSection";
 
 type ApiError = { message?: string; errors?: Record<string, string[]> };
 type Decision = "Aprovado" | "Rejeitado" | "Pendencia";
@@ -29,15 +34,7 @@ function errorMessage(error: unknown) {
   );
 }
 
-function badgeClass(status: string) {
-  if (status === "Aprovado" || status === "Aberto") {
-    return "bg-emerald-100 text-emerald-700";
-  }
-  if (status === "Rejeitado") return "bg-danger-600/10 text-danger-600";
-  return "bg-amber-100 text-amber-700";
-}
-
-const initialPeriodo = {
+const initialPeriodo: PeriodoFormState = {
   ano: String(new Date().getFullYear()),
   semestre: "1",
   data_inicio: "",
@@ -174,6 +171,13 @@ export function RecadastroAdminWorkspace() {
     setFeedback("");
   }
 
+  function updatePeriodoForm(field: keyof PeriodoFormState, value: string) {
+    setPeriodoForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
   async function salvarPeriodo() {
     if (periodoEmEdicao === null) {
       await createPeriodo();
@@ -291,23 +295,27 @@ export function RecadastroAdminWorkspace() {
 
   return (
     <div className="space-y-7">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-brand-600">Recadastramento</h1>
+          <h1 className="text-2xl font-bold text-content-primary lg:text-3xl">
+            Recadastramento
+          </h1>
           <p className="mt-1 text-sm text-content-muted">
-            Gerencie períodos e homologue os documentos enviados.
+            Gerencie períodos e homologue os documentos enviados pelos
+            estudantes.
           </p>
         </div>
         <Button
           fullWidth={false}
-          leftIcon={<RefreshCw className="size-4" />}
+          leftIcon={<RefreshCw />}
           loading={loading}
           onClick={() => void loadData()}
+          size="sm"
           variant="ghost"
         >
           Atualizar
         </Button>
-      </div>
+      </header>
 
       {feedback && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
@@ -315,143 +323,18 @@ export function RecadastroAdminWorkspace() {
         </p>
       )}
 
-      <section className="rounded-lg bg-white p-5 shadow-sm">
-        <div className="mb-5 flex items-center gap-2 text-brand-700">
-          <CalendarDays className="size-5" />
-          <h2 className="text-lg font-bold">Períodos de recadastro</h2>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Input
-            label="Ano"
-            onChange={(event) =>
-              setPeriodoForm((current) => ({
-                ...current,
-                ano: event.target.value,
-              }))
-            }
-            type="number"
-            value={periodoForm.ano}
-            variant="white"
-          />
-          <Select
-            label="Semestre"
-            onChange={(event) =>
-              setPeriodoForm((current) => ({
-                ...current,
-                semestre: event.target.value,
-              }))
-            }
-            options={[
-              { label: "1º semestre", value: "1" },
-              { label: "2º semestre", value: "2" },
-            ]}
-            value={periodoForm.semestre}
-            variant="white"
-          />
-          <DateInput
-            label="Início"
-            onChange={(event) =>
-              setPeriodoForm((current) => ({
-                ...current,
-                data_inicio: event.target.value,
-              }))
-            }
-            value={periodoForm.data_inicio}
-            variant="white"
-          />
-          <DateInput
-            label="Fim"
-            onChange={(event) =>
-              setPeriodoForm((current) => ({
-                ...current,
-                data_fim: event.target.value,
-              }))
-            }
-            value={periodoForm.data_fim}
-            variant="white"
-          />
-          <Input
-            label="Observações"
-            onChange={(event) =>
-              setPeriodoForm((current) => ({
-                ...current,
-                observacoes: event.target.value,
-              }))
-            }
-            placeholder="Ex.: prazo prorrogado por uma semana"
-            value={periodoForm.observacoes}
-            variant="white"
-          />
-          <div className="flex items-end gap-2">
-            <Button
-              loading={actionLoading}
-              onClick={() => void salvarPeriodo()}
-            >
-              {periodoEmEdicao === null ? "Criar período" : "Salvar alterações"}
-            </Button>
-            {periodoEmEdicao !== null && (
-              <Button
-                fullWidth={false}
-                onClick={cancelarEdicao}
-                variant="secondary"
-              >
-                Cancelar
-              </Button>
-            )}
-          </div>
-        </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {periodos.map((periodo) => (
-            <article
-              className="rounded-lg border border-border-subtle p-4"
-              key={periodo.id}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-bold text-slate-800">{periodo.referencia}</p>
-                <span
-                  className={`rounded-md px-2 py-1 text-xs font-bold ${badgeClass(periodo.status)}`}
-                >
-                  {periodo.status}
-                </span>
-              </div>
-              <p className="mt-2 text-sm text-content-muted">
-                {periodo.data_inicio} a {periodo.data_fim}
-              </p>
-              {periodo.observacoes && (
-                <p className="mt-1 text-sm text-content-muted">
-                  {periodo.observacoes}
-                </p>
-              )}
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  fullWidth={false}
-                  onClick={() => void togglePeriodo(periodo)}
-                  size="sm"
-                  variant={periodo.status === "Aberto" ? "danger" : "primary"}
-                >
-                  {periodo.status === "Aberto" ? "Fechar" : "Abrir"}
-                </Button>
-                <Button
-                  fullWidth={false}
-                  onClick={() => editarPeriodo(periodo)}
-                  size="sm"
-                  variant="secondary"
-                >
-                  Editar prazo
-                </Button>
-                <Button
-                  fullWidth={false}
-                  onClick={() => void verAusentes(periodo)}
-                  size="sm"
-                  variant="secondary"
-                >
-                  Quem não recadastrou
-                </Button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+      <RecadastroPeriodosSection
+        actionLoading={actionLoading}
+        editingId={periodoEmEdicao}
+        form={periodoForm}
+        onCancelEdit={cancelarEdicao}
+        onEdit={editarPeriodo}
+        onFormChange={updatePeriodoForm}
+        onSave={() => void salvarPeriodo()}
+        onShowMissing={(periodo) => void verAusentes(periodo)}
+        onToggle={(periodo) => void togglePeriodo(periodo)}
+        periodos={periodos}
+      />
 
       {ausentes && (
         <section className="rounded-lg bg-white p-5 shadow-sm">
@@ -569,51 +452,11 @@ export function RecadastroAdminWorkspace() {
         </section>
       )}
 
-      <section className="rounded-lg bg-white p-5 shadow-sm">
-        <div className="mb-5 flex items-center gap-2 text-brand-700">
-          <Clock3 className="size-5" />
-          <h2 className="text-lg font-bold">Solicitações de recadastro</h2>
-        </div>
-        <div className="space-y-3">
-          {solicitacoes.length === 0 && !loading && (
-            <p className="py-8 text-center text-sm text-content-muted">
-              Nenhuma solicitação encontrada.
-            </p>
-          )}
-          {solicitacoes.map((solicitacao) => (
-            <article
-              className="flex flex-col gap-4 rounded-lg border border-border-subtle p-4 md:flex-row md:items-center md:justify-between"
-              key={solicitacao.id}
-            >
-              <div>
-                <p className="font-bold text-slate-800">
-                  {solicitacao.estudante.name}
-                </p>
-                <p className="mt-1 text-sm text-content-muted">
-                  {solicitacao.estudante.cpf} · {solicitacao.periodo.referencia}{" "}
-                  · {solicitacao.documentos.length} documento(s)
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span
-                  className={`rounded-md px-2 py-1 text-xs font-bold ${badgeClass(solicitacao.status)}`}
-                >
-                  {solicitacao.status}
-                </span>
-                {solicitacao.status === "Em analise" && (
-                  <Button
-                    fullWidth={false}
-                    onClick={() => setSelected(solicitacao)}
-                    size="sm"
-                  >
-                    Analisar
-                  </Button>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+      <RecadastroSolicitacoesSection
+        loading={loading}
+        onAnalyze={setSelected}
+        solicitacoes={solicitacoes}
+      />
 
       <Modal
         cancelLabel="Cancelar"
