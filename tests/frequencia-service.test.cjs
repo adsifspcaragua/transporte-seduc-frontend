@@ -287,3 +287,27 @@ test("carrega e analisa uma justificativa", async () => {
     },
   ]);
 });
+
+test("carrega o relatório geral e o histórico do estudante", async () => {
+  const response = {
+    data: [],
+    periodo: { de: "2026-09-01", ate: "2026-09-18" },
+  };
+  const { service, calls } = setup(response);
+
+  await service.report({ de: "2026-09-01", linha_id: 3 });
+  await service.studentReport(8, { ate: "2026-09-18" });
+
+  assert.deepEqual(plain(calls), [
+    {
+      method: "get",
+      url: "/frequencias/relatorio",
+      body: { params: { de: "2026-09-01", linha_id: 3 } },
+    },
+    {
+      method: "get",
+      url: "/frequencias/estudantes/8/relatorio",
+      body: { params: { ate: "2026-09-18" } },
+    },
+  ]);
+});

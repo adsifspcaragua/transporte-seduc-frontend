@@ -13,6 +13,9 @@ import type {
   PaginatedChamadas,
   PaginatedJustificativas,
   RegistrarFrequenciasPayload,
+  RelatorioEstudanteResponse,
+  RelatorioFrequenciaParams,
+  RelatorioFrequenciaResponse,
   UpdateChamadaResponse,
 } from "@/types/frequencia";
 
@@ -93,4 +96,24 @@ export const frequenciaService = {
     );
     return data;
   },
+
+  report: sharePendingRequest(
+    async (params: RelatorioFrequenciaParams = {}) => {
+      const { data } = await api.get<RelatorioFrequenciaResponse>(
+        API_ENDPOINTS.FREQUENCIAS.RELATORIO,
+        { params },
+      );
+      return data;
+    },
+  ),
+
+  studentReport: sharePendingRequest(
+    async (id: number, params: RelatorioFrequenciaParams = {}) => {
+      const { data } = await api.get<RelatorioEstudanteResponse>(
+        API_ENDPOINTS.FREQUENCIAS.RELATORIO_ESTUDANTE(id),
+        { params },
+      );
+      return data;
+    },
+  ),
 };

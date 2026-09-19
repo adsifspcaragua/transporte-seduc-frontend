@@ -180,3 +180,68 @@ export type AnaliseJustificativaPayload =
 export type AnaliseJustificativaResponse = DataResponse<Justificativa> & {
   alerta?: string;
 };
+
+export type RelatorioFrequenciaParams = Partial<{
+  de: string;
+  ate: string;
+  linha_id: number;
+  faltas_consecutivas_min: number;
+}>;
+
+export type ResumoFrequencia = {
+  chamadas: number;
+  presencas: number;
+  faltas: number;
+  justificadas: number;
+  pendentes: number;
+  percentual_presenca: number | null;
+  faltas_consecutivas: number;
+};
+
+export type RelatorioFrequenciaItem = ResumoFrequencia & {
+  estudante: {
+    id: number;
+    name: string | null;
+    cpf: string | null;
+    status: string | null;
+    linha: FrequenciaPessoa | null;
+  };
+};
+
+export type RelatorioFrequenciaResponse = {
+  data: RelatorioFrequenciaItem[];
+  periodo: { de: string; ate: string };
+  totais: {
+    estudantes: number;
+    presencas: number;
+    faltas: number;
+    justificadas: number;
+    pendentes: number;
+  };
+};
+
+export type HistoricoFrequenciaItem = {
+  chamada_id: number;
+  data: string;
+  linha: FrequenciaPessoa;
+  situacao: FrequenciaSituacao;
+  observacao: string | null;
+};
+
+export type BeneficioFrequencia = {
+  referencia: string;
+  faltas_no_mes: number;
+  maior_sequencia: number;
+  sequencia_atual: number;
+  limite_no_mes: number;
+  limite_seguidas: number;
+  datas_das_faltas: string[];
+};
+
+export type RelatorioEstudanteResponse = {
+  data: RelatorioFrequenciaItem & {
+    beneficio: BeneficioFrequencia | null;
+    historico: HistoricoFrequenciaItem[];
+  };
+  periodo: { de: string; ate: string };
+};

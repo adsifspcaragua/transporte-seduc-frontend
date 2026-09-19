@@ -72,6 +72,9 @@ export const API_ENDPOINTS = {
       `/frequencias/justificativas/${id}`,
     ANALISAR_JUSTIFICATIVA: (id: number | string) =>
       `/frequencias/justificativas/${id}/analise`,
+    RELATORIO: "/frequencias/relatorio",
+    RELATORIO_ESTUDANTE: (id: number | string) =>
+      `/frequencias/estudantes/${id}/relatorio`,
   },
   ESTUDANTES: {
     BASE: "/estudantes",
