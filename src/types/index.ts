@@ -4,3 +4,4 @@ export type * from "./frequencia";
 export type * from "./inscricao";
 export type * from "./linha";
 export type * from "./recadastro";
+export type * from "./user";

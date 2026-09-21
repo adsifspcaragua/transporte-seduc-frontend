@@ -5,6 +5,9 @@ export const API_ENDPOINTS = {
     LOGOUT: "/logout",
     ME: "/me",
   },
+  USERS: {
+    BASE: "/users",
+  },
   INSCRICOES: {
     BASE: "/inscricoes",
     ANALISE: (id: number | string) => `/inscricoes/analise/${id}`,
