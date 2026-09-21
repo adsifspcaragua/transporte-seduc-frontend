@@ -1,5 +1,5 @@
 import type { Linha } from "@/types/inscricao";
-import type { SystemUser } from "@/types/user";
+import type { DriverOption } from "@/types/user";
 
 export type LinhasViewMode = "grid" | "list";
 
@@ -22,12 +22,10 @@ export function ocupacaoDe(linha: Linha) {
 }
 
 export function getAvailableDrivers(
-  users: SystemUser[],
-  currentDriver?: { id: number; name: string } | null,
+  availableDrivers: DriverOption[],
+  currentDriver?: DriverOption | null,
 ) {
-  const drivers = users
-    .filter((user) => user.ativo && user.roles.includes("motorista"))
-    .map(({ id, name }) => ({ id, name }));
+  const drivers = [...availableDrivers];
 
   if (
     currentDriver &&

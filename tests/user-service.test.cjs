@@ -50,15 +50,9 @@ function plain(value) {
 }
 
 test("lista usuários disponíveis para vínculo com a linha", async () => {
-  const motorista = {
-    id: 7,
-    name: "Maria Souza",
-    email: "maria@example.com",
-    ativo: true,
-    roles: ["motorista"],
-  };
+  const motorista = { id: 7, name: "Maria Souza" };
   const { calls, service } = setup({ data: [motorista] });
 
-  assert.deepEqual(plain(await service.list()), [motorista]);
-  assert.deepEqual(calls, [{ method: "get", url: "/users" }]);
+  assert.deepEqual(plain(await service.listDrivers()), [motorista]);
+  assert.deepEqual(calls, [{ method: "get", url: "/users/motoristas" }]);
 });

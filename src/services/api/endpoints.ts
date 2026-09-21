@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
   },
   USERS: {
     BASE: "/users",
+    DRIVERS: "/users/motoristas",
   },
   INSCRICOES: {
     BASE: "/inscricoes",

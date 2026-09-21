@@ -28,7 +28,7 @@ import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { linhaService } from "@/services/api/modules/linha";
 import { userService } from "@/services/api/modules/user";
 import type { Linha } from "@/types/inscricao";
-import type { SystemUser } from "@/types/user";
+import type { DriverOption } from "@/types/user";
 import { cn } from "@/utils/cn";
 import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
 
@@ -62,7 +62,7 @@ export function LinhasWorkspace() {
   const [viewMode, setViewMode] = useState<LinhasViewMode>("grid");
   const [detalhes, setDetalhes] = useState<Linha | null>(null);
   const [linhas, setLinhas] = useState<Linha[]>([]);
-  const [users, setUsers] = useState<SystemUser[]>([]);
+  const [drivers, setDrivers] = useState<DriverOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -99,13 +99,13 @@ export function LinhasWorkspace() {
   useEffect(() => {
     let active = true;
     void userService
-      .list()
+      .listDrivers()
       .then((data) => {
-        if (active) setUsers(data);
+        if (active) setDrivers(data);
       })
       .catch(() => {
         if (active) {
-          setUsers([]);
+          setDrivers([]);
           setDriversError(
             "A lista de motoristas não está disponível para este usuário.",
           );
@@ -256,7 +256,7 @@ export function LinhasWorkspace() {
     }
   }
 
-  const availableDrivers = getAvailableDrivers(users, editando?.motorista);
+  const availableDrivers = getAvailableDrivers(drivers, editando?.motorista);
 
   if (showPageSkeleton) {
     return <LinhasPageSkeleton />;

@@ -1,12 +1,12 @@
 import { api } from "@/services/api/client";
 import { API_ENDPOINTS } from "@/services/api/endpoints";
 import { sharePendingRequest } from "@/services/api/pending-request";
-import type { SystemUser } from "@/types/user";
+import type { DriverOption } from "@/types/user";
 
 export const userService = {
-  list: sharePendingRequest(async () => {
-    const { data } = await api.get<{ data: SystemUser[] }>(
-      API_ENDPOINTS.USERS.BASE,
+  listDrivers: sharePendingRequest(async () => {
+    const { data } = await api.get<{ data: DriverOption[] }>(
+      API_ENDPOINTS.USERS.DRIVERS,
     );
     return data.data;
   }),

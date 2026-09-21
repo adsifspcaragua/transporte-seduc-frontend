@@ -28,10 +28,8 @@ function plain(value) {
 test("oferece somente motoristas ativos em ordem alfabética", () => {
   const { getAvailableDrivers } = loadPresentation();
   const users = [
-    { id: 1, name: "Carlos", ativo: true, roles: ["operador"] },
-    { id: 2, name: "Zélia", ativo: false, roles: ["motorista"] },
-    { id: 3, name: "Bruno", ativo: true, roles: ["motorista"] },
-    { id: 4, name: "Ana", ativo: true, roles: ["motorista"] },
+    { id: 3, name: "Bruno" },
+    { id: 4, name: "Ana" },
   ];
 
   assert.deepEqual(plain(getAvailableDrivers(users)), [
