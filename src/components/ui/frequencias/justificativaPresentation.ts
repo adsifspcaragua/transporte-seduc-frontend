@@ -1,4 +1,5 @@
 import type {
+  Chamada,
   Justificativa,
   JustificativaStatus,
   ListarJustificativasParams,
@@ -82,4 +83,28 @@ export function formatJustificativaDateTime(
 export function validateJustificativaDateRange(de: string, ate: string) {
   if (!de || !ate || ate >= de) return "";
   return "A data final deve ser igual ou posterior à data inicial.";
+}
+
+export function validateLateJustificationReason(reason: string) {
+  const normalizedReason = reason.trim();
+  if (!normalizedReason) return "Informe o motivo da justificativa.";
+  if (normalizedReason.length < 3) {
+    return "O motivo deve ter pelo menos 3 caracteres.";
+  }
+  if (normalizedReason.length > 1000) {
+    return "O motivo deve ter no máximo 1.000 caracteres.";
+  }
+  return "";
+}
+
+export function findAbsenceFrequencyId(
+  chamada: Pick<Chamada, "frequencias">,
+  studentId: number,
+) {
+  return (
+    chamada.frequencias.find(
+      (frequency) =>
+        frequency.estudante_id === studentId && frequency.situacao === "Falta",
+    )?.id ?? null
+  );
 }

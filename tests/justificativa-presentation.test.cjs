@@ -122,3 +122,33 @@ test("impede período com data final anterior à inicial", () => {
     "A data final deve ser igual ou posterior à data inicial.",
   );
 });
+
+test("motivo da justificativa posterior respeita os limites do backend", () => {
+  const { validateLateJustificationReason } = loadPresentation();
+
+  assert.match(validateLateJustificationReason(""), /motivo/i);
+  assert.match(validateLateJustificationReason("ab"), /3/);
+  assert.equal(validateLateJustificationReason("Atestado médico"), "");
+  assert.match(validateLateJustificationReason("a".repeat(1001)), /1.000/);
+});
+
+test("localiza somente a falta atual do estudante dentro da chamada", () => {
+  const { findAbsenceFrequencyId } = loadPresentation();
+  const chamada = {
+    frequencias: [
+      { id: 10, estudante_id: 7, situacao: "Presente" },
+      { id: 11, estudante_id: 8, situacao: "Falta" },
+      { id: 12, estudante_id: 7, situacao: "Falta" },
+    ],
+  };
+
+  assert.equal(findAbsenceFrequencyId(chamada, 7), 12);
+  assert.equal(findAbsenceFrequencyId(chamada, 9), null);
+  assert.equal(
+    findAbsenceFrequencyId(
+      { frequencias: [{ id: 10, estudante_id: 7, situacao: "Presente" }] },
+      7,
+    ),
+    null,
+  );
+});

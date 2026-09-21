@@ -1,7 +1,10 @@
 "use client";
 
 import { CalendarDays, CircleAlert, Route, ShieldCheck } from "lucide-react";
+import { useState } from "react";
 
+import { Button } from "@/components/buttons";
+import { Textarea } from "@/components/form/inputs";
 import { Skeleton } from "@/components/loading";
 import {
   Modal,
@@ -11,12 +14,14 @@ import {
   ModalTitle,
 } from "@/components/modal";
 import { formatCallDate } from "@/components/ui/frequencias/frequenciaPresentation";
+import { validateLateJustificationReason } from "@/components/ui/frequencias/justificativaPresentation";
 import {
   formatAttendancePercentage,
   formatReportPeriod,
 } from "@/components/ui/frequencias/relatorioFrequenciaPresentation";
 import type {
   FrequenciaSituacao,
+  HistoricoFrequenciaItem,
   RelatorioEstudanteResponse,
 } from "@/types/frequencia";
 import { cn } from "@/utils/cn";
@@ -25,6 +30,7 @@ type RelatorioEstudanteModalProps = {
   error?: string;
   loading?: boolean;
   onClose: () => void;
+  onJustify: (entry: HistoricoFrequenciaItem, reason: string) => Promise<void>;
   open: boolean;
   report: RelatorioEstudanteResponse | null;
 };
@@ -43,17 +49,60 @@ export function RelatorioEstudanteModal({
   error = "",
   loading = false,
   onClose,
+  onJustify,
   open,
   report,
 }: RelatorioEstudanteModalProps) {
   const student = report?.data.estudante;
+  const [selectedEntry, setSelectedEntry] =
+    useState<HistoricoFrequenciaItem | null>(null);
+  const [reason, setReason] = useState("");
+  const [reasonError, setReasonError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  function resetJustification() {
+    setSelectedEntry(null);
+    setReason("");
+    setReasonError("");
+    setActionError("");
+  }
+
+  function handleClose() {
+    if (submitting) return;
+    resetJustification();
+    onClose();
+  }
+
+  async function submitJustification() {
+    if (!selectedEntry || submitting) return;
+
+    const validationError = validateLateJustificationReason(reason);
+    setReasonError(validationError);
+    if (validationError) return;
+
+    try {
+      setSubmitting(true);
+      setActionError("");
+      await onJustify(selectedEntry, reason.trim());
+      resetJustification();
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível enviar a justificativa.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <Modal
       cancelLabel="Fechar"
       className="max-w-3xl"
       hideSave
-      onClose={onClose}
+      onClose={handleClose}
       open={open}
       title={student?.name ?? "Histórico de frequência"}
     >
@@ -136,29 +185,100 @@ export function RelatorioEstudanteModal({
                   Nenhum registro encontrado no período.
                 </p>
               ) : (
-                report.data.historico.map((entry) => (
-                  <article
-                    className="flex flex-col gap-3 border-b border-border-subtle px-5 py-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
-                    key={`${entry.chamada_id}-${entry.data}`}
-                  >
-                    <div className="flex min-w-0 items-start gap-3">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-050 text-brand-600">
-                        <Route className="size-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-content-primary">
-                          {formatCallDate(entry.data)} · {entry.linha.name}
-                        </p>
-                        <p className="mt-1 text-xs text-content-muted">
-                          {entry.observacao || "Sem observação."}
-                        </p>
-                      </div>
+                report.data.historico.map((entry) => {
+                  const entryKey = `${entry.chamada_id}-${entry.data}`;
+                  const isSelected =
+                    selectedEntry?.chamada_id === entry.chamada_id;
+
+                  return (
+                    <div
+                      className="border-b border-border-subtle last:border-b-0"
+                      key={entryKey}
+                    >
+                      <article className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-start gap-3">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-050 text-brand-600">
+                            <Route className="size-4" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-content-primary">
+                              {formatCallDate(entry.data)} · {entry.linha.name}
+                            </p>
+                            <p className="mt-1 text-xs text-content-muted">
+                              {entry.observacao || "Sem observação."}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={situationClassName(entry.situacao)}>
+                            {entry.situacao}
+                          </span>
+                          {entry.situacao === "Falta" && !isSelected && (
+                            <Button
+                              fullWidth={false}
+                              onClick={() => {
+                                setSelectedEntry(entry);
+                                setReason("");
+                                setReasonError("");
+                                setActionError("");
+                              }}
+                              size="sm"
+                              variant="secondary"
+                            >
+                              Justificar falta
+                            </Button>
+                          )}
+                        </div>
+                      </article>
+
+                      {isSelected && (
+                        <div className="border-t border-border-subtle bg-surface-muted px-5 py-4">
+                          {actionError && (
+                            <p
+                              className="mb-3 text-sm font-medium text-danger-700"
+                              role="alert"
+                            >
+                              {actionError}
+                            </p>
+                          )}
+                          <Textarea
+                            disabled={submitting}
+                            error={reasonError}
+                            hint={`${reason.length}/1.000 caracteres`}
+                            label="Motivo da justificativa"
+                            maxLength={1000}
+                            onChange={(event) => {
+                              setReason(event.target.value);
+                              setReasonError("");
+                              setActionError("");
+                            }}
+                            required
+                            value={reason}
+                          />
+                          <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                            <Button
+                              disabled={submitting}
+                              fullWidth={false}
+                              onClick={resetJustification}
+                              size="sm"
+                              variant="ghost"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              fullWidth={false}
+                              loading={submitting}
+                              onClick={() => void submitJustification()}
+                              size="sm"
+                            >
+                              Enviar para análise
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <span className={situationClassName(entry.situacao)}>
-                      {entry.situacao}
-                    </span>
-                  </article>
-                ))
+                  );
+                })
               )}
             </ModalSectionContent>
           </ModalSection>

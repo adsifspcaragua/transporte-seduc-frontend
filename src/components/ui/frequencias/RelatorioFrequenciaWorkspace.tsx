@@ -3,7 +3,7 @@
 import axios from "axios";
 import { BarChart3 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-
+import { findAbsenceFrequencyId } from "@/components/ui/frequencias/justificativaPresentation";
 import { RelatorioEstudanteModal } from "@/components/ui/frequencias/RelatorioEstudanteModal";
 import { RelatorioFrequenciaFilterCard } from "@/components/ui/frequencias/RelatorioFrequenciaFilterCard";
 import { RelatorioFrequenciaSummary } from "@/components/ui/frequencias/RelatorioFrequenciaSummary";
@@ -17,6 +17,7 @@ import {
 import { frequenciaService } from "@/services/api/modules/frequencia";
 import type {
   FrequenciaLinha,
+  HistoricoFrequenciaItem,
   RelatorioEstudanteResponse,
   RelatorioFrequenciaItem,
   RelatorioFrequenciaResponse,
@@ -141,6 +142,51 @@ export function RelatorioFrequenciaWorkspace() {
     setDetailReport(null);
   }
 
+  async function justifyAbsence(
+    entry: HistoricoFrequenciaItem,
+    reason: string,
+  ) {
+    const currentDetail = detailReport;
+    if (!currentDetail) {
+      throw new Error("O histórico do estudante não está mais disponível.");
+    }
+
+    try {
+      const chamada = await frequenciaService.show(entry.chamada_id);
+      const frequencyId = findAbsenceFrequencyId(
+        chamada.data,
+        currentDetail.data.estudante.id,
+      );
+      if (!frequencyId) {
+        throw new Error(
+          "A falta não está mais disponível para justificativa. Atualize o relatório.",
+        );
+      }
+
+      await frequenciaService.createJustificativa({
+        frequencia_id: frequencyId,
+        motivo: reason,
+      });
+
+      const listRequestId = ++listRequestIdRef.current;
+      const period = currentDetail.periodo;
+      const [nextDetail, nextReport] = await Promise.all([
+        frequenciaService.studentReport(currentDetail.data.estudante.id, {
+          de: period.de,
+          ate: period.ate,
+        }),
+        frequenciaService.report(buildRelatorioParams(appliedFilters)),
+      ]);
+      setDetailReport(nextDetail);
+      if (listRequestId === listRequestIdRef.current) setResponse(nextReport);
+    } catch (error) {
+      if (error instanceof Error && !axios.isAxiosError(error)) throw error;
+      throw new Error(
+        errorMessage(error, "Não foi possível enviar a justificativa."),
+      );
+    }
+  }
+
   return (
     <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -189,6 +235,7 @@ export function RelatorioFrequenciaWorkspace() {
         error={detailError}
         loading={detailLoading}
         onClose={closeStudentDetail}
+        onJustify={justifyAbsence}
         open={detailOpen}
         report={detailReport}
       />
