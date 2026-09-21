@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BarChart3,
   ClipboardCheck,
   ClipboardEdit,
   FileCheck2,
@@ -40,6 +41,11 @@ const sidebarItems: SidebarItem[] = [
     label: "Justificativas",
     icon: FileCheck2,
     href: "/frequencias/justificativas",
+  },
+  {
+    label: "Relatório de frequência",
+    icon: BarChart3,
+    href: "/frequencias/relatorio",
   },
   { label: "Solicitações", icon: ClipboardEdit, href: "/solicitacoes" },
   {
