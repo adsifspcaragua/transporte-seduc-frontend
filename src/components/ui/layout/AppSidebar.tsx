@@ -6,6 +6,7 @@ import {
   ClipboardEdit,
   FileCheck2,
   GraduationCap,
+  History,
   LayoutDashboard,
   type LucideIcon,
   MapIcon,
@@ -36,6 +37,11 @@ const sidebarItems: SidebarItem[] = [
     icon: ClipboardCheck,
     href: "/frequencias",
     exact: true,
+  },
+  {
+    label: "Histórico de chamadas",
+    icon: History,
+    href: "/frequencias/chamadas",
   },
   {
     label: "Justificativas",

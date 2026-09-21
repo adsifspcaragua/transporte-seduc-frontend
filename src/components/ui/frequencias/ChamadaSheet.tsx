@@ -35,6 +35,7 @@ import { cn } from "@/utils/cn";
 
 type ChamadaSheetProps = {
   chamada: Chamada;
+  backLabel?: string;
   onBack: () => void;
   onChamadaChange: (chamada: Chamada) => void;
 };
@@ -73,6 +74,7 @@ function decisionLabel(registro: FrequenciaRegistro) {
 
 export function ChamadaSheet({
   chamada,
+  backLabel = "Voltar às linhas",
   onBack,
   onChamadaChange,
 }: ChamadaSheetProps) {
@@ -178,7 +180,7 @@ export function ChamadaSheet({
           onClick={onBack}
           variant="ghost"
         >
-          Voltar às linhas
+          {backLabel}
         </Button>
         <span
           className={cn(
