@@ -6,6 +6,7 @@ import { Button } from "@/components/buttons";
 import { DateInput, Input, Select } from "@/components/form/inputs";
 import {
   type RelatorioFrequenciaFilters,
+  validateMinimumConsecutiveAbsences,
   validateReportPeriod,
 } from "@/components/ui/frequencias/relatorioFrequenciaPresentation";
 import type { FrequenciaLinha } from "@/types/frequencia";
@@ -28,6 +29,9 @@ export function RelatorioFrequenciaFilterCard({
   onClear,
 }: RelatorioFrequenciaFilterCardProps) {
   const periodError = validateReportPeriod(filters.de, filters.ate);
+  const minimumError = validateMinimumConsecutiveAbsences(
+    filters.faltasConsecutivasMin,
+  );
 
   return (
     <section className="rounded-lg border border-border-subtle bg-white p-5 shadow-sm">
@@ -62,6 +66,7 @@ export function RelatorioFrequenciaFilterCard({
         />
         <Input
           disabled={disabled}
+          error={minimumError}
           label="Mínimo de faltas seguidas"
           min="1"
           onChange={(event) =>
@@ -84,7 +89,7 @@ export function RelatorioFrequenciaFilterCard({
           Limpar
         </Button>
         <Button
-          disabled={disabled || Boolean(periodError)}
+          disabled={disabled || Boolean(periodError || minimumError)}
           fullWidth={false}
           leftIcon={<Filter />}
           onClick={onApply}

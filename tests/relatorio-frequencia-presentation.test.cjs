@@ -89,3 +89,13 @@ test("formata o período retornado pelo backend sem deslocar a data", () => {
     "01/09/2026 a 18/09/2026",
   );
 });
+
+test("aceita somente mínimo inteiro e positivo de faltas consecutivas", () => {
+  assert.equal(presentation.validateMinimumConsecutiveAbsences(""), "");
+  assert.equal(presentation.validateMinimumConsecutiveAbsences("3"), "");
+  assert.match(presentation.validateMinimumConsecutiveAbsences("0"), /maior/);
+  assert.match(
+    presentation.validateMinimumConsecutiveAbsences("1.5"),
+    /inteiro/,
+  );
+});

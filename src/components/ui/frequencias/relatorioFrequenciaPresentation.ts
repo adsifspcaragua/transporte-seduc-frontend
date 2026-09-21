@@ -37,6 +37,14 @@ export function validateReportPeriod(de: string, ate: string) {
   return days > 366 ? "O intervalo não pode passar de 366 dias." : "";
 }
 
+export function validateMinimumConsecutiveAbsences(value: string) {
+  if (!value) return "";
+
+  const minimum = Number(value);
+  if (!Number.isInteger(minimum)) return "Informe um número inteiro.";
+  return minimum >= 1 ? "" : "O mínimo deve ser maior que zero.";
+}
+
 export function formatAttendancePercentage(value: number | null) {
   return value === null
     ? "—"
