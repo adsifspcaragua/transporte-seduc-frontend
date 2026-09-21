@@ -79,4 +79,21 @@ export const estudanteService = {
   async remove(id: number) {
     await api.delete<{ message?: string }>(API_ENDPOINTS.ESTUDANTES.BY_ID(id));
   },
+
+  async export(type: "csv" | "pdf" | "xlsx") {
+    const response = await api.get<Blob>(
+      API_ENDPOINTS.ESTUDANTES.EXPORT(type),
+      {
+        responseType: "blob",
+      },
+    );
+
+    return {
+      blob: response.data,
+      contentDisposition: response.headers["content-disposition"] as
+        | string
+        | undefined,
+      contentType: response.headers["content-type"] as string | undefined,
+    };
+  },
 };
