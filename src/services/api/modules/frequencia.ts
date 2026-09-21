@@ -6,6 +6,7 @@ import type {
   AnaliseJustificativaPayload,
   AnaliseJustificativaResponse,
   Chamada,
+  CriarJustificativaPayload,
   DataResponse,
   FrequenciaLinha,
   ListarChamadasParams,
@@ -92,6 +93,14 @@ export const frequenciaService = {
   async analyzeJustificativa(id: number, payload: AnaliseJustificativaPayload) {
     const { data } = await api.put<AnaliseJustificativaResponse>(
       API_ENDPOINTS.FREQUENCIAS.ANALISAR_JUSTIFICATIVA(id),
+      payload,
+    );
+    return data;
+  },
+
+  async createJustificativa(payload: CriarJustificativaPayload) {
+    const { data } = await api.post<AnaliseJustificativaResponse>(
+      API_ENDPOINTS.FREQUENCIAS.JUSTIFICATIVAS,
       payload,
     );
     return data;

@@ -181,6 +181,11 @@ export type AnaliseJustificativaResponse = DataResponse<Justificativa> & {
   alerta?: string;
 };
 
+export type CriarJustificativaPayload = {
+  frequencia_id: number;
+  motivo: string;
+};
+
 export type RelatorioFrequenciaParams = Partial<{
   de: string;
   ate: string;

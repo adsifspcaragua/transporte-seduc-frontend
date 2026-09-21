@@ -288,6 +288,30 @@ test("carrega e analisa uma justificativa", async () => {
   ]);
 });
 
+test("envia justificativa posterior para uma falta registrada", async () => {
+  const response = {
+    data: justificativa,
+    message: "Justificativa enviada para análise",
+  };
+  const { service, calls } = setup(response);
+
+  await service.createJustificativa({
+    frequencia_id: 12,
+    motivo: "Atestado entregue posteriormente.",
+  });
+
+  assert.deepEqual(calls, [
+    {
+      method: "post",
+      url: "/frequencias/justificativas",
+      body: {
+        frequencia_id: 12,
+        motivo: "Atestado entregue posteriormente.",
+      },
+    },
+  ]);
+});
+
 test("carrega o relatório geral e o histórico do estudante", async () => {
   const response = {
     data: [],
