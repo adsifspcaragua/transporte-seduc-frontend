@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BusFront,
   Clock3,
+  IdCard,
   MoreVertical,
   Pencil,
   Plus,
@@ -221,6 +222,12 @@ export function LinhaCard({
       </dl>
 
       <div className={cn("mt-3", viewMode === "list" && "xl:mt-0")}>
+        <p className="mb-3 flex items-center gap-2 text-xs text-content-secondary">
+          <IdCard aria-hidden="true" className="size-4 text-brand-600" />
+          <span className="truncate">
+            {linha.motorista?.name ?? "Motorista não vinculado"}
+          </span>
+        </p>
         <div className="mb-1 flex justify-between gap-2 text-xs">
           <span className="font-bold text-brand-700">Ocupação</span>
           <span className="tabular-nums text-content-muted">

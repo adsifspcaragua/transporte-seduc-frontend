@@ -171,7 +171,7 @@ export function LinhaDetailsModal({
             </p>
           </div>
         </div>
-        <dl className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <dl className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
           {[
             {
               label: "Saída",
@@ -180,6 +180,10 @@ export function LinhaDetailsModal({
             {
               label: "Retorno",
               value: horaParaInput(linha.return_time) || "Não informado",
+            },
+            {
+              label: "Motorista",
+              value: linha.motorista?.name || "Não vinculado",
             },
             {
               label: "Ocupação ativa",

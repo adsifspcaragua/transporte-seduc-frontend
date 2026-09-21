@@ -5,7 +5,12 @@ import { LayoutGrid, List, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/buttons";
-import { Input, NumberInput, TimeInput } from "@/components/form/inputs";
+import {
+  Input,
+  NumberInput,
+  Select,
+  TimeInput,
+} from "@/components/form/inputs";
 import { Modal } from "@/components/modal";
 import { LinhaCard, LinhaCreateCard } from "@/components/ui/linhas/LinhaCard";
 import { LinhaDetailsModal } from "@/components/ui/linhas/LinhaDetailsModal";
@@ -14,13 +19,16 @@ import {
   LinhasSkeleton,
 } from "@/components/ui/linhas/LinhasSkeleton";
 import {
+  getAvailableDrivers,
   horaParaInput,
   type LinhasViewMode,
   ocupacaoDe,
 } from "@/components/ui/linhas/linhaPresentation";
 import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { linhaService } from "@/services/api/modules/linha";
+import { userService } from "@/services/api/modules/user";
 import type { Linha } from "@/types/inscricao";
+import type { SystemUser } from "@/types/user";
 import { cn } from "@/utils/cn";
 import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
 
@@ -44,6 +52,7 @@ const formInicial = {
   departure_time: "",
   return_time: "",
   max_capacity: "",
+  motorista_id: "",
 };
 
 type LinhaFormField = keyof typeof formInicial;
@@ -53,10 +62,12 @@ export function LinhasWorkspace() {
   const [viewMode, setViewMode] = useState<LinhasViewMode>("grid");
   const [detalhes, setDetalhes] = useState<Linha | null>(null);
   const [linhas, setLinhas] = useState<Linha[]>([]);
+  const [users, setUsers] = useState<SystemUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [driversError, setDriversError] = useState("");
   const [formError, setFormError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<LinhaFieldErrors>({});
@@ -85,6 +96,27 @@ export function LinhasWorkspace() {
     void carregar();
   }, [carregar]);
 
+  useEffect(() => {
+    let active = true;
+    void userService
+      .list()
+      .then((data) => {
+        if (active) setUsers(data);
+      })
+      .catch(() => {
+        if (active) {
+          setUsers([]);
+          setDriversError(
+            "A lista de motoristas não está disponível para este usuário.",
+          );
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   function abrirCriacao() {
     setEditando(null);
     setForm(formInicial);
@@ -101,6 +133,7 @@ export function LinhasWorkspace() {
       departure_time: horaParaInput(linha.departure_time),
       return_time: horaParaInput(linha.return_time),
       max_capacity: String(linha.max_capacity ?? ""),
+      motorista_id: String(linha.motorista_id ?? linha.motorista?.id ?? ""),
     });
     setFormError("");
     setFieldErrors({});
@@ -161,6 +194,7 @@ export function LinhasWorkspace() {
         : {}),
       ...(form.departure_time ? { departure_time: form.departure_time } : {}),
       ...(form.return_time ? { return_time: form.return_time } : {}),
+      motorista_id: form.motorista_id ? Number(form.motorista_id) : null,
     };
 
     try {
@@ -221,6 +255,8 @@ export function LinhasWorkspace() {
       setActionLoading(false);
     }
   }
+
+  const availableDrivers = getAvailableDrivers(users, editando?.motorista);
 
   if (showPageSkeleton) {
     return <LinhasPageSkeleton />;
@@ -383,6 +419,21 @@ export function LinhasWorkspace() {
             onChange={(event) => setField("max_capacity", event.target.value)}
             required
             value={form.max_capacity}
+          />
+          <Select
+            aria-invalid={Boolean(fieldErrors.motorista_id)}
+            error={fieldErrors.motorista_id}
+            hint={driversError}
+            label="Motorista responsável"
+            onChange={(event) => setField("motorista_id", event.target.value)}
+            options={[
+              { value: "", label: "Nenhum motorista vinculado" },
+              ...availableDrivers.map((driver) => ({
+                value: String(driver.id),
+                label: driver.name,
+              })),
+            ]}
+            value={form.motorista_id}
           />
           {editando && (
             <p className="text-sm text-content-muted">

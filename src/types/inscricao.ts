@@ -128,6 +128,11 @@ export type Linha = {
   departure_time?: string | null;
   return_time?: string | null;
   max_capacity?: number | null;
+  motorista_id?: number | null;
+  motorista?: {
+    id: number;
+    name: string;
+  } | null;
   // Lugares tomados e livres. Só estudante ativo ocupa vaga.
   ocupacao?: number;
   vagas_restantes?: number;
@@ -140,6 +145,7 @@ export type LinhaPayload = {
   departure_time?: string | null;
   return_time?: string | null;
   max_capacity: number;
+  motorista_id?: number | null;
 };
 
 export type CepAddress = {
