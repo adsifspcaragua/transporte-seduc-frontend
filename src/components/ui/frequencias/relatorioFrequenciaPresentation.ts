@@ -42,3 +42,26 @@ export function formatAttendancePercentage(value: number | null) {
     ? "—"
     : `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(value)}%`;
 }
+
+export type AttendanceTone = "danger" | "success" | "warning";
+
+export function getAttendanceTone(
+  summary: Pick<
+    import("@/types/frequencia").ResumoFrequencia,
+    "faltas" | "faltas_consecutivas"
+  >,
+): AttendanceTone {
+  if (summary.faltas_consecutivas >= 3 || summary.faltas >= 5) {
+    return "danger";
+  }
+  return summary.faltas > 0 ? "warning" : "success";
+}
+
+function formatIsoDate(value: string) {
+  const [year, month, day] = value.split("-");
+  return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+export function formatReportPeriod(period: { de: string; ate: string }) {
+  return `${formatIsoDate(period.de)} a ${formatIsoDate(period.ate)}`;
+}

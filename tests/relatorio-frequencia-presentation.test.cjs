@@ -60,3 +60,32 @@ test("formata percentual ausente e informado", () => {
   assert.equal(presentation.formatAttendancePercentage(null), "—");
   assert.equal(presentation.formatAttendancePercentage(87.5), "87,5%");
 });
+
+test("classifica o risco do estudante pelas faltas", () => {
+  assert.equal(
+    presentation.getAttendanceTone({ faltas: 3, faltas_consecutivas: 3 }),
+    "danger",
+  );
+  assert.equal(
+    presentation.getAttendanceTone({ faltas: 5, faltas_consecutivas: 1 }),
+    "danger",
+  );
+  assert.equal(
+    presentation.getAttendanceTone({ faltas: 1, faltas_consecutivas: 0 }),
+    "warning",
+  );
+  assert.equal(
+    presentation.getAttendanceTone({ faltas: 0, faltas_consecutivas: 0 }),
+    "success",
+  );
+});
+
+test("formata o período retornado pelo backend sem deslocar a data", () => {
+  assert.equal(
+    presentation.formatReportPeriod({
+      de: "2026-09-01",
+      ate: "2026-09-18",
+    }),
+    "01/09/2026 a 18/09/2026",
+  );
+});
