@@ -73,7 +73,7 @@ function setup(responseData) {
   const calls = [];
   const client = {};
 
-  for (const method of ["get", "post", "put", "patch"]) {
+  for (const method of ["get", "post", "put", "patch", "delete"]) {
     client[method] = async (url, body) => {
       calls.push({ method, url, ...(body === undefined ? {} : { body }) });
       return { data: responseData };
@@ -213,6 +213,17 @@ test("fecha e reabre a chamada pelos endpoints de ação", async () => {
       { method: "patch", url: "/frequencias/chamadas/9/reabrir" },
     ],
   );
+});
+
+test("exclui uma chamada pelo endpoint protegido", async () => {
+  const response = { message: "Chamada excluída com sucesso" };
+  const { service, calls } = setup(response);
+
+  assert.deepEqual(plain(await service.remove(9)), response);
+  assert.deepEqual(calls[0], {
+    method: "delete",
+    url: "/frequencias/chamadas/9",
+  });
 });
 
 test("lista justificativas paginadas com filtros", async () => {

@@ -73,6 +73,13 @@ export const frequenciaService = {
     return data;
   },
 
+  async remove(id: number) {
+    const { data } = await api.delete<{ message: string }>(
+      API_ENDPOINTS.FREQUENCIAS.CHAMADA_BY_ID(id),
+    );
+    return data;
+  },
+
   listJustificativas: sharePendingRequest(
     async (params: ListarJustificativasParams = {}) => {
       const { data } = await api.get<PaginatedJustificativas>(
