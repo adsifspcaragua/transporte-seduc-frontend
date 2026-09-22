@@ -35,8 +35,8 @@ export function LinhaCard({
   viewMode = "grid",
 }: {
   linha: Linha;
-  onEdit: (linha: Linha) => void;
-  onDelete: (linha: Linha) => void;
+  onEdit?: (linha: Linha) => void;
+  onDelete?: (linha: Linha) => void;
   onDetails: (linha: Linha) => void;
   viewMode?: LinhasViewMode;
 }) {
@@ -78,13 +78,19 @@ export function LinhaCard({
       icon: <ArrowRight />,
       run: () => onDetails(linha),
     },
-    { label: "Editar", icon: <Pencil />, run: () => onEdit(linha) },
-    {
-      label: "Excluir",
-      icon: <Trash2 />,
-      run: () => onDelete(linha),
-      danger: true,
-    },
+    ...(onEdit
+      ? [{ label: "Editar", icon: <Pencil />, run: () => onEdit(linha) }]
+      : []),
+    ...(onDelete
+      ? [
+          {
+            label: "Excluir",
+            icon: <Trash2 />,
+            run: () => onDelete(linha),
+            danger: true,
+          },
+        ]
+      : []),
   ];
 
   return (

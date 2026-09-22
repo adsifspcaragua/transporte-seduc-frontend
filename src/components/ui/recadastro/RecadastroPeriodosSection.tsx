@@ -34,6 +34,7 @@ export type PeriodoFormState = {
 type PeriodoViewMode = "grid" | "list";
 
 type RecadastroPeriodosSectionProps = {
+  canWrite: boolean;
   actionLoading: boolean;
   editingId: number | null;
   form: PeriodoFormState;
@@ -47,6 +48,7 @@ type RecadastroPeriodosSectionProps = {
 };
 
 export function RecadastroPeriodosSection({
+  canWrite,
   actionLoading,
   editingId,
   form,
@@ -67,96 +69,98 @@ export function RecadastroPeriodosSection({
 
   return (
     <section className="space-y-5">
-      <div className="rounded-xl border border-border-subtle bg-white p-5 shadow-sm lg:p-6">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-050 text-brand-600">
-              <CalendarDays className="size-5" />
-            </span>
-            <div>
-              <h2 className="text-lg font-bold text-brand-700">
-                {editingId === null
-                  ? "Períodos de recadastro"
-                  : "Editar período de recadastro"}
-              </h2>
-              <p className="mt-1 text-sm text-content-muted">
-                {editingId === null
-                  ? "Filtre os períodos existentes ou crie um novo."
-                  : "Atualize as informações do período selecionado e salve as alterações."}
-              </p>
+      {canWrite && (
+        <div className="rounded-xl border border-border-subtle bg-white p-5 shadow-sm lg:p-6">
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-050 text-brand-600">
+                <CalendarDays className="size-5" />
+              </span>
+              <div>
+                <h2 className="text-lg font-bold text-brand-700">
+                  {editingId === null
+                    ? "Períodos de recadastro"
+                    : "Editar período de recadastro"}
+                </h2>
+                <p className="mt-1 text-sm text-content-muted">
+                  {editingId === null
+                    ? "Filtre os períodos existentes ou crie um novo."
+                    : "Atualize as informações do período selecionado e salve as alterações."}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {editingId !== null && (
+                <Button
+                  fullWidth={false}
+                  onClick={onCancelEdit}
+                  size="sm"
+                  variant="secondary"
+                >
+                  Cancelar
+                </Button>
+              )}
+              <Button
+                fullWidth={false}
+                leftIcon={editingId === null ? <Plus /> : <Pencil />}
+                loading={actionLoading}
+                onClick={onSave}
+                size="sm"
+                variant="primary"
+              >
+                {editingId === null ? "Criar período" : "Salvar alterações"}
+              </Button>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {editingId !== null && (
-              <Button
-                fullWidth={false}
-                onClick={onCancelEdit}
-                size="sm"
-                variant="secondary"
-              >
-                Cancelar
-              </Button>
-            )}
-            <Button
-              fullWidth={false}
-              leftIcon={editingId === null ? <Plus /> : <Pencil />}
-              loading={actionLoading}
-              onClick={onSave}
-              size="sm"
-              variant="primary"
-            >
-              {editingId === null ? "Criar período" : "Salvar alterações"}
-            </Button>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
+            <Input
+              containerClassName="xl:col-span-2"
+              label="Ano"
+              min="2000"
+              onChange={(event) => onFormChange("ano", event.target.value)}
+              type="number"
+              value={form.ano}
+            />
+            <Select
+              containerClassName="xl:col-span-2"
+              label="Semestre"
+              onChange={(event) => onFormChange("semestre", event.target.value)}
+              options={[
+                { label: "1º semestre", value: "1" },
+                { label: "2º semestre", value: "2" },
+              ]}
+              value={form.semestre}
+            />
+            <DateInput
+              containerClassName="xl:col-span-2"
+              label="Início"
+              onChange={(event) =>
+                onFormChange("data_inicio", event.target.value)
+              }
+              value={form.data_inicio}
+              variant="white"
+            />
+            <DateInput
+              containerClassName="xl:col-span-2"
+              label="Fim"
+              onChange={(event) => onFormChange("data_fim", event.target.value)}
+              value={form.data_fim}
+              variant="white"
+            />
+            <Input
+              containerClassName="md:col-span-2 xl:col-span-4"
+              label="Observações"
+              onChange={(event) =>
+                onFormChange("observacoes", event.target.value)
+              }
+              placeholder="Ex.: prazo prorrogado por uma semana"
+              value={form.observacoes}
+            />
           </div>
         </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
-          <Input
-            containerClassName="xl:col-span-2"
-            label="Ano"
-            min="2000"
-            onChange={(event) => onFormChange("ano", event.target.value)}
-            type="number"
-            value={form.ano}
-          />
-          <Select
-            containerClassName="xl:col-span-2"
-            label="Semestre"
-            onChange={(event) => onFormChange("semestre", event.target.value)}
-            options={[
-              { label: "1º semestre", value: "1" },
-              { label: "2º semestre", value: "2" },
-            ]}
-            value={form.semestre}
-          />
-          <DateInput
-            containerClassName="xl:col-span-2"
-            label="Início"
-            onChange={(event) =>
-              onFormChange("data_inicio", event.target.value)
-            }
-            value={form.data_inicio}
-            variant="white"
-          />
-          <DateInput
-            containerClassName="xl:col-span-2"
-            label="Fim"
-            onChange={(event) => onFormChange("data_fim", event.target.value)}
-            value={form.data_fim}
-            variant="white"
-          />
-          <Input
-            containerClassName="md:col-span-2 xl:col-span-4"
-            label="Observações"
-            onChange={(event) =>
-              onFormChange("observacoes", event.target.value)
-            }
-            placeholder="Ex.: prazo prorrogado por uma semana"
-            value={form.observacoes}
-          />
-        </div>
-      </div>
+      )}
 
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
@@ -287,28 +291,38 @@ export function RecadastroPeriodosSection({
                       "lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-0",
                   )}
                 >
-                  <Button
-                    className="px-3"
-                    fullWidth
-                    leftIcon={
-                      periodo.status === "Aberto" ? <LockKeyhole /> : <Eye />
-                    }
-                    onClick={() => onToggle(periodo)}
-                    size="sm"
-                    variant={periodo.status === "Aberto" ? "danger" : "primary"}
-                  >
-                    {periodo.status === "Aberto" ? "Fechar" : "Abrir"}
-                  </Button>
-                  <Button
-                    className="px-3"
-                    fullWidth
-                    leftIcon={<Pencil />}
-                    onClick={() => onEdit(periodo)}
-                    size="sm"
-                    variant="secondary"
-                  >
-                    Editar prazo
-                  </Button>
+                  {canWrite && (
+                    <>
+                      <Button
+                        className="px-3"
+                        fullWidth
+                        leftIcon={
+                          periodo.status === "Aberto" ? (
+                            <LockKeyhole />
+                          ) : (
+                            <Eye />
+                          )
+                        }
+                        onClick={() => onToggle(periodo)}
+                        size="sm"
+                        variant={
+                          periodo.status === "Aberto" ? "danger" : "primary"
+                        }
+                      >
+                        {periodo.status === "Aberto" ? "Fechar" : "Abrir"}
+                      </Button>
+                      <Button
+                        className="px-3"
+                        fullWidth
+                        leftIcon={<Pencil />}
+                        onClick={() => onEdit(periodo)}
+                        size="sm"
+                        variant="secondary"
+                      >
+                        Editar prazo
+                      </Button>
+                    </>
+                  )}
                   <Button
                     className="px-3"
                     fullWidth

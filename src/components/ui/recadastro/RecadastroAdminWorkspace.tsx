@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/buttons";
 import { Select, Textarea } from "@/components/form/inputs";
 import { Modal } from "@/components/modal";
+import { useAuthz } from "@/hooks/use-authz";
 import { recadastroService } from "@/services/api/modules/recadastro";
 import type {
   AusentesRecadastro,
@@ -93,6 +94,11 @@ function DocumentoRecadastroLink({
 }
 
 export function RecadastroAdminWorkspace() {
+  const { can } = useAuthz();
+  const canViewPeriodos = can("periodos.view");
+  const canWritePeriodos = can("periodos.write");
+  const canViewSolicitacoes = can("solicitacoes.view");
+  const canAnalyzeSolicitacoes = can("solicitacoes.analise");
   const [periodos, setPeriodos] = useState<PeriodoRecadastro[]>([]);
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoRecadastro[]>([]);
   const [periodoForm, setPeriodoForm] = useState(initialPeriodo);
@@ -117,8 +123,12 @@ export function RecadastroAdminWorkspace() {
       setLoading(true);
       setFeedback("");
       const [nextPeriodos, nextSolicitacoes] = await Promise.all([
-        recadastroService.listPeriodos(),
-        recadastroService.listSolicitacoes(),
+        canViewPeriodos
+          ? recadastroService.listPeriodos()
+          : Promise.resolve([] as PeriodoRecadastro[]),
+        canViewSolicitacoes
+          ? recadastroService.listSolicitacoes()
+          : Promise.resolve([] as SolicitacaoRecadastro[]),
       ]);
       setPeriodos(nextPeriodos);
       setSolicitacoes(nextSolicitacoes);
@@ -127,7 +137,7 @@ export function RecadastroAdminWorkspace() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canViewPeriodos, canViewSolicitacoes]);
 
   useEffect(() => {
     void loadData();
@@ -323,20 +333,23 @@ export function RecadastroAdminWorkspace() {
         </p>
       )}
 
-      <RecadastroPeriodosSection
-        actionLoading={actionLoading}
-        editingId={periodoEmEdicao}
-        form={periodoForm}
-        onCancelEdit={cancelarEdicao}
-        onEdit={editarPeriodo}
-        onFormChange={updatePeriodoForm}
-        onSave={() => void salvarPeriodo()}
-        onShowMissing={(periodo) => void verAusentes(periodo)}
-        onToggle={(periodo) => void togglePeriodo(periodo)}
-        periodos={periodos}
-      />
+      {canViewPeriodos && (
+        <RecadastroPeriodosSection
+          actionLoading={actionLoading}
+          canWrite={canWritePeriodos}
+          editingId={periodoEmEdicao}
+          form={periodoForm}
+          onCancelEdit={cancelarEdicao}
+          onEdit={editarPeriodo}
+          onFormChange={updatePeriodoForm}
+          onSave={() => void salvarPeriodo()}
+          onShowMissing={(periodo) => void verAusentes(periodo)}
+          onToggle={(periodo) => void togglePeriodo(periodo)}
+          periodos={periodos}
+        />
+      )}
 
-      {ausentes && (
+      {canViewPeriodos && ausentes && (
         <section className="rounded-lg bg-white p-5 shadow-sm">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-brand-700">
@@ -377,6 +390,7 @@ export function RecadastroAdminWorkspace() {
                     <span className="flex items-center gap-2">
                       <input
                         checked={ausentesSelecionados.includes(estudante.id)}
+                        disabled={!canWritePeriodos}
                         onChange={(event) =>
                           setAusentesSelecionados((current) =>
                             event.target.checked
@@ -397,66 +411,70 @@ export function RecadastroAdminWorkspace() {
                 ))}
               </div>
 
-              {confirmandoInativacao ? (
-                <div className="mt-4 rounded-md border border-danger-600/30 bg-danger-600/5 p-4">
-                  <p className="text-sm font-bold text-slate-800">
-                    Inativar {ausentesSelecionados.length} estudante(s)?
-                  </p>
-                  <p className="mt-1 text-sm text-slate-700">
-                    Eles perdem o direito ao transporte até serem reativados na
-                    tela de estudantes.
-                  </p>
-                  <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
-                    {ausentes.data
-                      .filter((estudante) =>
-                        ausentesSelecionados.includes(estudante.id),
-                      )
-                      .map((estudante) => (
-                        <li key={estudante.id}>{estudante.name}</li>
-                      ))}
-                  </ul>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button
-                      fullWidth={false}
-                      loading={actionLoading}
-                      onClick={() => void inativarAusentes()}
-                      size="sm"
-                      variant="danger"
-                    >
-                      Confirmar inativação
-                    </Button>
-                    <Button
-                      fullWidth={false}
-                      onClick={() => setConfirmandoInativacao(false)}
-                      size="sm"
-                      variant="secondary"
-                    >
-                      Cancelar
-                    </Button>
+              {canWritePeriodos &&
+                (confirmandoInativacao ? (
+                  <div className="mt-4 rounded-md border border-danger-600/30 bg-danger-600/5 p-4">
+                    <p className="text-sm font-bold text-slate-800">
+                      Inativar {ausentesSelecionados.length} estudante(s)?
+                    </p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      Eles perdem o direito ao transporte até serem reativados
+                      na tela de estudantes.
+                    </p>
+                    <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
+                      {ausentes.data
+                        .filter((estudante) =>
+                          ausentesSelecionados.includes(estudante.id),
+                        )
+                        .map((estudante) => (
+                          <li key={estudante.id}>{estudante.name}</li>
+                        ))}
+                    </ul>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        fullWidth={false}
+                        loading={actionLoading}
+                        onClick={() => void inativarAusentes()}
+                        size="sm"
+                        variant="danger"
+                      >
+                        Confirmar inativação
+                      </Button>
+                      <Button
+                        fullWidth={false}
+                        onClick={() => setConfirmandoInativacao(false)}
+                        size="sm"
+                        variant="secondary"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Button
-                  className="mt-4"
-                  disabled={ausentesSelecionados.length === 0}
-                  fullWidth={false}
-                  onClick={() => setConfirmandoInativacao(true)}
-                  size="sm"
-                  variant="danger"
-                >
-                  Inativar selecionados
-                </Button>
-              )}
+                ) : (
+                  <Button
+                    className="mt-4"
+                    disabled={ausentesSelecionados.length === 0}
+                    fullWidth={false}
+                    onClick={() => setConfirmandoInativacao(true)}
+                    size="sm"
+                    variant="danger"
+                  >
+                    Inativar selecionados
+                  </Button>
+                ))}
             </>
           )}
         </section>
       )}
 
-      <RecadastroSolicitacoesSection
-        loading={loading}
-        onAnalyze={setSelected}
-        solicitacoes={solicitacoes}
-      />
+      {canViewSolicitacoes && (
+        <RecadastroSolicitacoesSection
+          canAnalyze={canAnalyzeSolicitacoes}
+          loading={loading}
+          onAnalyze={setSelected}
+          solicitacoes={solicitacoes}
+        />
+      )}
 
       <Modal
         cancelLabel="Cancelar"

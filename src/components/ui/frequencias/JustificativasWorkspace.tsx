@@ -15,6 +15,7 @@ import {
   EMPTY_JUSTIFICATIVA_FILTERS,
   type JustificativaFilters,
 } from "@/components/ui/frequencias/justificativaPresentation";
+import { useAuthz } from "@/hooks/use-authz";
 import { frequenciaService } from "@/services/api/modules/frequencia";
 import type {
   AnaliseJustificativaPayload,
@@ -57,6 +58,8 @@ function isPerPage(value: number): value is PerPage {
 }
 
 export function JustificativasWorkspace() {
+  const { can } = useAuthz();
+  const canAnalyze = can("justificativas.analise");
   const [filters, setFilters] = useState<JustificativaFilters>({
     ...EMPTY_JUSTIFICATIVA_FILTERS,
   });
@@ -238,6 +241,7 @@ export function JustificativasWorkspace() {
       />
 
       <JustificativasTable
+        allowAnalysis={canAnalyze}
         data={response.data}
         errorMessage={loadError}
         loading={loading}

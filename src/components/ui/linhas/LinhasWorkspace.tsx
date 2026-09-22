@@ -24,6 +24,7 @@ import {
   type LinhasViewMode,
   ocupacaoDe,
 } from "@/components/ui/linhas/linhaPresentation";
+import { useAuthz } from "@/hooks/use-authz";
 import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { linhaService } from "@/services/api/modules/linha";
 import { userService } from "@/services/api/modules/user";
@@ -59,6 +60,9 @@ type LinhaFormField = keyof typeof formInicial;
 type LinhaFieldErrors = Partial<Record<LinhaFormField, string>>;
 
 export function LinhasWorkspace() {
+  const { can } = useAuthz();
+  const canWrite = can("linhas.write");
+  const canDelete = can("linhas.delete");
   const [viewMode, setViewMode] = useState<LinhasViewMode>("grid");
   const [detalhes, setDetalhes] = useState<Linha | null>(null);
   const [linhas, setLinhas] = useState<Linha[]>([]);
@@ -97,6 +101,8 @@ export function LinhasWorkspace() {
   }, [carregar]);
 
   useEffect(() => {
+    if (!canWrite) return;
+
     let active = true;
     void userService
       .listDrivers()
@@ -115,7 +121,7 @@ export function LinhasWorkspace() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [canWrite]);
 
   function abrirCriacao() {
     setEditando(null);
@@ -303,15 +309,17 @@ export function LinhasWorkspace() {
               );
             })}
           </fieldset>
-          <Button
-            className="h-10 px-4 text-sm"
-            fullWidth={false}
-            leftIcon={<Plus />}
-            onClick={abrirCriacao}
-            variant="primary"
-          >
-            Nova linha
-          </Button>
+          {canWrite && (
+            <Button
+              className="h-10 px-4 text-sm"
+              fullWidth={false}
+              leftIcon={<Plus />}
+              onClick={abrirCriacao}
+              variant="primary"
+            >
+              Nova linha
+            </Button>
+          )}
         </div>
       </div>
 
@@ -339,14 +347,18 @@ export function LinhasWorkspace() {
               linha={linha}
               viewMode={viewMode}
               onDetails={setDetalhes}
-              onEdit={abrirEdicao}
-              onDelete={(selected) => {
-                setDeleteError("");
-                setExcluindo(selected);
-              }}
+              onEdit={canWrite ? abrirEdicao : undefined}
+              onDelete={
+                canDelete
+                  ? (selected) => {
+                      setDeleteError("");
+                      setExcluindo(selected);
+                    }
+                  : undefined
+              }
             />
           ))}
-          {(viewMode === "grid" || linhas.length === 0) && (
+          {canWrite && (viewMode === "grid" || linhas.length === 0) && (
             <LinhaCreateCard onCreate={abrirCriacao} />
           )}
         </div>

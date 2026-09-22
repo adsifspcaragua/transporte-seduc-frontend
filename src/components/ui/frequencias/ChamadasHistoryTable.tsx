@@ -14,6 +14,7 @@ type ChamadasHistoryTableProps = {
   data: Chamada[];
   errorMessage?: string;
   loading?: boolean;
+  canDelete?: boolean;
   onDelete: (chamada: Chamada) => void;
   onRetry: () => void;
   onView: (chamada: Chamada) => void;
@@ -35,6 +36,7 @@ export function ChamadasHistoryTable({
   data,
   errorMessage = "",
   loading = false,
+  canDelete = false,
   onDelete,
   onRetry,
   onView,
@@ -126,16 +128,18 @@ export function ChamadasHistoryTable({
               >
                 Abrir
               </Button>
-              <Button
-                aria-label={`Excluir chamada da ${chamada.linha.name} em ${formatCallDate(chamada.data)}`}
-                className="h-9 px-3"
-                fullWidth={false}
-                leftIcon={<Trash2 />}
-                onClick={() => onDelete(chamada)}
-                size="icon"
-                title="Excluir chamada"
-                variant="danger"
-              />
+              {canDelete && (
+                <Button
+                  aria-label={`Excluir chamada da ${chamada.linha.name} em ${formatCallDate(chamada.data)}`}
+                  className="h-9 px-3"
+                  fullWidth={false}
+                  leftIcon={<Trash2 />}
+                  onClick={() => onDelete(chamada)}
+                  size="icon"
+                  title="Excluir chamada"
+                  variant="danger"
+                />
+              )}
             </div>
           </article>
         );

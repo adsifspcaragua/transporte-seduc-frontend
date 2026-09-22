@@ -38,6 +38,7 @@ import {
   type StudentFilters,
   StudentsFilterDropdown,
 } from "@/components/ui/estudantes/StudentsFilterDropdown";
+import { useAuthz } from "@/hooks/use-authz";
 import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { estudanteService } from "@/services/api/modules/estudante";
 import { inscricaoService } from "@/services/api/modules/inscricao";
@@ -765,6 +766,9 @@ function StudentsTableSkeleton({ rows = 6 }: { rows?: number }) {
 }
 
 export function StudentsWorkspace() {
+  const { can } = useAuthz();
+  const canEdit = can("estudantes.write");
+  const canDelete = can("estudantes.delete");
   const hasCachedPage = Boolean(studentsPageCache);
   const [studentsLoading, setStudentsLoading] = useState(!hasCachedPage);
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
@@ -1117,21 +1121,25 @@ export function StudentsWorkspace() {
                 tooltip="Visualizar estudante"
                 variant="secondary"
               />
-              <TableActionButton
-                ariaLabel={`Editar ${student.name}`}
-                icon={<Pencil />}
-                onClick={() => openEditModal(student)}
-                tooltip="Editar estudante"
-                variant="primary"
-              />
-              <TableActionButton
-                ariaLabel={`Deletar ${student.name}`}
-                icon={<Trash2 />}
-                loading={deleteLoadingId === student.id}
-                onClick={() => openDeleteModal(student)}
-                tooltip="Deletar estudante"
-                variant="danger"
-              />
+              {canEdit && (
+                <TableActionButton
+                  ariaLabel={`Editar ${student.name}`}
+                  icon={<Pencil />}
+                  onClick={() => openEditModal(student)}
+                  tooltip="Editar estudante"
+                  variant="primary"
+                />
+              )}
+              {canDelete && (
+                <TableActionButton
+                  ariaLabel={`Deletar ${student.name}`}
+                  icon={<Trash2 />}
+                  loading={deleteLoadingId === student.id}
+                  onClick={() => openDeleteModal(student)}
+                  tooltip="Deletar estudante"
+                  variant="danger"
+                />
+              )}
             </div>
           </article>
         )}

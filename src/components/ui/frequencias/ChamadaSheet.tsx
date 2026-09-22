@@ -25,6 +25,7 @@ import {
   isRegistroLocked,
   validateDraft,
 } from "@/components/ui/frequencias/frequenciaPresentation";
+import { useAuthz } from "@/hooks/use-authz";
 import { frequenciaService } from "@/services/api/modules/frequencia";
 import type {
   Chamada,
@@ -78,6 +79,8 @@ export function ChamadaSheet({
   onBack,
   onChamadaChange,
 }: ChamadaSheetProps) {
+  const { can } = useAuthz();
+  const canWrite = can("frequencias.write");
   const [draft, setDraft] = useState<ChamadaDraft>(() =>
     createChamadaDraft(chamada),
   );
@@ -246,7 +249,7 @@ export function ChamadaSheet({
           const estudanteId = registro.estudante_id;
           const entry = draft[estudanteId];
           const locked = isRegistroLocked(registro);
-          const disabled = isClosed || locked || actionLoading;
+          const disabled = !canWrite || isClosed || locked || actionLoading;
           const decision = decisionLabel(registro);
 
           if (!entry) return null;
@@ -355,42 +358,44 @@ export function ChamadaSheet({
                 ? `${changedCount} alteração(ões) ainda não salva(s).`
                 : "Todas as marcações estão salvas."}
         </p>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {isClosed ? (
-            <Button
-              fullWidth={false}
-              leftIcon={<Undo2 />}
-              loading={actionLoading}
-              onClick={() => void handleReopen()}
-              variant="secondary"
-            >
-              Reabrir chamada
-            </Button>
-          ) : (
-            <>
+        {canWrite && (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {isClosed ? (
               <Button
-                disabled={changedCount === 0}
                 fullWidth={false}
-                leftIcon={<Save />}
+                leftIcon={<Undo2 />}
                 loading={actionLoading}
-                onClick={() => void saveChanges()}
+                onClick={() => void handleReopen()}
                 variant="secondary"
               >
-                Salvar andamento
+                Reabrir chamada
               </Button>
-              <Button
-                disabled={pending || Object.keys(validationErrors).length > 0}
-                fullWidth={false}
-                leftIcon={<CheckCircle2 />}
-                loading={actionLoading}
-                onClick={() => void handleClose()}
-                variant="approved"
-              >
-                Fechar chamada
-              </Button>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <Button
+                  disabled={changedCount === 0}
+                  fullWidth={false}
+                  leftIcon={<Save />}
+                  loading={actionLoading}
+                  onClick={() => void saveChanges()}
+                  variant="secondary"
+                >
+                  Salvar andamento
+                </Button>
+                <Button
+                  disabled={pending || Object.keys(validationErrors).length > 0}
+                  fullWidth={false}
+                  leftIcon={<CheckCircle2 />}
+                  loading={actionLoading}
+                  onClick={() => void handleClose()}
+                  variant="approved"
+                >
+                  Fechar chamada
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </footer>
     </main>
   );

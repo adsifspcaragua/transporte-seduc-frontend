@@ -14,6 +14,7 @@ import {
 } from "./recadastroPresentation";
 
 type RecadastroSolicitacoesSectionProps = {
+  canAnalyze: boolean;
   loading: boolean;
   solicitacoes: SolicitacaoRecadastro[];
   onAnalyze: (solicitacao: SolicitacaoRecadastro) => void;
@@ -38,6 +39,7 @@ function getInitials(name: string) {
 }
 
 export function RecadastroSolicitacoesSection({
+  canAnalyze,
   loading,
   solicitacoes,
   onAnalyze,
@@ -130,7 +132,7 @@ export function RecadastroSolicitacoesSection({
                     {formatRecadastroDateTime(solicitacao.enviada_em)}
                   </span>
                 </div>
-                {solicitacao.status === "Em analise" && (
+                {canAnalyze && solicitacao.status === "Em analise" && (
                   <Button
                     fullWidth={false}
                     onClick={() => onAnalyze(solicitacao)}

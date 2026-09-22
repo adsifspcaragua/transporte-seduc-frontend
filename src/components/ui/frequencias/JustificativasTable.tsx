@@ -17,6 +17,7 @@ type JustificativasTableProps = {
   data: Justificativa[];
   errorMessage?: string;
   loading?: boolean;
+  allowAnalysis?: boolean;
   onApprove: (justificativa: Justificativa) => void;
   onReject: (justificativa: Justificativa) => void;
   onRetry: () => void;
@@ -49,6 +50,7 @@ export function JustificativasTable({
   data,
   errorMessage = "",
   loading = false,
+  allowAnalysis = false,
   onApprove,
   onReject,
   onRetry,
@@ -69,7 +71,8 @@ export function JustificativasTable({
       pagination={pagination}
       skeleton={<JustificativasTableSkeleton />}
       renderRow={(justificativa) => {
-        const canAnalyze = canAnalyzeJustificativa(justificativa);
+        const canAnalyze =
+          allowAnalysis && canAnalyzeJustificativa(justificativa);
         const studentName =
           justificativa.estudante?.name ?? "Estudante não encontrado";
 

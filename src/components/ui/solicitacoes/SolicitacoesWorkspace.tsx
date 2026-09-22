@@ -37,6 +37,7 @@ import {
   type SolicitationFilters,
   SolicitationsFilterDropdown,
 } from "@/components/ui/solicitacoes/SolicitationsFilterDropdown";
+import { useAuthz } from "@/hooks/use-authz";
 import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { inscricaoService } from "@/services/api/modules/inscricao";
 import type {
@@ -565,6 +566,8 @@ const CAMPOS_CORRIGIVEIS: { campo: string; label: string }[] = [
 ];
 
 export function SolicitacoesWorkspace() {
+  const { can } = useAuthz();
+  const canAnalyze = can("inscricoes.analise");
   const loadVersion = useRef(0);
   const hasCachedPage = Boolean(solicitacoesPageCache);
   const [loading, setLoading] = useState(!hasCachedPage);
@@ -1026,27 +1029,31 @@ export function SolicitacoesWorkspace() {
                 tooltip="Visualizar solicitação"
                 variant="secondary"
               />
-              <TableActionButton
-                ariaLabel={`Aprovar ${solicitacao.name}`}
-                icon={<Check />}
-                onClick={() => setApproveTarget(solicitacao)}
-                tooltip="Aprovar inscrição"
-                variant="approved"
-              />
-              <TableActionButton
-                ariaLabel={`Devolver ${solicitacao.name} para correção`}
-                icon={<Undo2 />}
-                onClick={() => setReturnTarget(solicitacao)}
-                tooltip="Devolver para correção"
-                variant="secondary"
-              />
-              <TableActionButton
-                ariaLabel={`Rejeitar ${solicitacao.name}`}
-                icon={<X />}
-                onClick={() => setRejectTarget(solicitacao)}
-                tooltip="Rejeitar inscrição"
-                variant="danger"
-              />
+              {canAnalyze && (
+                <>
+                  <TableActionButton
+                    ariaLabel={`Aprovar ${solicitacao.name}`}
+                    icon={<Check />}
+                    onClick={() => setApproveTarget(solicitacao)}
+                    tooltip="Aprovar inscrição"
+                    variant="approved"
+                  />
+                  <TableActionButton
+                    ariaLabel={`Devolver ${solicitacao.name} para correção`}
+                    icon={<Undo2 />}
+                    onClick={() => setReturnTarget(solicitacao)}
+                    tooltip="Devolver para correção"
+                    variant="secondary"
+                  />
+                  <TableActionButton
+                    ariaLabel={`Rejeitar ${solicitacao.name}`}
+                    icon={<X />}
+                    onClick={() => setRejectTarget(solicitacao)}
+                    tooltip="Rejeitar inscrição"
+                    variant="danger"
+                  />
+                </>
+              )}
             </div>
           </article>
         )}

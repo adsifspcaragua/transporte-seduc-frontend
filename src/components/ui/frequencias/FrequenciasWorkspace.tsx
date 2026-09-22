@@ -10,6 +10,7 @@ import { ChamadaSheet } from "@/components/ui/frequencias/ChamadaSheet";
 import { FrequenciaLinhaCard } from "@/components/ui/frequencias/FrequenciaLinhaCard";
 import { FrequenciasPageSkeleton } from "@/components/ui/frequencias/FrequenciaRouteSkeletons";
 import { localDateIso } from "@/components/ui/frequencias/frequenciaPresentation";
+import { useAuthz } from "@/hooks/use-authz";
 import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { frequenciaService } from "@/services/api/modules/frequencia";
 import type { Chamada, FrequenciaLinha } from "@/types/frequencia";
@@ -29,6 +30,8 @@ function errorMessage(error: unknown) {
 }
 
 export function FrequenciasWorkspace() {
+  const { can } = useAuthz();
+  const canWrite = can("frequencias.write");
   const today = useMemo(() => localDateIso(), []);
   const [date, setDate] = useState(today);
   const [linhas, setLinhas] = useState<FrequenciaLinha[]>([]);
@@ -174,7 +177,9 @@ export function FrequenciasWorkspace() {
               date={date}
               key={linha.id}
               linha={linha}
-              onOpen={(selected) => void openChamada(selected)}
+              onOpen={
+                canWrite ? (selected) => void openChamada(selected) : undefined
+              }
             />
           ))}
         </section>

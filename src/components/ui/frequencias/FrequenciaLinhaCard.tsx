@@ -18,7 +18,7 @@ type FrequenciaLinhaCardProps = {
   actionLoading: boolean;
   date: string;
   linha: FrequenciaLinha;
-  onOpen: (linha: FrequenciaLinha) => void;
+  onOpen?: (linha: FrequenciaLinha) => void;
 };
 
 function formatTime(value: string | null) {
@@ -91,14 +91,16 @@ export function FrequenciaLinhaCard({
         </div>
       </dl>
 
-      <Button
-        className="mt-auto pt-2"
-        loading={actionLoading}
-        onClick={() => onOpen(linha)}
-        variant={status === "Fechada" ? "secondary" : "primary"}
-      >
-        {action}
-      </Button>
+      {onOpen && (
+        <Button
+          className="mt-auto pt-2"
+          loading={actionLoading}
+          onClick={() => onOpen(linha)}
+          variant={status === "Fechada" ? "secondary" : "primary"}
+        >
+          {action}
+        </Button>
+      )}
     </article>
   );
 }

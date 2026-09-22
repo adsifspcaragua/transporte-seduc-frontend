@@ -14,6 +14,7 @@ import {
   EMPTY_CHAMADA_HISTORY_FILTERS,
 } from "@/components/ui/frequencias/chamadaHistoryPresentation";
 import { formatCallDate } from "@/components/ui/frequencias/frequenciaPresentation";
+import { useAuthz } from "@/hooks/use-authz";
 import { frequenciaService } from "@/services/api/modules/frequencia";
 import type {
   Chamada,
@@ -54,6 +55,8 @@ function isPerPage(value: number): value is PerPage {
 }
 
 export function ChamadasHistoryWorkspace() {
+  const { can } = useAuthz();
+  const canDelete = can("frequencias.delete");
   const [filters, setFilters] = useState<ChamadaHistoryFilters>({
     ...EMPTY_CHAMADA_HISTORY_FILTERS,
   });
@@ -232,6 +235,7 @@ export function ChamadasHistoryWorkspace() {
       />
 
       <ChamadasHistoryTable
+        canDelete={canDelete}
         data={response.data}
         errorMessage={loadError}
         loading={loading || detailLoading}
