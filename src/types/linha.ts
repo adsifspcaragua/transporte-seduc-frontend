@@ -7,6 +7,8 @@ export type LinhaEstudante = Pick<
   course: string | null;
   semester: string | null;
   instituicao_name: string | null;
+  faltas: number;
+  ultima_presenca: string | null;
 };
 
 export type PaginatedLinhaEstudantes = {

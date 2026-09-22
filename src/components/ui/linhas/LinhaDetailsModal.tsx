@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/loading";
 import { Modal } from "@/components/modal";
 import { DataTable, type DataTableColumn } from "@/components/table";
 import {
+  formatLastPresence,
   horaParaInput,
   ocupacaoDe,
 } from "@/components/ui/linhas/linhaPresentation";
@@ -92,14 +93,22 @@ function LinhaEstudanteRow({ estudante }: { estudante: LinhaEstudante }) {
             : "Telefone não informado"}
         </p>
       </div>
-      {["Faltas", "Última presença"].map((label) => (
-        <div key={label}>
-          <span className="mb-1 block text-xs font-semibold text-content-muted md:sr-only">
-            {label}
-          </span>
-          <span className="text-xs text-content-muted">A implementar</span>
-        </div>
-      ))}
+      <div>
+        <span className="mb-1 block text-xs font-semibold text-content-muted md:sr-only">
+          Faltas
+        </span>
+        <span className="text-xs tabular-nums text-content-muted">
+          {estudante.faltas ?? 0}
+        </span>
+      </div>
+      <div>
+        <span className="mb-1 block text-xs font-semibold text-content-muted md:sr-only">
+          Última presença
+        </span>
+        <span className="text-xs text-content-muted">
+          {formatLastPresence(estudante.ultima_presenca)}
+        </span>
+      </div>
     </article>
   );
 }

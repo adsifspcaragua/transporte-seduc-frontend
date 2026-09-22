@@ -7,6 +7,14 @@ export function horaParaInput(valor?: string | null) {
   return valor ? valor.slice(0, 5) : "";
 }
 
+export function formatLastPresence(value?: string | null) {
+  if (!value) return "Sem presença registrada";
+
+  const [year, month, day] = value.slice(0, 10).split("-");
+
+  return `${day}/${month}/${year}`;
+}
+
 export function ocupacaoDe(linha: Linha) {
   const ocupacao = linha.ocupacao ?? 0;
   const capacidade = linha.max_capacity ?? 0;
