@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 
+import { PermissionBoundary } from "@/components/guard";
 import { AppFooter } from "@/components/ui/layout/AppFooter";
 import { AppHeader } from "@/components/ui/layout/AppHeader";
 import {
@@ -32,7 +33,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         }
       >
         <AppHeader />
-        <main className="px-5 py-6 lg:px-8">{children}</main>
+        <main className="px-5 py-6 lg:px-8">
+          <PermissionBoundary>{children}</PermissionBoundary>
+        </main>
         <AppFooter />
       </div>
     </div>

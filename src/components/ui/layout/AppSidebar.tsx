@@ -1,73 +1,23 @@
 "use client";
 
-import {
-  BarChart3,
-  ClipboardCheck,
-  ClipboardEdit,
-  FileCheck2,
-  GraduationCap,
-  History,
-  LayoutDashboard,
-  type LucideIcon,
-  MapIcon,
-  Menu,
-} from "lucide-react";
+import { Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useAuthz } from "@/hooks/use-authz";
+import { sidebarItems } from "@/services/navigation/sidebar-items";
 import { cn } from "@/utils/cn";
 
 export const SIDEBAR_COLLAPSED_WIDTH = 80;
 export const SIDEBAR_EXPANDED_WIDTH = 240;
-
-type SidebarItem = {
-  label: string;
-  icon: LucideIcon;
-  href?: string;
-  exact?: boolean;
-};
-
-const sidebarItems: SidebarItem[] = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/" },
-  { label: "Estudantes", icon: GraduationCap, href: "/estudantes" },
-  { label: "Linhas", icon: MapIcon, href: "/linhas" },
-  {
-    label: "Frequência",
-    icon: ClipboardCheck,
-    href: "/frequencias",
-    exact: true,
-  },
-  {
-    label: "Histórico de chamadas",
-    icon: History,
-    href: "/frequencias/chamadas",
-  },
-  {
-    label: "Justificativas",
-    icon: FileCheck2,
-    href: "/frequencias/justificativas",
-  },
-  {
-    label: "Relatório de frequência",
-    icon: BarChart3,
-    href: "/frequencias/relatorio",
-  },
-  { label: "Solicitações", icon: ClipboardEdit, href: "/solicitacoes" },
-  {
-    label: "Recadastramento",
-    icon: ClipboardEdit,
-    href: "/recadastramento",
-  },
-];
 
 type AppSidebarProps = {
   isOpen: boolean;
   onToggle: () => void;
 };
 
-function isPathActive(pathname: string, href?: string, exact = false) {
-  if (!href) return false;
+function isPathActive(pathname: string, href: string, exact = false) {
   if (href === "/" || exact) return pathname === href;
 
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -75,6 +25,10 @@ function isPathActive(pathname: string, href?: string, exact = false) {
 
 export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
   const pathname = usePathname();
+  const { canAny } = useAuthz();
+  const visibleItems = sidebarItems.filter(
+    (item) => !item.permissions || canAny(item.permissions),
+  );
 
   return (
     <aside
@@ -109,15 +63,21 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
 
         <nav>
           <div className="space-y-1">
-            {sidebarItems.map((item) => {
+            {visibleItems.map((item) => {
               const Icon = item.icon;
               const isActive = isPathActive(pathname, item.href, item.exact);
               const className = cn(
                 "group relative flex h-11 w-full cursor-pointer items-center overflow-hidden rounded-md px-3 text-left text-[15px] font-medium transition-colors hover:bg-brand-700",
                 isActive && "bg-brand-700",
               );
-              const content = (
-                <>
+
+              return (
+                <Link
+                  className={className}
+                  href={item.href}
+                  key={item.label}
+                  title={isOpen ? undefined : item.label}
+                >
                   <Icon className="size-5 shrink-0" />
                   <span
                     className={cn(
@@ -135,31 +95,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                       isActive ? "opacity-100" : "opacity-0",
                     )}
                   />
-                </>
-              );
-
-              if (item.href) {
-                return (
-                  <Link
-                    className={className}
-                    href={item.href}
-                    key={item.label}
-                    title={isOpen ? undefined : item.label}
-                  >
-                    {content}
-                  </Link>
-                );
-              }
-
-              return (
-                <button
-                  className={className}
-                  key={item.label}
-                  title={isOpen ? undefined : item.label}
-                  type="button"
-                >
-                  {content}
-                </button>
+                </Link>
               );
             })}
           </div>

@@ -5,6 +5,8 @@ export type AuthUser = {
   cpf?: string | null;
   matricula?: string | null;
   data_nascimento?: string | null;
+  roles: string[];
+  permissions: string[];
   created_at?: string;
   updated_at?: string;
 };
