@@ -11,7 +11,7 @@ const routePermissions: RoutePermission[] = [
   { prefix: "/frequencias", permissions: ["frequencias.view"] },
   { prefix: "/estudantes", permissions: ["estudantes.view"] },
   { prefix: "/linhas", permissions: ["linhas.view"] },
-  { prefix: "/solicitacoes", permissions: ["solicitacoes.view"] },
+  { prefix: "/solicitacoes", permissions: ["inscricoes.view"] },
   {
     prefix: "/recadastramento",
     permissions: ["periodos.view", "solicitacoes.view"],

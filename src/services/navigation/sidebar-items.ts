@@ -62,7 +62,7 @@ export const sidebarItems: SidebarItem[] = [
     label: "Solicitações",
     icon: ClipboardEdit,
     href: "/solicitacoes",
-    permissions: ["solicitacoes.view"],
+    permissions: ["inscricoes.view"],
   },
   {
     label: "Recadastramento",

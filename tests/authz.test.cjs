@@ -34,6 +34,13 @@ test("autoriza recadastramento por qualquer permissao de leitura prevista", () =
   assert.equal(hasRouteAccess("/recadastramento", ["linhas.view"]), false);
 });
 
+test("protege solicitacoes de inscricao com a permissao do endpoint consumido", () => {
+  const { hasRouteAccess } = loadAuthz();
+
+  assert.equal(hasRouteAccess("/solicitacoes", ["inscricoes.view"]), true);
+  assert.equal(hasRouteAccess("/solicitacoes", ["solicitacoes.view"]), false);
+});
+
 test("mantem dashboard e perfil livres para usuario autenticado", () => {
   const { hasRouteAccess } = loadAuthz();
 
