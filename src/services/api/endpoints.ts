@@ -8,6 +8,9 @@ export const API_ENDPOINTS = {
   USERS: {
     BASE: "/users",
     DRIVERS: "/users/motoristas",
+    BY_ID: (id: number | string) => `/users/${id}`,
+    ACTIVATE: (id: number | string) => `/users/${id}/ativar`,
+    INACTIVATE: (id: number | string) => `/users/${id}/inativar`,
   },
   INSCRICOES: {
     BASE: "/inscricoes",
