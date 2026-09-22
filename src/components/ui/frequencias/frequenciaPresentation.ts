@@ -92,6 +92,14 @@ export function getLinhaCallAction(
   return chamadaHoje.status === "Aberta" ? "Continuar" : "Visualizar";
 }
 
+export function canAccessLinhaCall(
+  canWrite: boolean,
+  isToday: boolean,
+  hasExistingCall: boolean,
+) {
+  return canWrite || (isToday && hasExistingCall);
+}
+
 function padDatePart(value: number) {
   return String(value).padStart(2, "0");
 }

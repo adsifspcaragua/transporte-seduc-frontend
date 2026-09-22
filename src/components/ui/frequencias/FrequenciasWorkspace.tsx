@@ -9,7 +9,10 @@ import { DateInput } from "@/components/form/inputs";
 import { ChamadaSheet } from "@/components/ui/frequencias/ChamadaSheet";
 import { FrequenciaLinhaCard } from "@/components/ui/frequencias/FrequenciaLinhaCard";
 import { FrequenciasPageSkeleton } from "@/components/ui/frequencias/FrequenciaRouteSkeletons";
-import { localDateIso } from "@/components/ui/frequencias/frequenciaPresentation";
+import {
+  canAccessLinhaCall,
+  localDateIso,
+} from "@/components/ui/frequencias/frequenciaPresentation";
 import { useAuthz } from "@/hooks/use-authz";
 import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { frequenciaService } from "@/services/api/modules/frequencia";
@@ -178,7 +181,13 @@ export function FrequenciasWorkspace() {
               key={linha.id}
               linha={linha}
               onOpen={
-                canWrite ? (selected) => void openChamada(selected) : undefined
+                canAccessLinhaCall(
+                  canWrite,
+                  date === today,
+                  Boolean(linha.chamada_hoje),
+                )
+                  ? (selected) => void openChamada(selected)
+                  : undefined
               }
             />
           ))}

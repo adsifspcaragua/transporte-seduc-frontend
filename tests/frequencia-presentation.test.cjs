@@ -167,3 +167,11 @@ test("formata datas sem deslocamento de fuso", () => {
   assert.equal(localDateIso(new Date(2026, 8, 8)), "2026-09-08");
   assert.equal(formatCallDate("2026-09-08"), "08/09/2026");
 });
+
+test("permite consultar chamada existente sem permissao de escrita", () => {
+  const { canAccessLinhaCall } = loadPresentation();
+
+  assert.equal(canAccessLinhaCall(false, true, true), true);
+  assert.equal(canAccessLinhaCall(false, true, false), false);
+  assert.equal(canAccessLinhaCall(true, false, false), true);
+});
