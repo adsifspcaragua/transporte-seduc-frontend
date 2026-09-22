@@ -11,6 +11,7 @@ import { UsersSkeleton } from "@/components/ui/users/UsersSkeleton";
 import { UsersTable } from "@/components/ui/users/UsersTable";
 import { useAuthStore } from "@/contexts/auth-store";
 import { useAuthz } from "@/hooks/use-authz";
+import { authService } from "@/services/api/modules/auth";
 import { userService } from "@/services/api/modules/user";
 import type {
   SystemUser,
@@ -32,6 +33,7 @@ function errorMessage(error: unknown, fallback: string) {
 
 export function UsersWorkspace() {
   const currentUserId = useAuthStore((state) => state.user?.id);
+  const setCurrentUser = useAuthStore((state) => state.setUser);
   const { can } = useAuthz();
   const canWrite = can("users.write");
   const canDelete = can("users.delete");
@@ -103,7 +105,15 @@ export function UsersWorkspace() {
           : "Usuário cadastrado com sucesso.",
       );
       setFormOpen(false);
+      const editedCurrentUser = editing?.id === currentUserId;
       setEditing(null);
+
+      if (editedCurrentUser) {
+        const currentUser = await authService.me();
+        setCurrentUser(currentUser);
+        if (!currentUser.permissions.includes("users.view")) return;
+      }
+
       await loadUsers();
     } catch (error) {
       const apiErrors = axios.isAxiosError<ApiError>(error)

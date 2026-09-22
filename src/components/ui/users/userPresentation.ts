@@ -11,7 +11,6 @@ export const USER_ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "gestor", label: "Gestor" },
   { value: "operador", label: "Operador" },
   { value: "motorista", label: "Motorista" },
-  { value: "estudante", label: "Estudante" },
 ];
 
 export function getUserRoleLabel(role?: string) {
@@ -62,6 +61,7 @@ export function validateUserForm(values: UserFormValues, mode: UserFormMode) {
 export function buildUserPayload(
   values: UserFormValues,
   mode: UserFormMode,
+  originalRole?: UserRole,
 ): UserPayload {
   const cpf = values.cpf.replace(/\D/g, "");
   const matricula = values.matricula.trim();
@@ -70,7 +70,9 @@ export function buildUserPayload(
   return {
     name: values.name.trim(),
     email: values.email.trim().toLocaleLowerCase("pt-BR"),
-    role: values.role as UserRole,
+    ...(mode === "create" || values.role !== originalRole
+      ? { role: values.role as UserRole }
+      : {}),
     ...(mode === "create" || password ? { password } : {}),
     ...(cpf ? { cpf } : {}),
     ...(matricula ? { matricula: Number(matricula) } : {}),

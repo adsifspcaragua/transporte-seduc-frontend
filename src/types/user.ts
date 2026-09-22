@@ -3,12 +3,7 @@ export type DriverOption = {
   name: string;
 };
 
-export type UserRole =
-  | "admin"
-  | "gestor"
-  | "operador"
-  | "motorista"
-  | "estudante";
+export type UserRole = "admin" | "gestor" | "operador" | "motorista";
 
 export type SystemUser = {
   id: number;
@@ -36,7 +31,7 @@ export type UserFormValues = {
 export type UserPayload = {
   name: string;
   email: string;
-  role: UserRole;
+  role?: UserRole;
   password?: string;
   cpf?: string;
   matricula?: number;

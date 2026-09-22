@@ -84,7 +84,7 @@ test("normaliza o payload de criacao", () => {
   );
 });
 
-test("omite senha e opcionais vazios na edicao", () => {
+test("omite senha, opcionais vazios e papel inalterado na edicao", () => {
   const { buildUserPayload } = loadPresentation();
 
   assert.deepEqual(
@@ -100,14 +100,45 @@ test("omite senha e opcionais vazios na edicao", () => {
           role: "operador",
         },
         "edit",
+        "operador",
       ),
     ),
     {
       name: "João",
       email: "joao@example.com",
-      role: "operador",
     },
   );
+});
+
+test("envia papel na edicao somente quando ele foi alterado", () => {
+  const { buildUserPayload } = loadPresentation();
+
+  const payload = buildUserPayload(
+    {
+      name: "Joao",
+      email: "joao@example.com",
+      password: "",
+      cpf: "",
+      matricula: "",
+      data_nascimento: "",
+      role: "gestor",
+    },
+    "edit",
+    "operador",
+  );
+
+  assert.equal(payload.role, "gestor");
+});
+
+test("oferece somente papeis administrativos existentes", () => {
+  const { USER_ROLE_OPTIONS } = loadPresentation();
+
+  assert.deepEqual(plain(USER_ROLE_OPTIONS.map(({ value }) => value)), [
+    "admin",
+    "gestor",
+    "operador",
+    "motorista",
+  ]);
 });
 
 test("impede alterar situacao ou excluir o proprio usuario", () => {

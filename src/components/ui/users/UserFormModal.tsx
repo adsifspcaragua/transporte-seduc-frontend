@@ -90,7 +90,7 @@ export function UserFormModal({
       scheduleFocusFirstFieldError(formRef.current);
       return;
     }
-    onSubmit(buildUserPayload(values, mode));
+    onSubmit(buildUserPayload(values, mode, user?.roles[0]));
   }
 
   function fieldError(field: keyof UserFormValues) {
