@@ -109,3 +109,10 @@ test("omite senha e opcionais vazios na edicao", () => {
     },
   );
 });
+
+test("impede alterar situacao ou excluir o proprio usuario", () => {
+  const { canChangeUserStatusOrDelete } = loadPresentation();
+
+  assert.equal(canChangeUserStatusOrDelete(7, 7), false);
+  assert.equal(canChangeUserStatusOrDelete(8, 7), true);
+});

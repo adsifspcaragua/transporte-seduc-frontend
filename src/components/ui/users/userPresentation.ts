@@ -21,6 +21,13 @@ export function getUserRoleLabel(role?: string) {
   );
 }
 
+export function canChangeUserStatusOrDelete(
+  targetUserId: number,
+  currentUserId?: number,
+) {
+  return targetUserId !== currentUserId;
+}
+
 export function validateUserForm(values: UserFormValues, mode: UserFormMode) {
   const errors: UserFormErrors = {};
   const cpf = values.cpf.replace(/\D/g, "");
