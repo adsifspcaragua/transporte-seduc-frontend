@@ -99,6 +99,7 @@ export function UserFormModal({
 
   return (
     <Modal
+      className="max-w-2xl"
       onClose={onClose}
       onSave={submit}
       open={open}
@@ -106,10 +107,10 @@ export function UserFormModal({
       saveLoading={loading}
       title={user ? "Editar usuário" : "Novo usuário"}
     >
-      <div className="space-y-4" ref={formRef}>
+      <div className="grid gap-4 sm:grid-cols-2" ref={formRef}>
         {error && (
           <p
-            className="rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600"
+            className="rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600 sm:col-span-2"
             role="alert"
           >
             {error}
@@ -121,6 +122,7 @@ export function UserFormModal({
           onChange={(event) => setField("name", event.target.value)}
           required
           value={values.name}
+          variant="white"
         />
         <Input
           autoComplete="email"
@@ -130,6 +132,7 @@ export function UserFormModal({
           required
           type="email"
           value={values.email}
+          variant="white"
         />
         <PasswordInput
           autoComplete="new-password"
@@ -139,27 +142,29 @@ export function UserFormModal({
           onChange={(event) => setField("password", event.target.value)}
           required={!user}
           value={values.password}
+          variant="white"
         />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <CpfInput
-            error={fieldError("cpf")}
-            label="CPF"
-            onChange={(event) => setField("cpf", event.target.value)}
-            value={values.cpf}
-          />
-          <Input
-            error={fieldError("matricula")}
-            inputMode="numeric"
-            label="Matrícula"
-            onChange={(event) => setField("matricula", event.target.value)}
-            value={values.matricula}
-          />
-        </div>
+        <CpfInput
+          error={fieldError("cpf")}
+          label="CPF"
+          onChange={(event) => setField("cpf", event.target.value)}
+          value={values.cpf}
+          variant="white"
+        />
+        <Input
+          error={fieldError("matricula")}
+          inputMode="numeric"
+          label="Matrícula"
+          onChange={(event) => setField("matricula", event.target.value)}
+          value={values.matricula}
+          variant="white"
+        />
         <DateInput
           error={fieldError("data_nascimento")}
           label="Data de nascimento"
           onChange={(event) => setField("data_nascimento", event.target.value)}
           value={values.data_nascimento}
+          variant="white"
         />
         <Select
           error={fieldError("role")}
@@ -171,6 +176,7 @@ export function UserFormModal({
           ]}
           required
           value={values.role}
+          variant="white"
         />
       </div>
     </Modal>

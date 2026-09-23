@@ -177,17 +177,14 @@ export function UsersWorkspace() {
   }
 
   return (
-    <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mx-auto max-w-7xl space-y-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-content-muted">
-            Administração
-          </p>
-          <h1 className="mt-1 flex items-center gap-2 text-2xl font-bold text-brand-700">
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-brand-600">
             <Users aria-hidden="true" className="size-6" />
             Usuários
           </h1>
-          <p className="mt-2 text-sm text-content-secondary">
+          <p className="mt-1 text-sm text-content-secondary">
             Gerencie acessos, papéis e a situação dos usuários do sistema.
           </p>
         </div>
@@ -279,6 +276,6 @@ export function UsersWorkspace() {
           </p>
         )}
       </Modal>
-    </main>
+    </div>
   );
 }

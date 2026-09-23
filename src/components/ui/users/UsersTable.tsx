@@ -1,11 +1,12 @@
 import { Pencil, Power, PowerOff, Trash2 } from "lucide-react";
 
-import { TableActionButton } from "@/components/table";
+import { DataTable, TableActionButton } from "@/components/table";
 import {
   canChangeUserStatusOrDelete,
   getUserRoleLabel,
 } from "@/components/ui/users/userPresentation";
 import type { SystemUser } from "@/types/user";
+import { cn } from "@/utils/cn";
 
 type UsersTableProps = {
   users: SystemUser[];
@@ -18,6 +19,17 @@ type UsersTableProps = {
   onDelete: (user: SystemUser) => void;
 };
 
+const columns = [
+  { key: "name", label: "Nome" },
+  { key: "email", label: "E-mail" },
+  { key: "role", label: "Papel" },
+  { key: "status", label: "Situação" },
+  { key: "actions", label: "Ações" },
+];
+
+const gridClassName =
+  "md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.35fr)_9rem_7rem_10rem] md:gap-3";
+
 export function UsersTable({
   users,
   currentUserId,
@@ -28,106 +40,107 @@ export function UsersTable({
   onToggleStatus,
   onDelete,
 }: UsersTableProps) {
-  if (users.length === 0) {
-    return (
-      <p className="rounded-xl border border-border-subtle bg-white px-5 py-10 text-center text-sm text-content-muted">
-        Nenhum usuário cadastrado.
-      </p>
-    );
-  }
-
   return (
-    <div className="overflow-x-auto rounded-xl border border-border-subtle bg-white shadow-sm">
-      <table className="w-full min-w-[760px] text-left text-sm">
-        <thead className="bg-surface-muted text-xs uppercase tracking-wide text-content-muted">
-          <tr>
-            <th className="px-5 py-4 font-semibold">Nome</th>
-            <th className="px-5 py-4 font-semibold">E-mail</th>
-            <th className="px-5 py-4 font-semibold">Papel</th>
-            <th className="px-5 py-4 font-semibold">Situação</th>
-            <th className="px-5 py-4 text-right font-semibold">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => {
-            const canChangeStatusOrDelete = canChangeUserStatusOrDelete(
-              user.id,
-              currentUserId,
-            );
-            const isCurrentUser = !canChangeStatusOrDelete;
-            const isLoading = loadingUserId === user.id;
+    <DataTable
+      columns={columns}
+      data={users}
+      emptyMessage="Nenhum usuário cadastrado."
+      getRowKey={(user) => user.id}
+      gridClassName={gridClassName}
+      renderRow={(user) => {
+        const canChangeStatusOrDelete = canChangeUserStatusOrDelete(
+          user.id,
+          currentUserId,
+        );
+        const isCurrentUser = !canChangeStatusOrDelete;
+        const isLoading = loadingUserId === user.id;
 
-            return (
-              <tr
-                className="border-t border-border-subtle text-content-secondary"
-                key={user.id}
-              >
-                <td className="px-5 py-4 font-semibold text-brand-700">
-                  {user.name}
-                  {isCurrentUser && (
-                    <span className="ml-2 text-xs font-medium text-content-muted">
-                      (você)
-                    </span>
-                  )}
-                </td>
-                <td className="px-5 py-4">{user.email}</td>
-                <td className="px-5 py-4">{getUserRoleLabel(user.roles[0])}</td>
-                <td className="px-5 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
-                      user.ativo
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-slate-200 text-slate-600"
-                    }`}
-                  >
-                    {user.ativo ? "Ativo" : "Inativo"}
+        return (
+          <article
+            className={cn(
+              "grid gap-4 border-b border-border-subtle px-5 py-4 last:border-b-0 md:items-center",
+              gridClassName,
+            )}
+          >
+            <div className="min-w-0">
+              <span className="text-xs font-semibold uppercase text-content-muted md:hidden">
+                Nome
+              </span>
+              <p className="truncate text-sm font-bold text-brand-700">
+                {user.name}
+                {isCurrentUser && (
+                  <span className="ml-2 text-xs font-medium text-content-muted">
+                    (você)
                   </span>
-                </td>
-                <td className="px-5 py-4">
-                  <div className="flex justify-end gap-2">
-                    {canWrite && (
-                      <TableActionButton
-                        ariaLabel={`Editar ${user.name}`}
-                        icon={<Pencil aria-hidden="true" />}
-                        onClick={() => onEdit(user)}
-                        tooltip="Editar usuário"
-                        variant="light"
-                      />
-                    )}
-                    {canWrite && canChangeStatusOrDelete && (
-                      <TableActionButton
-                        ariaLabel={`${user.ativo ? "Inativar" : "Ativar"} ${user.name}`}
-                        icon={
-                          user.ativo ? (
-                            <PowerOff aria-hidden="true" />
-                          ) : (
-                            <Power aria-hidden="true" />
-                          )
-                        }
-                        loading={isLoading}
-                        onClick={() => onToggleStatus(user)}
-                        tooltip={
-                          user.ativo ? "Inativar usuário" : "Ativar usuário"
-                        }
-                        variant={user.ativo ? "neutral" : "approved"}
-                      />
-                    )}
-                    {canDelete && canChangeStatusOrDelete && (
-                      <TableActionButton
-                        ariaLabel={`Excluir ${user.name}`}
-                        icon={<Trash2 aria-hidden="true" />}
-                        onClick={() => onDelete(user)}
-                        tooltip="Excluir usuário"
-                        variant="danger"
-                      />
-                    )}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                )}
+              </p>
+            </div>
+            <p className="min-w-0 truncate text-sm text-content-secondary">
+              <span className="block text-xs font-semibold uppercase text-content-muted md:hidden">
+                E-mail
+              </span>
+              {user.email}
+            </p>
+            <p className="text-sm text-content-secondary">
+              <span className="block text-xs font-semibold uppercase text-content-muted md:hidden">
+                Papel
+              </span>
+              {getUserRoleLabel(user.roles[0])}
+            </p>
+            <div>
+              <span className="block text-xs font-semibold uppercase text-content-muted md:hidden">
+                Situação
+              </span>
+              <span
+                className={cn(
+                  "inline-flex rounded-full px-2.5 py-1 text-xs font-bold",
+                  user.ativo
+                    ? "bg-green-100 text-green-800"
+                    : "bg-surface-muted text-content-muted",
+                )}
+              >
+                {user.ativo ? "Ativo" : "Inativo"}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2 md:justify-end">
+              {canWrite && (
+                <TableActionButton
+                  ariaLabel={`Editar ${user.name}`}
+                  icon={<Pencil aria-hidden="true" />}
+                  onClick={() => onEdit(user)}
+                  tooltip="Editar usuário"
+                  variant="light"
+                />
+              )}
+              {canWrite && canChangeStatusOrDelete && (
+                <TableActionButton
+                  ariaLabel={`${user.ativo ? "Inativar" : "Ativar"} ${user.name}`}
+                  icon={
+                    user.ativo ? (
+                      <PowerOff aria-hidden="true" />
+                    ) : (
+                      <Power aria-hidden="true" />
+                    )
+                  }
+                  loading={isLoading}
+                  onClick={() => onToggleStatus(user)}
+                  tooltip={user.ativo ? "Inativar usuário" : "Ativar usuário"}
+                  variant={user.ativo ? "neutral" : "approved"}
+                />
+              )}
+              {canDelete && canChangeStatusOrDelete && (
+                <TableActionButton
+                  ariaLabel={`Excluir ${user.name}`}
+                  icon={<Trash2 aria-hidden="true" />}
+                  onClick={() => onDelete(user)}
+                  tooltip="Excluir usuário"
+                  variant="danger"
+                />
+              )}
+            </div>
+          </article>
+        );
+      }}
+    />
   );
 }
