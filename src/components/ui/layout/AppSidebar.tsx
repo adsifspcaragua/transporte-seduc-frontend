@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { getFrequencyLandingPath } from "@/components/ui/frequencias/frequenciaNavigation";
 import { useAuthz } from "@/hooks/use-authz";
 import { sidebarItems } from "@/services/navigation/sidebar-items";
 import { cn } from "@/utils/cn";
@@ -25,7 +26,7 @@ function isPathActive(pathname: string, href: string, exact = false) {
 
 export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
   const pathname = usePathname();
-  const { canAny } = useAuthz();
+  const { canAny, permissions } = useAuthz();
   const visibleItems = sidebarItems.filter(
     (item) => !item.permissions || canAny(item.permissions),
   );
@@ -65,6 +66,10 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
           <div className="space-y-1">
             {visibleItems.map((item) => {
               const Icon = item.icon;
+              const href =
+                item.href === "/frequencias"
+                  ? getFrequencyLandingPath(permissions)
+                  : item.href;
               const isActive = isPathActive(pathname, item.href, item.exact);
               const className = cn(
                 "group relative flex h-11 w-full cursor-pointer items-center overflow-hidden rounded-md px-3 text-left text-[15px] font-medium transition-colors hover:bg-brand-700",
@@ -74,7 +79,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
               return (
                 <Link
                   className={className}
-                  href={item.href}
+                  href={href}
                   key={item.label}
                   title={isOpen ? undefined : item.label}
                 >
