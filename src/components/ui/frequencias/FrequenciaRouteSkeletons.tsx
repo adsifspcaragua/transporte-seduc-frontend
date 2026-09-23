@@ -16,7 +16,7 @@ function FrequenciaLinhaCardSkeleton() {
 
 export function FrequenciasPageSkeleton() {
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <TextSkeleton className="h-7" lines={["12rem"]} />
         <Skeleton className="h-10 w-64 rounded-lg" />
@@ -26,6 +26,6 @@ export function FrequenciasPageSkeleton() {
           <FrequenciaLinhaCardSkeleton key={key} />
         ))}
       </div>
-    </main>
+    </div>
   );
 }

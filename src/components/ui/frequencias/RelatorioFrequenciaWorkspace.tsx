@@ -188,16 +188,13 @@ export function RelatorioFrequenciaWorkspace() {
   }
 
   return (
-    <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+    <section className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-content-muted">
-            Controle de frequência
-          </p>
-          <h1 className="mt-1 text-2xl font-bold text-brand-700">
+          <h2 className="text-xl font-bold text-brand-600">
             Relatório de frequência
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-content-secondary">
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm text-content-secondary">
             Acompanhe presença, faltas e risco de perda do benefício por
             estudante.
           </p>
@@ -239,6 +236,6 @@ export function RelatorioFrequenciaWorkspace() {
         open={detailOpen}
         report={detailReport}
       />
-    </main>
+    </section>
   );
 }

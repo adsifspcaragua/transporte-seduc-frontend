@@ -33,8 +33,12 @@ export function ChamadasHistoryFilterCard({
   );
 
   return (
-    <section className="rounded-lg border border-border-subtle bg-white p-5 shadow-sm">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <section className="rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
+      <div className="mb-4 flex items-center gap-2 text-brand-600">
+        <Filter aria-hidden="true" className="size-4" />
+        <h2 className="text-base font-bold">Filtros</h2>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Select
           disabled={disabled}
           label="Status"
@@ -65,6 +69,7 @@ export function ChamadasHistoryFilterCard({
           max={filters.ate || undefined}
           onChange={(event) => onChange("de", event.target.value)}
           value={filters.de}
+          variant="white"
         />
         <DateInput
           disabled={disabled}
@@ -73,10 +78,11 @@ export function ChamadasHistoryFilterCard({
           min={filters.de || undefined}
           onChange={(event) => onChange("ate", event.target.value)}
           value={filters.ate}
+          variant="white"
         />
       </div>
 
-      <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
         <Button
           disabled={disabled}
           fullWidth={false}

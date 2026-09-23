@@ -175,7 +175,7 @@ export function ChamadaSheet({
   }
 
   return (
-    <main className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
+    <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button
           fullWidth={false}
@@ -397,6 +397,6 @@ export function ChamadaSheet({
           </div>
         )}
       </footer>
-    </main>
+    </section>
   );
 }

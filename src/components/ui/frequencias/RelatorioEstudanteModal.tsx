@@ -270,6 +270,7 @@ export function RelatorioEstudanteModal({
                               loading={submitting}
                               onClick={() => void submitJustification()}
                               size="sm"
+                              variant="primary"
                             >
                               Enviar para análise
                             </Button>
