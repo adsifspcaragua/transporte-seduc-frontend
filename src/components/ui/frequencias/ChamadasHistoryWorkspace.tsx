@@ -1,7 +1,6 @@
 "use client";
 
 import axios from "axios";
-import { History } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Modal } from "@/components/modal";
@@ -189,47 +188,33 @@ export function ChamadasHistoryWorkspace() {
   const { meta } = response;
 
   return (
-    <section className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-brand-600">
-            Histórico de chamadas
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm text-content-secondary">
-            Consulte folhas anteriores, acompanhe pendências e gerencie os
-            registros das linhas.
-          </p>
-        </div>
-        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-brand-600/10 px-4 py-2 text-sm font-bold text-brand-700">
-          <History aria-hidden="true" className="size-4" />
-          {response.meta.total} chamada(s)
-        </div>
-      </header>
-
+    <section>
       {successMessage && (
-        <output className="block rounded-lg border border-green-600/20 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+        <output className="mb-5 block rounded-lg border border-green-600/20 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
           {successMessage}
         </output>
       )}
       {actionError && !deleting && (
         <p
-          className="rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600"
+          className="mb-5 rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600"
           role="alert"
         >
           {actionError}
         </p>
       )}
 
-      <ChamadasHistoryFilterCard
-        disabled={loading || detailLoading}
-        filters={filters}
-        linhas={linhas}
-        onApply={applyFilters}
-        onChange={(field, value) =>
-          setFilters((current) => ({ ...current, [field]: value }))
-        }
-        onClear={clearFilters}
-      />
+      <div className="mb-6">
+        <ChamadasHistoryFilterCard
+          disabled={loading || detailLoading}
+          filters={filters}
+          linhas={linhas}
+          onApply={applyFilters}
+          onChange={(field, value) =>
+            setFilters((current) => ({ ...current, [field]: value }))
+          }
+          onClear={clearFilters}
+        />
+      </div>
 
       <ChamadasHistoryTable
         canDelete={canDelete}

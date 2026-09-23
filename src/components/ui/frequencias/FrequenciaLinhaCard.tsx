@@ -36,7 +36,7 @@ export function FrequenciaLinhaCard({
   const action = getLinhaCallAction(linha.chamada_hoje, isToday);
 
   return (
-    <article className="flex min-h-64 flex-col rounded-lg border border-border-subtle bg-white p-5 shadow-sm">
+    <article className="flex flex-col rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-100/70 text-brand-700">
           <Bus aria-hidden="true" className="size-5" />
@@ -53,9 +53,9 @@ export function FrequenciaLinhaCard({
         </span>
       </div>
 
-      <h2 className="mt-4 text-lg font-bold text-brand-700">{linha.name}</h2>
+      <h2 className="mt-3 text-lg font-bold text-brand-700">{linha.name}</h2>
 
-      <dl className="mt-3 space-y-2 text-sm text-content-secondary">
+      <dl className="mt-2 space-y-1.5 text-sm text-content-secondary">
         <div className="flex items-center gap-2">
           <Clock3 aria-hidden="true" className="size-4 text-brand-600" />
           <dt className="sr-only">Horários</dt>
@@ -92,14 +92,15 @@ export function FrequenciaLinhaCard({
       </dl>
 
       {onOpen && (
-        <Button
-          className="mt-auto pt-2"
-          loading={actionLoading}
-          onClick={() => onOpen(linha)}
-          variant={status === "Fechada" ? "secondary" : "primary"}
-        >
-          {action}
-        </Button>
+        <div className="mt-auto pt-4">
+          <Button
+            loading={actionLoading}
+            onClick={() => onOpen(linha)}
+            variant={status === "Fechada" ? "secondary" : "primary"}
+          >
+            {action}
+          </Button>
+        </div>
       )}
     </article>
   );

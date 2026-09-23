@@ -1,7 +1,6 @@
 "use client";
 
 import axios from "axios";
-import { BarChart3 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { findAbsenceFrequencyId } from "@/components/ui/frequencias/justificativaPresentation";
 import { RelatorioEstudanteModal } from "@/components/ui/frequencias/RelatorioEstudanteModal";
@@ -11,7 +10,6 @@ import { RelatorioFrequenciaTable } from "@/components/ui/frequencias/RelatorioF
 import {
   buildRelatorioParams,
   EMPTY_RELATORIO_FILTERS,
-  formatReportPeriod,
   type RelatorioFrequenciaFilters,
 } from "@/components/ui/frequencias/relatorioFrequenciaPresentation";
 import { frequenciaService } from "@/services/api/modules/frequencia";
@@ -188,37 +186,25 @@ export function RelatorioFrequenciaWorkspace() {
   }
 
   return (
-    <section className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-brand-600">
-            Relatório de frequência
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm text-content-secondary">
-            Acompanhe presença, faltas e risco de perda do benefício por
-            estudante.
-          </p>
+    <section>
+      <div className="mb-6">
+        <RelatorioFrequenciaFilterCard
+          disabled={loading}
+          filters={filters}
+          linhas={linhas}
+          onApply={applyFilters}
+          onChange={(field, value) =>
+            setFilters((current) => ({ ...current, [field]: value }))
+          }
+          onClear={clearFilters}
+        />
+      </div>
+
+      {response && (
+        <div className="mb-6">
+          <RelatorioFrequenciaSummary totals={response.totais} />
         </div>
-        {response && (
-          <div className="inline-flex w-fit items-center gap-2 rounded-full bg-brand-050 px-4 py-2 text-sm font-bold text-brand-700">
-            <BarChart3 aria-hidden="true" className="size-4" />
-            {formatReportPeriod(response.periodo)}
-          </div>
-        )}
-      </header>
-
-      <RelatorioFrequenciaFilterCard
-        disabled={loading}
-        filters={filters}
-        linhas={linhas}
-        onApply={applyFilters}
-        onChange={(field, value) =>
-          setFilters((current) => ({ ...current, [field]: value }))
-        }
-        onClear={clearFilters}
-      />
-
-      {response && <RelatorioFrequenciaSummary totals={response.totais} />}
+      )}
 
       <RelatorioFrequenciaTable
         data={response?.data ?? []}

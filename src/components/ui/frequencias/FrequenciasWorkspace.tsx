@@ -99,18 +99,16 @@ export function FrequenciasWorkspace() {
   }
 
   return (
-    <section className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-brand-600">Chamada diária</h2>
-          <p className="mt-1 max-w-2xl text-sm text-content-secondary">
-            Selecione a data e a linha para iniciar ou continuar a folha de
-            presença.
-          </p>
+    <section>
+      <div className="mb-6 rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 text-brand-600">
+          <CalendarDays aria-hidden="true" className="size-4" />
+          <h2 className="text-base font-bold">Data da chamada</h2>
         </div>
         <DateInput
-          containerClassName="w-full sm:w-64"
-          label="Data da chamada"
+          aria-label="Data da chamada"
+          containerClassName="w-full sm:max-w-64"
+          label=""
           max={today}
           onChange={(event) => {
             setDate(event.target.value);
@@ -124,7 +122,7 @@ export function FrequenciasWorkspace() {
 
       {openError && (
         <p
-          className="rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600"
+          className="mb-5 rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600"
           role="alert"
         >
           {openError}

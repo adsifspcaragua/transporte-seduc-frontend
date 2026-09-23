@@ -20,6 +20,9 @@ type RelatorioFrequenciaFilterCardProps = {
   onClear: () => void;
 };
 
+const FILTER_LABEL_CLASS =
+  "mb-1.5 block text-xs font-bold text-content-secondary";
+
 export function RelatorioFrequenciaFilterCard({
   disabled = false,
   filters,
@@ -40,49 +43,68 @@ export function RelatorioFrequenciaFilterCard({
         <h2 className="text-base font-bold">Filtros</h2>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <DateInput
-          disabled={disabled}
-          label="Período inicial"
-          max={filters.ate || undefined}
-          onChange={(event) => onChange("de", event.target.value)}
-          value={filters.de}
-          variant="white"
-        />
-        <DateInput
-          disabled={disabled}
-          error={periodError}
-          label="Período final"
-          min={filters.de || undefined}
-          onChange={(event) => onChange("ate", event.target.value)}
-          value={filters.ate}
-          variant="white"
-        />
-        <Select
-          disabled={disabled}
-          label="Linha"
-          onChange={(event) => onChange("linhaId", event.target.value)}
-          options={[
-            { label: "Todas as linhas", value: "" },
-            ...linhas.map((linha) => ({
-              label: linha.name,
-              value: String(linha.id),
-            })),
-          ]}
-          value={filters.linhaId}
-        />
-        <Input
-          disabled={disabled}
-          error={minimumError}
-          label="Mínimo de faltas seguidas"
-          min="1"
-          onChange={(event) =>
-            onChange("faltasConsecutivasMin", event.target.value)
-          }
-          placeholder="Sem mínimo"
-          type="number"
-          value={filters.faltasConsecutivasMin}
-          variant="white"
-        />
+        <div className="min-w-0">
+          <label className={FILTER_LABEL_CLASS} htmlFor="relatorio-de">
+            Período inicial
+          </label>
+          <DateInput
+            disabled={disabled}
+            id="relatorio-de"
+            label=""
+            max={filters.ate || undefined}
+            onChange={(event) => onChange("de", event.target.value)}
+            value={filters.de}
+            variant="white"
+          />
+        </div>
+        <div className="min-w-0">
+          <label className={FILTER_LABEL_CLASS} htmlFor="relatorio-ate">
+            Período final
+          </label>
+          <DateInput
+            disabled={disabled}
+            error={periodError}
+            id="relatorio-ate"
+            label=""
+            min={filters.de || undefined}
+            onChange={(event) => onChange("ate", event.target.value)}
+            value={filters.ate}
+            variant="white"
+          />
+        </div>
+        <div className="min-w-0">
+          <span className={FILTER_LABEL_CLASS}>Linha</span>
+          <Select
+            disabled={disabled}
+            onChange={(event) => onChange("linhaId", event.target.value)}
+            options={[
+              { label: "Todas as linhas", value: "" },
+              ...linhas.map((linha) => ({
+                label: linha.name,
+                value: String(linha.id),
+              })),
+            ]}
+            value={filters.linhaId}
+          />
+        </div>
+        <div className="min-w-0">
+          <label className={FILTER_LABEL_CLASS} htmlFor="relatorio-minimo">
+            Mínimo de faltas seguidas
+          </label>
+          <Input
+            disabled={disabled}
+            error={minimumError}
+            id="relatorio-minimo"
+            min="1"
+            onChange={(event) =>
+              onChange("faltasConsecutivasMin", event.target.value)
+            }
+            placeholder="Sem mínimo"
+            type="number"
+            value={filters.faltasConsecutivasMin}
+            variant="white"
+          />
+        </div>
       </div>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">

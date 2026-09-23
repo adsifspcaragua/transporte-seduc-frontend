@@ -1,7 +1,6 @@
 "use client";
 
 import axios from "axios";
-import { ClipboardList } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
@@ -203,39 +202,26 @@ export function JustificativasWorkspace() {
   const { meta } = response;
 
   return (
-    <section className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-brand-600">
-            Justificativas de faltas
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm text-content-secondary">
-            Consulte os pedidos enviados e registre a decisão administrativa.
-          </p>
-        </div>
-        <div className="inline-flex w-fit items-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-bold text-amber-800">
-          <ClipboardList aria-hidden="true" className="size-4" />
-          {response.em_analise} em análise
-        </div>
-      </header>
-
+    <section>
       {successMessage && (
-        <output className="block rounded-lg border border-green-600/20 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+        <output className="mb-5 block rounded-lg border border-green-600/20 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
           <span className="block">{successMessage}</span>
           {alertMessage && <span className="mt-1 block">{alertMessage}</span>}
         </output>
       )}
 
-      <JustificativasFilterCard
-        disabled={loading}
-        filters={filters}
-        linhas={linhas}
-        onApply={applyFilters}
-        onChange={(field, value) =>
-          setFilters((current) => ({ ...current, [field]: value }))
-        }
-        onClear={clearFilters}
-      />
+      <div className="mb-6">
+        <JustificativasFilterCard
+          disabled={loading}
+          filters={filters}
+          linhas={linhas}
+          onApply={applyFilters}
+          onChange={(field, value) =>
+            setFilters((current) => ({ ...current, [field]: value }))
+          }
+          onClear={clearFilters}
+        />
+      </div>
 
       <JustificativasTable
         allowAnalysis={canAnalyze}
