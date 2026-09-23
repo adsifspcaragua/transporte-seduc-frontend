@@ -202,10 +202,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const selectedOption = parsedOptions.find(
       (option) => option.value === selectedValue,
     );
-    const hasSelectedValue = Boolean(selectedValue && selectedOption);
+    const hasSelectedOption = Boolean(selectedOption);
     const displayLabel = selectedOption?.label ?? "";
     const displayText = displayLabel || (!label ? placeholder : "");
-    const shouldFloatLabel = isOpen || hasSelectedValue;
+    const shouldFloatLabel = isOpen || hasSelectedOption;
     const hasError = Boolean(error);
 
     function setSelectRef(node: HTMLSelectElement | null) {
@@ -409,7 +409,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             <span
               className={cn(
                 "min-w-0 truncate",
-                !hasSelectedValue && variantClasses[variant].placeholder,
+                !selectedValue && variantClasses[variant].placeholder,
               )}
             >
               {displayText}
