@@ -7,7 +7,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/buttons";
 import { Modal } from "@/components/modal";
 import { UserFormModal } from "@/components/ui/users/UserFormModal";
-import { UsersSkeleton } from "@/components/ui/users/UsersSkeleton";
 import { UsersTable } from "@/components/ui/users/UsersTable";
 import { useAuthStore } from "@/contexts/auth-store";
 import { useAuthz } from "@/hooks/use-authz";
@@ -177,7 +176,7 @@ export function UsersWorkspace() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <section className="mx-auto max-w-7xl space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-brand-600">
@@ -205,40 +204,22 @@ export function UsersWorkspace() {
           {successMessage}
         </output>
       )}
-      {loadError && (
-        <div
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3"
-          role="alert"
-        >
-          <p className="text-sm font-medium text-danger-600">{loadError}</p>
-          <Button
-            fullWidth={false}
-            onClick={() => void loadUsers()}
-            size="sm"
-            variant="ghost"
-          >
-            Tentar novamente
-          </Button>
-        </div>
-      )}
-
-      {loading ? (
-        <UsersSkeleton />
-      ) : (
-        <UsersTable
-          canDelete={canDelete}
-          canWrite={canWrite}
-          currentUserId={currentUserId}
-          loadingUserId={loadingUserId}
-          onDelete={(user) => {
-            setDeleteError("");
-            setDeleting(user);
-          }}
-          onEdit={(user) => openForm(user)}
-          onToggleStatus={(user) => void toggleStatus(user)}
-          users={users}
-        />
-      )}
+      <UsersTable
+        canDelete={canDelete}
+        canWrite={canWrite}
+        currentUserId={currentUserId}
+        data={users}
+        errorMessage={loadError}
+        loading={loading}
+        loadingUserId={loadingUserId}
+        onDelete={(user) => {
+          setDeleteError("");
+          setDeleting(user);
+        }}
+        onEdit={(user) => openForm(user)}
+        onRetry={() => void loadUsers()}
+        onToggleStatus={(user) => void toggleStatus(user)}
+      />
 
       <UserFormModal
         error={formError}
@@ -276,6 +257,6 @@ export function UsersWorkspace() {
           </p>
         )}
       </Modal>
-    </div>
+    </section>
   );
 }

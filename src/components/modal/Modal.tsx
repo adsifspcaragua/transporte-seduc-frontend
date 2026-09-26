@@ -202,7 +202,7 @@ export function Modal({
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex min-h-screen items-center justify-center p-4">
+    <div className="fixed inset-0 z-[80] flex min-h-screen items-start justify-center p-4">
       <button
         aria-label="Fechar modal"
         className="absolute inset-0 cursor-default bg-overlay/45"

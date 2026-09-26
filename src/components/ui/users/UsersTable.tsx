@@ -1,6 +1,7 @@
 import { Pencil, Power, PowerOff, Trash2 } from "lucide-react";
 
 import { DataTable, TableActionButton } from "@/components/table";
+import { UsersTableSkeleton } from "@/components/ui/users/UsersSkeleton";
 import {
   canChangeUserStatusOrDelete,
   getUserRoleLabel,
@@ -9,14 +10,17 @@ import type { SystemUser } from "@/types/user";
 import { cn } from "@/utils/cn";
 
 type UsersTableProps = {
-  users: SystemUser[];
+  data: SystemUser[];
   currentUserId?: number;
   canWrite: boolean;
   canDelete: boolean;
+  errorMessage?: string;
+  loading?: boolean;
   loadingUserId: number | null;
   onEdit: (user: SystemUser) => void;
   onToggleStatus: (user: SystemUser) => void;
   onDelete: (user: SystemUser) => void;
+  onRetry: () => void;
 };
 
 const columns = [
@@ -31,22 +35,30 @@ const gridClassName =
   "md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.35fr)_9rem_7rem_10rem] md:gap-3";
 
 export function UsersTable({
-  users,
+  data,
   currentUserId,
   canWrite,
   canDelete,
+  errorMessage = "",
+  loading = false,
   loadingUserId,
   onEdit,
   onToggleStatus,
   onDelete,
+  onRetry,
 }: UsersTableProps) {
   return (
     <DataTable
       columns={columns}
-      data={users}
+      data={data}
       emptyMessage="Nenhum usuário cadastrado."
+      errorMessage={errorMessage}
+      errorTitle="Não foi possível carregar os usuários"
       getRowKey={(user) => user.id}
       gridClassName={gridClassName}
+      loading={loading}
+      onRetry={onRetry}
+      skeleton={<UsersTableSkeleton />}
       renderRow={(user) => {
         const canChangeStatusOrDelete = canChangeUserStatusOrDelete(
           user.id,

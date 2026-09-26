@@ -12,6 +12,7 @@ import {
   type SelectHTMLAttributes,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -24,6 +25,8 @@ type SelectOption = {
   value: string;
   disabled?: boolean;
 };
+
+type ListboxPlacement = "top" | "bottom";
 
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   label?: string;
@@ -145,6 +148,22 @@ function getNextEnabledIndex(
   return -1;
 }
 
+function getOverflowContainer(element: HTMLElement) {
+  let parent = element.parentElement;
+
+  while (parent) {
+    const { overflowY } = window.getComputedStyle(parent);
+
+    if (["auto", "scroll", "hidden", "clip"].includes(overflowY)) {
+      return parent;
+    }
+
+    parent = parent.parentElement;
+  }
+
+  return null;
+}
+
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
   (
     {
@@ -180,9 +199,13 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const listboxId = `${selectId}-listbox`;
     const rootRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const listboxRef = useRef<HTMLDivElement>(null);
     const selectRef = useRef<HTMLSelectElement | null>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(-1);
+    const [listboxPlacement, setListboxPlacement] =
+      useState<ListboxPlacement>("bottom");
+    const [listboxMaxHeight, setListboxMaxHeight] = useState<number>();
     const [internalValue, setInternalValue] = useState(() =>
       normalizeValue(defaultValue),
     );
@@ -207,6 +230,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const displayText = displayLabel || (!label ? placeholder : "");
     const shouldFloatLabel = isOpen || hasSelectedOption;
     const hasError = Boolean(error);
+    const shouldRenderListboxInPopover = Boolean(
+      triggerRef.current?.closest('[role="dialog"]'),
+    );
 
     function setSelectRef(node: HTMLSelectElement | null) {
       selectRef.current = node;
@@ -322,6 +348,115 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       };
     }, [allOptions, isOpen, selectedValue]);
 
+    useLayoutEffect(() => {
+      if (
+        !isOpen ||
+        !triggerRef.current ||
+        shouldRenderListboxInPopover
+      ) {
+        return;
+      }
+
+      const trigger = triggerRef.current;
+
+      function updateListboxPlacement() {
+        const triggerRect = trigger.getBoundingClientRect();
+
+        const overflowContainer = getOverflowContainer(trigger);
+        const containerRect = overflowContainer?.getBoundingClientRect();
+        const viewportTop = containerRect?.top ?? 0;
+        const viewportBottom = containerRect?.bottom ?? window.innerHeight;
+        const spacing = 8;
+        const availableAbove = Math.max(
+          0,
+          triggerRect.top - viewportTop - spacing,
+        );
+        const availableBelow = Math.max(
+          0,
+          viewportBottom - triggerRect.bottom - spacing,
+        );
+        const desiredHeight = Math.min(
+          256,
+          Math.max(48, allOptions.length * 48),
+        );
+        const shouldOpenAbove =
+          availableBelow < desiredHeight && availableAbove > availableBelow;
+        const availableHeight = shouldOpenAbove
+          ? availableAbove
+          : availableBelow;
+
+        setListboxPlacement(shouldOpenAbove ? "top" : "bottom");
+        setListboxMaxHeight(Math.min(256, availableHeight));
+      }
+
+      updateListboxPlacement();
+      window.addEventListener("resize", updateListboxPlacement);
+      window.addEventListener("scroll", updateListboxPlacement, true);
+
+      return () => {
+        window.removeEventListener("resize", updateListboxPlacement);
+        window.removeEventListener("scroll", updateListboxPlacement, true);
+      };
+    }, [allOptions.length, isOpen, shouldRenderListboxInPopover]);
+
+    useLayoutEffect(() => {
+      if (
+        !isOpen ||
+        !shouldRenderListboxInPopover ||
+        !triggerRef.current ||
+        !listboxRef.current
+      ) {
+        return;
+      }
+
+      const trigger = triggerRef.current;
+      const listbox = listboxRef.current;
+
+      listbox.showPopover();
+
+      function positionListbox() {
+        const triggerRect = trigger.getBoundingClientRect();
+        const spacing = 8;
+        const desiredHeight = Math.min(256, Math.max(48, listbox.offsetHeight));
+        const availableBelow = window.innerHeight - triggerRect.bottom - spacing;
+        const top =
+          availableBelow >= desiredHeight
+            ? triggerRect.bottom + spacing
+            : Math.max(spacing, triggerRect.top - desiredHeight - spacing);
+        listbox.style.width = `${triggerRect.width}px`;
+        const left = Math.max(
+          spacing,
+          Math.min(
+            triggerRect.left,
+            window.innerWidth - listbox.offsetWidth - spacing,
+          ),
+        );
+
+        listbox.style.maxHeight = `${Math.min(
+          desiredHeight,
+          Math.max(spacing, window.innerHeight - spacing * 2),
+        )}px`;
+        listbox.style.top = `${top}px`;
+        listbox.style.left = `${left}px`;
+      }
+
+      positionListbox();
+      const resizeObserver = new ResizeObserver(positionListbox);
+      resizeObserver.observe(listbox);
+      window.addEventListener("resize", positionListbox);
+      window.addEventListener("scroll", positionListbox, true);
+
+      return () => {
+        resizeObserver.disconnect();
+        window.removeEventListener("resize", positionListbox);
+        window.removeEventListener("scroll", positionListbox, true);
+
+        if (listbox.matches(":popover-open")) {
+          listbox.hidePopover();
+        }
+      };
+    }, [isOpen, shouldRenderListboxInPopover]);
+
     useEffect(() => {
       const trigger = triggerRef.current;
 
@@ -397,7 +532,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             onClick={() => setIsOpen((current) => !current && !disabled)}
             onKeyDown={handleKeyDown}
             className={cn(
-              "peer flex h-10 w-full cursor-pointer items-center justify-between gap-3 px-3.5 text-left text-sm font-normal outline-none transition-all duration-200 disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
+              "peer flex h-10 w-full cursor-pointer items-center justify-between gap-3 px-3.5 text-left text-sm font-medium outline-none transition-all duration-200 disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
               variantClasses[variant].field,
               hasError
                 ? "border-danger-600 focus:border-danger-600"
@@ -450,13 +585,30 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
 
           {isOpen && (
             <div
+              ref={listboxRef}
               id={listboxId}
+              popover={
+                shouldRenderListboxInPopover ? "manual" : undefined
+              }
               role="listbox"
               aria-labelledby={selectId}
               className={cn(
-                "select-scrollbar absolute left-0 top-full z-[60] mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-border-subtle bg-surface-primary py-1 text-sm text-content-primary shadow-xl shadow-content-primary/10",
+                "select-scrollbar z-[60] w-full overflow-y-auto rounded-lg border border-border-subtle bg-surface-primary py-1 text-sm text-content-primary shadow-xl shadow-content-primary/10",
+                shouldRenderListboxInPopover
+                  ? "fixed inset-auto m-0"
+                  : cn(
+                      "absolute left-0",
+                      listboxPlacement === "top"
+                        ? "bottom-full mb-2"
+                        : "top-full mt-2",
+                    ),
                 listboxClassName,
               )}
+              style={
+                shouldRenderListboxInPopover
+                  ? undefined
+                  : { maxHeight: listboxMaxHeight }
+              }
             >
               {allOptions.length > 0 ? (
                 allOptions.map((option, index) => {
