@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useMemo } from "react";
+import { AppLoadingScreen } from "@/components/loading";
 import { useAuthStore } from "@/contexts/auth-store";
 import { authService } from "@/services/api/modules/auth";
 
@@ -80,15 +81,15 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   }, [status, isPublicRoute, isGuestOnlyRoute, router]);
 
   if (status === "unknown") {
-    return null;
+    return <AppLoadingScreen />;
   }
 
   if (!isPublicRoute && status === "guest") {
-    return null;
+    return <AppLoadingScreen />;
   }
 
   if (isGuestOnlyRoute && status === "authenticated") {
-    return null;
+    return <AppLoadingScreen />;
   }
 
   return children;
