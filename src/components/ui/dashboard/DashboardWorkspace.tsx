@@ -2,109 +2,173 @@
 
 import axios from "axios";
 import {
-  Bus,
+  AlertTriangle,
+  BusFront,
+  CalendarDays,
+  ChevronRight,
   ClipboardEdit,
-  GraduationCap,
-  MapPinOff,
-  RotateCcw,
+  FileText,
+  RefreshCw,
+  Settings2,
+  UsersRound,
 } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 
 import { DashboardSkeleton } from "@/components/ui/dashboard/DashboardSkeleton";
 import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { dashboardService } from "@/services/api/modules/dashboard";
 import type { DashboardLinha, DashboardResumo } from "@/types/dashboard";
+import { cn } from "@/utils/cn";
 
 type ApiError = { message?: string };
+type Tone = "amber" | "blue" | "purple" | "red";
 
 function errorMessage(error: unknown) {
-  if (!axios.isAxiosError<ApiError>(error)) {
+  if (!axios.isAxiosError<ApiError>(error))
     return "Não foi possível carregar o resumo.";
-  }
   return error.response?.data?.message ?? "Não foi possível carregar o resumo.";
 }
 
-/**
- * Estado do meter de ocupação.
- *
- * A cor sozinha nunca carrega a informação: cada meter mostra o número de
- * lugares e uma etiqueta em texto. O âmbar tem contraste baixo sobre o branco,
- * e é justamente o rótulo visível que o torna aceitável — escurecê-lo o
- * deixaria indistinguível do vermelho de "lotada".
- */
 function estadoDaLinha(linha: DashboardLinha) {
   const capacidade = linha.max_capacity || 0;
-  const proporcao = capacidade > 0 ? linha.ocupacao / capacidade : 0;
-
-  if (capacidade > 0 && linha.ocupacao >= capacidade) {
-    return { rotulo: "Lotada", cor: "bg-danger-600", proporcao: 1 };
-  }
-
-  if (proporcao >= 0.85) {
+  const proportion = capacidade > 0 ? linha.ocupacao / capacidade : 0;
+  if (capacidade > 0 && linha.ocupacao >= capacidade)
+    return { label: "Lotada", className: "bg-danger-600", proportion: 1 };
+  if (proportion >= 0.85)
     return {
-      rotulo: `${linha.vagas_restantes} vaga(s)`,
-      cor: "bg-amber-500",
-      proporcao,
+      label: `${linha.vagas_restantes} vaga(s)`,
+      className: "bg-amber-500",
+      proportion,
     };
-  }
-
   return {
-    rotulo: `${linha.vagas_restantes} vaga(s)`,
-    cor: "bg-brand-600",
-    proporcao,
+    label: `${linha.vagas_restantes} vaga(s)`,
+    className: "bg-blue-500",
+    proportion,
   };
 }
 
-/** Cartão de pendência: um número que exige ação e leva para onde agir. */
-function PendenciaTile({
+function AttentionTile({
   href,
-  icon,
+  icon: Icon,
   label,
+  tone,
   value,
 }: {
   href: string;
-  icon: ReactNode;
+  icon: ComponentType<{ className?: string }>;
   label: string;
+  tone: Tone;
   value: number;
 }) {
-  const vazio = value === 0;
+  const styles = {
+    amber: [
+      "border-amber-200 bg-amber-50/70 hover:bg-amber-50",
+      "bg-amber-100 text-amber-600",
+      "border-amber-200 text-amber-600",
+    ],
+    blue: [
+      "border-blue-200 bg-blue-50/70 hover:bg-blue-50",
+      "bg-blue-100 text-blue-600",
+      "border-blue-200 text-blue-600",
+    ],
+    purple: [
+      "border-violet-200 bg-violet-50/70 hover:bg-violet-50",
+      "bg-violet-100 text-violet-600",
+      "border-violet-200 text-violet-600",
+    ],
+    red: [
+      "border-red-200 bg-red-50/70 hover:bg-red-50",
+      "bg-red-100 text-danger-600",
+      "border-red-200 text-danger-600",
+    ],
+  }[tone];
 
   return (
     <Link
-      className="flex items-start gap-3 rounded-lg bg-white p-5 shadow-sm transition-colors hover:bg-brand-600/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+      className={cn(
+        "group flex min-h-25 gap-3 rounded-xl border p-4 shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
+        styles[0],
+      )}
       href={href}
     >
       <span
-        className={`mt-0.5 [&>svg]:size-5 ${vazio ? "text-content-muted" : "text-brand-600"}`}
+        className={cn(
+          "flex size-10 shrink-0 items-center justify-center rounded-full",
+          styles[1],
+        )}
       >
-        {icon}
+        <Icon className="size-5" />
       </span>
-      <span className="flex flex-col">
-        <span
-          className={`text-2xl font-semibold ${vazio ? "text-content-muted" : "text-slate-800"}`}
-        >
+      <span className="min-w-0 flex-1">
+        <span className="block text-2xl font-bold tabular-nums text-content-primary">
           {value}
         </span>
-        <span className="text-sm font-medium text-content-secondary">
+        <span className="mt-1 block text-sm font-medium leading-5 text-content-secondary">
           {label}
         </span>
+      </span>
+      <span
+        className={cn(
+          "mt-1 flex size-7 shrink-0 items-center justify-center rounded-full border bg-white",
+          styles[2],
+        )}
+      >
+        <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
       </span>
     </Link>
   );
 }
 
-/** Linha de panorama: rótulo e valor, sem disputar atenção com as pendências. */
-function ResumoItem({ label, value }: { label: string; value: number }) {
+function SummaryItem({
+  label,
+  tone = "blue",
+  value,
+}: {
+  label: string;
+  tone?: "amber" | "blue" | "green" | "red";
+  value: number;
+}) {
+  const color = {
+    amber: "bg-amber-100 text-amber-700",
+    blue: "bg-blue-100 text-blue-700",
+    green: "bg-green-100 text-green-700",
+    red: "bg-red-100 text-red-700",
+  }[tone];
   return (
-    <div className="flex items-center justify-between gap-3 py-2">
+    <div className="flex items-center justify-between gap-3 border-b border-border-subtle py-2.5 last:border-b-0 last:pb-0">
       <span className="text-sm font-medium text-content-secondary">
         {label}
       </span>
-      <span className="text-sm font-semibold tabular-nums text-slate-800">
+      <span
+        className={cn(
+          "min-w-7 rounded-md px-2 py-0.5 text-center text-xs font-bold tabular-nums",
+          color,
+        )}
+      >
         {value}
       </span>
+    </div>
+  );
+}
+
+function PanelHeader({
+  action,
+  icon,
+  title,
+}: {
+  action: ReactNode;
+  icon: ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="mb-2 flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-2 text-base font-bold text-brand-700">
+        <span className="[&>svg]:size-5">{icon}</span>
+        {title}
+      </h2>
+      {action}
     </div>
   );
 }
@@ -114,7 +178,6 @@ export function DashboardWorkspace() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
   const showPageSkeleton = useMinimumVisibleLoading(loading);
-
   const carregar = useCallback(async () => {
     try {
       setLoading(true);
@@ -130,20 +193,15 @@ export function DashboardWorkspace() {
   useEffect(() => {
     void carregar();
   }, [carregar]);
-
-  if (showPageSkeleton) {
-    return <DashboardSkeleton />;
-  }
-
-  if (erro || !resumo) {
+  if (showPageSkeleton) return <DashboardSkeleton />;
+  if (erro || !resumo)
     return (
-      <main className="mx-auto max-w-6xl p-4 sm:p-6">
-        <p className="rounded-md bg-danger-600/10 px-3 py-2 text-sm font-medium text-danger-600">
+      <main className="mx-auto max-w-7xl p-4 sm:p-6">
+        <p className="rounded-lg border border-danger-600/20 bg-danger-600/10 px-4 py-3 text-sm font-medium text-danger-600">
           {erro || "Não foi possível carregar o resumo."}
         </p>
       </main>
     );
-  }
 
   const { estudantes, inscricoes, recadastro, linhas } = resumo;
   const periodo = recadastro.periodo;
@@ -151,102 +209,135 @@ export function DashboardWorkspace() {
     linhas.capacidade_total > 0
       ? Math.round((linhas.ocupacao_total / linhas.capacidade_total) * 100)
       : 0;
+  const actionLink =
+    "rounded-lg border border-brand-600/15 bg-brand-050 px-3 py-1.5 text-xs font-bold text-brand-700 transition-colors hover:bg-brand-100";
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
-      <section className="rounded-lg bg-white p-6 shadow-sm">
-        <p className="text-sm font-medium text-content-secondary">
-          Estudantes com transporte ativo
-        </p>
-        <p className="mt-1 text-5xl font-semibold text-brand-700">
-          {estudantes.ativos}
-        </p>
-        <p className="mt-2 text-sm text-content-muted">
-          {estudantes.total} cadastrado(s) no total · {estudantes.aprovados}{" "}
-          aprovados · {estudantes.recusados} recusados ·{" "}
-          {estudantes.lista_de_espera} em espera · {estudantes.inativos}{" "}
-          inativo(s)
-        </p>
+    <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+      <section className="relative overflow-hidden rounded-xl border border-brand-600/10 bg-gradient-to-r from-white via-white to-brand-050 p-5 shadow-sm sm:p-6">
+        <div className="relative z-10 flex items-start gap-4">
+          <span className="flex size-15 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700 shadow-sm [&>svg]:size-8">
+            <BusFront />
+          </span>
+          <div>
+            <p className="text-sm font-bold text-content-primary">
+              Estudantes com transporte ativo
+            </p>
+            <p className="mt-1 text-5xl font-bold tabular-nums text-brand-700">
+              {estudantes.ativos}
+            </p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-content-muted">
+              {estudantes.total} cadastrado(s) no total · {estudantes.aprovados}{" "}
+              aprovados · {estudantes.recusados} recusados ·{" "}
+              {estudantes.lista_de_espera} em espera · {estudantes.inativos}{" "}
+              inativo(s)
+            </p>
+          </div>
+        </div>
+        <BusFront
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-4 bottom-[-2.75rem] size-52 text-blue-500/10 sm:right-14 sm:size-64"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_70%_25%,rgba(255,255,255,.9),transparent_25%),linear-gradient(135deg,transparent_40%,rgba(147,197,253,.25))]"
+        />
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-content-secondary">
-          Precisa da sua atenção
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <PendenciaTile
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-content-primary">
+              Precisa da sua atenção
+            </h1>
+            <p className="mt-0.5 text-sm text-content-muted">
+              Acompanhe os principais itens que necessitam de análise.
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-white px-3 py-2 text-xs font-semibold text-content-secondary shadow-sm">
+            <CalendarDays className="size-4 text-brand-600" />
+            {periodo ? `Período ${periodo.referencia}` : "Sem período aberto"}
+          </span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <AttentionTile
             href="/solicitacoes"
-            icon={<ClipboardEdit />}
+            icon={ClipboardEdit}
             label="Inscrições aguardando análise"
+            tone="amber"
             value={inscricoes.em_analise}
           />
-          <PendenciaTile
+          <AttentionTile
             href="/recadastramento"
-            icon={<RotateCcw />}
+            icon={RefreshCw}
             label="Recadastros aguardando análise"
+            tone="blue"
             value={recadastro.em_analise}
           />
-          <PendenciaTile
+          <AttentionTile
             href="/estudantes"
-            icon={<MapPinOff />}
+            icon={UsersRound}
             label="Estudantes ativos sem linha"
+            tone="purple"
             value={estudantes.sem_linha}
           />
-          <PendenciaTile
+          <AttentionTile
             href="/recadastramento"
-            icon={<GraduationCap />}
+            icon={AlertTriangle}
             label={
               periodo
                 ? "Ativos sem recadastro no período"
                 : "Sem período de recadastro aberto"
             }
+            tone="red"
             value={recadastro.ausentes}
           />
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <section className="rounded-lg bg-white p-5 shadow-sm">
-          <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-brand-700">
-              <Bus className="size-5" />
-              <h2 className="text-lg font-bold">Ocupação das linhas</h2>
-            </div>
-            <Link
-              className="text-sm font-semibold text-brand-600 hover:underline"
-              href="/linhas"
-            >
-              Gerenciar linhas
-            </Link>
-          </div>
-          <p className="mb-4 text-sm text-content-muted">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,.8fr)]">
+        <section className="rounded-xl border border-border-subtle bg-white p-5 shadow-sm sm:p-6">
+          <PanelHeader
+            action={
+              <Link
+                className={cn(actionLink, "inline-flex items-center gap-1.5")}
+                href="/linhas"
+              >
+                <Settings2 className="size-3.5" />
+                Gerenciar linhas
+              </Link>
+            }
+            icon={<BusFront />}
+            title="Ocupação das linhas"
+          />
+          <p className="mb-5 text-sm text-content-muted">
             {linhas.ocupacao_total} de {linhas.capacidade_total} lugares
             ocupados ({ocupacaoGeral}%). Conta apenas estudantes ativos.
           </p>
-
           {linhas.lista.length === 0 ? (
-            <p className="text-sm font-medium text-slate-700">
+            <p className="text-sm font-medium text-content-secondary">
               Nenhuma linha cadastrada.
             </p>
           ) : (
             <ul className="space-y-4">
               {linhas.lista.map((linha) => {
-                const { rotulo, cor, proporcao } = estadoDaLinha(linha);
-
+                const { label, className, proportion } = estadoDaLinha(linha);
                 return (
                   <li key={linha.id}>
-                    <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-                      <span className="text-sm font-semibold text-slate-800">
+                    <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+                      <span className="font-bold text-content-primary">
                         {linha.name}
                       </span>
-                      <span className="text-sm tabular-nums text-content-muted">
-                        {linha.ocupacao} de {linha.max_capacity} · {rotulo}
+                      <span className="text-xs font-medium tabular-nums text-content-muted">
+                        {linha.ocupacao} de {linha.max_capacity} vagas · {label}
                       </span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-brand-100">
+                    <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className={`h-full rounded-full ${cor}`}
-                        style={{ width: `${Math.min(1, proporcao) * 100}%` }}
+                        className={cn("h-full rounded-full", className)}
+                        style={{
+                          width: `${Math.round(Math.min(1, proportion) * 100)}%`,
+                        }}
                       />
                     </div>
                   </li>
@@ -255,57 +346,68 @@ export function DashboardWorkspace() {
             </ul>
           )}
         </section>
-
-        <div className="space-y-6">
-          <section className="rounded-lg bg-white p-5 shadow-sm">
-            <h2 className="mb-2 text-lg font-bold text-brand-700">
-              Inscrições
-            </h2>
-            <div className="divide-y divide-border-subtle">
-              <ResumoItem label="Em análise" value={inscricoes.em_analise} />
-              <ResumoItem
-                label="Incompletas (lista de espera)"
-                value={inscricoes.incompletas}
-              />
-              <ResumoItem label="Aprovadas" value={inscricoes.aprovadas} />
-              <ResumoItem label="Rejeitadas" value={inscricoes.rejeitadas} />
-            </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+          <section className="rounded-xl border border-border-subtle bg-white p-5 shadow-sm">
+            <PanelHeader
+              action={
+                <Link className={actionLink} href="/solicitacoes">
+                  Ver todas
+                </Link>
+              }
+              icon={<FileText />}
+              title="Inscrições"
+            />
+            <SummaryItem label="Em análise" value={inscricoes.em_analise} />
+            <SummaryItem
+              label="Incompletas (lista de espera)"
+              tone="amber"
+              value={inscricoes.incompletas}
+            />
+            <SummaryItem
+              label="Aprovadas"
+              tone="green"
+              value={inscricoes.aprovadas}
+            />
+            <SummaryItem
+              label="Rejeitadas"
+              tone="red"
+              value={inscricoes.rejeitadas}
+            />
           </section>
-
-          <section className="rounded-lg bg-white p-5 shadow-sm">
-            <h2 className="mb-2 text-lg font-bold text-brand-700">
-              Recadastro
-            </h2>
+          <section className="rounded-xl border border-border-subtle bg-white p-5 shadow-sm">
+            <PanelHeader
+              action={
+                <Link className={actionLink} href="/recadastramento">
+                  Detalhes
+                </Link>
+              }
+              icon={<RefreshCw />}
+              title="Recadastro"
+            />
             {periodo ? (
               <>
-                <p className="mb-2 text-sm text-content-muted">
+                <p className="mb-1 text-xs text-content-muted">
                   Período {periodo.referencia} · {periodo.status}
-                  {periodo.data_fim ? ` · até ${periodo.data_fim}` : ""}
+                  {periodo.data_fim ? ` até ${periodo.data_fim}` : ""}
                 </p>
-                <div className="divide-y divide-border-subtle">
-                  <ResumoItem
-                    label="Aguardando análise"
-                    value={recadastro.em_analise}
-                  />
-                  <ResumoItem
-                    label="Devolvidos para correção"
-                    value={recadastro.pendencias}
-                  />
-                  <ResumoItem
-                    label="Ativos que não recadastraram"
-                    value={recadastro.ausentes}
-                  />
-                </div>
+                <SummaryItem
+                  label="Aguardando análise"
+                  value={recadastro.em_analise}
+                />
+                <SummaryItem
+                  label="Devolvidos para correção"
+                  tone="amber"
+                  value={recadastro.pendencias}
+                />
+                <SummaryItem
+                  label="Ativos que não recadastraram"
+                  tone="red"
+                  value={recadastro.ausentes}
+                />
               </>
             ) : (
-              <p className="text-sm font-medium text-slate-700">
-                Nenhum período de recadastro aberto.{" "}
-                <Link
-                  className="font-semibold text-brand-600 hover:underline"
-                  href="/recadastramento"
-                >
-                  Abrir um período
-                </Link>
+              <p className="text-sm font-medium text-content-secondary">
+                Nenhum período de recadastro aberto.
               </p>
             )}
           </section>

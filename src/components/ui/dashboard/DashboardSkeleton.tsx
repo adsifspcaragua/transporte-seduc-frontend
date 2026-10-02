@@ -6,13 +6,18 @@ export function DashboardSkeleton() {
       aria-busy="true"
       aria-label="Carregando dashboard"
       aria-live="polite"
-      className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6"
+      className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6"
     >
       <div aria-hidden="true" className="space-y-6">
-        <div className="rounded-lg bg-white p-6 shadow-sm">
-          <Skeleton className="h-5 w-60 max-w-full rounded-full" />
-          <Skeleton className="mt-1 h-12 w-16 rounded-lg" />
-          <Skeleton className="mt-2 h-5 w-96 max-w-full rounded-full" />
+        <div className="rounded-xl border border-brand-600/10 bg-white p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <Skeleton className="size-15 shrink-0 rounded-xl" />
+            <div>
+              <Skeleton className="h-5 w-60 max-w-full rounded-full" />
+              <Skeleton className="mt-2 h-12 w-16 rounded-lg" />
+              <Skeleton className="mt-3 h-5 w-96 max-w-full rounded-full" />
+            </div>
+          </div>
         </div>
 
         <div>
@@ -21,7 +26,7 @@ export function DashboardSkeleton() {
             {["inscricoes", "recadastros", "sem-linha", "ausentes"].map(
               (key) => (
                 <div
-                  className="flex items-start gap-3 rounded-lg bg-white p-5 shadow-sm"
+                  className="flex min-h-25 items-start gap-3 rounded-xl border border-border-subtle bg-white p-4 shadow-sm"
                   key={key}
                 >
                   <Skeleton className="mt-0.5 size-5 shrink-0 rounded" />
@@ -38,8 +43,8 @@ export function DashboardSkeleton() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <div className="rounded-lg bg-white p-5 shadow-sm">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,.8fr)]">
+          <div className="rounded-xl border border-border-subtle bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Skeleton className="size-5 shrink-0 rounded" />
@@ -61,8 +66,8 @@ export function DashboardSkeleton() {
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-lg bg-white p-5 shadow-sm">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <div className="rounded-xl border border-border-subtle bg-white p-5 shadow-sm">
               <Skeleton className="mb-2 h-7 w-28 rounded-full" />
               <div className="divide-y divide-border-subtle">
                 {["em-analise", "incompletas", "aprovadas", "rejeitadas"].map(
@@ -79,7 +84,7 @@ export function DashboardSkeleton() {
               </div>
             </div>
 
-            <div className="rounded-lg bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-border-subtle bg-white p-5 shadow-sm">
               <Skeleton className="mb-2 h-7 w-28 rounded-full" />
               <Skeleton className="h-5 w-full rounded-full" />
             </div>
