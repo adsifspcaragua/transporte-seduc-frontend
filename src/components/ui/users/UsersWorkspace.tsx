@@ -1,15 +1,17 @@
 "use client";
 
 import axios from "axios";
-import { Plus, Users } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/buttons";
 import { Modal } from "@/components/modal";
 import { UserFormModal } from "@/components/ui/users/UserFormModal";
+import { UsersPageSkeleton } from "@/components/ui/users/UsersSkeleton";
 import { UsersTable } from "@/components/ui/users/UsersTable";
 import { useAuthStore } from "@/contexts/auth-store";
 import { useAuthz } from "@/hooks/use-authz";
+import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
 import { authService } from "@/services/api/modules/auth";
 import { userService } from "@/services/api/modules/user";
 import type {
@@ -38,6 +40,7 @@ export function UsersWorkspace() {
   const canDelete = can("users.delete");
   const [users, setUsers] = useState<SystemUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [formOpen, setFormOpen] = useState(false);
@@ -64,7 +67,10 @@ export function UsersWorkspace() {
         );
       }
     } finally {
-      if (id === requestId.current) setLoading(false);
+      if (id === requestId.current) {
+        setLoading(false);
+        setHasLoaded(true);
+      }
     }
   }, []);
 
@@ -74,6 +80,8 @@ export function UsersWorkspace() {
       requestId.current += 1;
     };
   }, [loadUsers]);
+
+  const showPageSkeleton = useMinimumVisibleLoading(loading && !hasLoaded);
 
   function openForm(user: SystemUser | null) {
     setEditing(user);
@@ -175,20 +183,17 @@ export function UsersWorkspace() {
     }
   }
 
+  if (showPageSkeleton) {
+    return <UsersPageSkeleton />;
+  }
+
   return (
-    <section className="mx-auto max-w-7xl space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-brand-600">
-            <Users aria-hidden="true" className="size-6" />
-            Usuários
-          </h1>
-          <p className="mt-1 text-sm text-content-secondary">
-            Gerencie acessos, papéis e a situação dos usuários do sistema.
-          </p>
-        </div>
+    <section>
+      <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-brand-600">Usuários</h1>
         {canWrite && (
           <Button
+            className="h-10 px-4 text-sm"
             fullWidth={false}
             leftIcon={<Plus aria-hidden="true" />}
             onClick={() => openForm(null)}

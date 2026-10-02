@@ -190,38 +190,42 @@ export function RecadastroPeriodosSection({
                 value={sortOrder}
               />
             </div>
-            <fieldset className="flex h-10 items-center gap-1 rounded-lg border-2 border-border-default bg-surface-primary p-1">
-              <legend className="sr-only">
-                Modo de visualização dos períodos
-              </legend>
-              <Button
-                aria-label="Visualizar períodos em grade"
-                aria-pressed={viewMode === "grid"}
-                className={cn(
-                  "size-7 rounded-md border-0 p-0 shadow-none",
-                  viewMode !== "grid" && "bg-transparent",
-                )}
-                fullWidth={false}
-                leftIcon={<LayoutGrid />}
-                onClick={() => setViewMode("grid")}
-                size="icon"
-                title="Visualização em grade"
-                variant={viewMode === "grid" ? "primary" : "ghost"}
-              />
-              <Button
-                aria-label="Visualizar períodos em lista"
-                aria-pressed={viewMode === "list"}
-                className={cn(
-                  "size-7 rounded-md border-0 p-0 shadow-none",
-                  viewMode !== "list" && "bg-transparent",
-                )}
-                fullWidth={false}
-                leftIcon={<List />}
-                onClick={() => setViewMode("list")}
-                size="icon"
-                title="Visualização em lista"
-                variant={viewMode === "list" ? "primary" : "ghost"}
-              />
+            <fieldset
+              aria-label="Modo de exibição dos períodos"
+              className="inline-flex h-10 shrink-0 overflow-hidden rounded-lg border border-brand-600/20 bg-white"
+            >
+              {(
+                [
+                  { value: "list", label: "Visualizar em lista", icon: List },
+                  {
+                    value: "grid",
+                    label: "Visualizar em cards",
+                    icon: LayoutGrid,
+                  },
+                ] as const
+              ).map((option) => {
+                const selected = viewMode === option.value;
+                const Icon = option.icon;
+
+                return (
+                  <Button
+                    aria-label={option.label}
+                    aria-pressed={selected}
+                    className={cn(
+                      "h-full w-14 rounded-none border-0 shadow-none first:border-r first:border-brand-600/20 focus-visible:-outline-offset-2 active:scale-100",
+                      selected
+                        ? "bg-action-light-default text-brand-700 hover:bg-action-light-hover"
+                        : "bg-white text-content-secondary hover:bg-surface-muted",
+                    )}
+                    key={option.value}
+                    leftIcon={<Icon aria-hidden="true" />}
+                    onClick={() => setViewMode(option.value)}
+                    size="icon"
+                    title={option.label}
+                    variant="ghost"
+                  />
+                );
+              })}
             </fieldset>
           </div>
         </div>
