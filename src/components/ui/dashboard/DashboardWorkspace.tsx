@@ -162,8 +162,10 @@ export function DashboardWorkspace() {
           {estudantes.ativos}
         </p>
         <p className="mt-2 text-sm text-content-muted">
-          {estudantes.total} cadastrado(s) no total · {estudantes.em_espera} em
-          espera · {estudantes.inativos} inativo(s)
+          {estudantes.total} cadastrado(s) no total · {estudantes.aprovados}{" "}
+          aprovados · {estudantes.recusados} recusados ·{" "}
+          {estudantes.lista_de_espera} em espera · {estudantes.inativos}{" "}
+          inativo(s)
         </p>
       </section>
 

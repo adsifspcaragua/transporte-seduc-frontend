@@ -72,6 +72,7 @@ type EditStudentForm = {
   semester: string;
   shift: string;
   status: string;
+  situacao: string;
   used_transport: string;
 };
 
@@ -118,6 +119,7 @@ const EMPTY_FORM: EditStudentForm = {
   semester: "",
   shift: "",
   status: "",
+  situacao: "",
   used_transport: "",
 };
 
@@ -131,11 +133,14 @@ const WEEKDAYS = [
 ];
 
 const STATUS_OPTIONS = [
-  { label: "Lista de espera", value: "LISTA DE ESPERA" },
-  { label: "Aprovado", value: "APROVADO" },
-  { label: "Rejeitado", value: "REJEITADO" },
-  { label: "Ativo", value: "ATIVO" },
-  { label: "Inativo", value: "INATIVO" },
+  { label: "Lista de espera", value: "Lista de espera" },
+  { label: "Aprovado", value: "Aprovado" },
+  { label: "Recusado", value: "Recusado" },
+];
+
+const SITUACAO_OPTIONS = [
+  { label: "Ativo", value: "Ativo" },
+  { label: "Inativo", value: "Inativo" },
 ];
 
 const SHIFT_OPTIONS = [
@@ -286,17 +291,28 @@ function normalizeStatusValue(status: string | null) {
     normalizedStatus.includes("ANALISE") ||
     normalizedStatus.includes("INCOMPLETO")
   )
-    return "LISTA DE ESPERA";
-  if (normalizedStatus.includes("APROV")) return "APROVADO";
+    return "Lista de espera";
+  if (normalizedStatus.includes("APROV")) return "Aprovado";
   if (
     normalizedStatus.includes("REPROV") ||
-    normalizedStatus.includes("REJEIT")
+    normalizedStatus.includes("REJEIT") ||
+    normalizedStatus.includes("RECUS")
   )
-    return "REJEITADO";
-  if (normalizedStatus.includes("INATIVO")) return "INATIVO";
-  if (normalizedStatus.includes("ATIVO")) return "ATIVO";
+    return "Recusado";
 
   return status;
+}
+
+function normalizeSituacaoValue(situacao: string | null) {
+  if (!situacao) return "";
+
+  return situacao
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .includes("INATIV")
+    ? "Inativo"
+    : "Ativo";
 }
 
 function getStudentForm(student: Estudante | null): EditStudentForm {
@@ -331,6 +347,7 @@ function getStudentForm(student: Estudante | null): EditStudentForm {
     semester: student.semester ?? "",
     shift: student.shift ? String(student.shift) : "",
     status: normalizeStatusValue(student.status),
+    situacao: normalizeSituacaoValue(student.situacao),
     used_transport: normalizeBooleanAnswer(student.used_transport),
   };
 }
@@ -773,6 +790,7 @@ export function StudentsEditModal({
     if (form.semester.trim()) payload.semester = form.semester.trim();
     if (form.shift) payload.shift = Number(form.shift);
     if (form.status.trim()) payload.status = form.status.trim();
+    if (form.situacao.trim()) payload.situacao = form.situacao.trim();
     if (form.used_transport) {
       payload.used_transport = form.used_transport === "true";
     }
@@ -845,11 +863,20 @@ export function StudentsEditModal({
             <Select
               className="bg-white"
               containerClassName="md:col-span-3"
-              label="Status"
+              label="Resultado"
               onChange={(event) => setField("status", event.target.value)}
               options={STATUS_OPTIONS}
               placeholder="Selecione"
               value={form.status}
+            />
+            <Select
+              className="bg-white"
+              containerClassName="md:col-span-3"
+              label="Situação do benefício"
+              onChange={(event) => setField("situacao", event.target.value)}
+              options={SITUACAO_OPTIONS}
+              placeholder="Selecione"
+              value={form.situacao}
             />
             <CpfInput
               autoComplete="on"

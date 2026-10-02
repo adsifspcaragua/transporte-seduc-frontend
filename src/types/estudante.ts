@@ -24,6 +24,7 @@ export type Estudante = {
     | null;
   observation: string | null;
   status: string | null;
+  situacao: string | null;
   linha_id: number | null;
   user_id: number | null;
   instituicao_id: number | null;
@@ -97,5 +98,6 @@ export type UpdateEstudantePayload = {
   semester?: string | null;
   shift?: number | null;
   status?: string;
+  situacao?: string;
   used_transport?: boolean | null;
 };

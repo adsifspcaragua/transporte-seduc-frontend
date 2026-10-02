@@ -10,7 +10,9 @@ export type DashboardResumo = {
   estudantes: {
     ativos: number;
     inativos: number;
-    em_espera: number;
+    aprovados: number;
+    recusados: number;
+    lista_de_espera: number;
     total: number;
     // Ativo sem linha não tem como ser transportado: é pendência, não panorama.
     sem_linha: number;

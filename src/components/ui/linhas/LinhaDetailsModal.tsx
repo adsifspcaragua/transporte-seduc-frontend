@@ -56,7 +56,7 @@ function LinhaEstudanteRow({ estudante }: { estudante: LinhaEstudante }) {
             {name}
           </h4>
           <span className="inline-flex rounded-md bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
-            Ativo
+            {estudante.situacao ?? "Ativo"}
           </span>
         </div>
       </div>

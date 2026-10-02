@@ -2,7 +2,7 @@ import type { Estudante, PaginatedEstudantes } from "@/types/estudante";
 
 export type LinhaEstudante = Pick<
   Estudante,
-  "id" | "name" | "email" | "phone" | "status"
+  "id" | "name" | "email" | "phone" | "status" | "situacao"
 > & {
   course: string | null;
   semester: string | null;

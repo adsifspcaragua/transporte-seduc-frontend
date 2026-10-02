@@ -84,7 +84,7 @@ const STUDENTS_TABLE_COLUMNS: DataTableColumn[] = [
   { key: "name", label: "Nome / Email" },
   { key: "course", label: "Curso / Semestre" },
   { key: "institution", label: "Instituição" },
-  { key: "status", label: "Status" },
+  { key: "status", label: "Resultado / situação" },
   { key: "line", label: "Linha" },
   { key: "actions", label: "Ações" },
 ];
@@ -323,7 +323,7 @@ function getSemesterFilterValue(semester?: string | null) {
 }
 
 function getStatusLabel(status: string | null) {
-  if (!status?.trim()) return "Sem status";
+  if (!status?.trim()) return "Sem resultado";
 
   const normalizedStatus = normalizeFilterText(status);
 
@@ -339,27 +339,14 @@ function getStatusLabel(status: string | null) {
 
   if (
     normalizedStatus.includes("reprov") ||
-    normalizedStatus.includes("rejeit")
+    normalizedStatus.includes("rejeit") ||
+    normalizedStatus.includes("recus")
   ) {
-    return "Rejeitado";
+    return "Recusado";
   }
 
   if (normalizedStatus.includes("aprov")) {
     return "Aprovado";
-  }
-
-  if (
-    normalizedStatus.includes("inativo") ||
-    normalizedStatus.includes("inactive")
-  ) {
-    return "Inativo";
-  }
-
-  if (
-    normalizedStatus.includes("ativo") ||
-    normalizedStatus.includes("active")
-  ) {
-    return "Ativo";
   }
 
   return status
@@ -373,10 +360,7 @@ function getStatusLabel(status: string | null) {
 function getStatusBadgeClass(status: string | null) {
   const normalizedStatus = normalizeFilterText(status ?? "");
 
-  if (
-    normalizedStatus.includes("aprov") ||
-    normalizedStatus.includes("ativo")
-  ) {
+  if (normalizedStatus.includes("aprov")) {
     return "bg-approve-default/10 text-approve-default";
   }
 
@@ -388,6 +372,18 @@ function getStatusBadgeClass(status: string | null) {
   }
 
   return "bg-amber-100 text-amber-700";
+}
+
+function getSituacaoLabel(situacao: string | null) {
+  if (!situacao?.trim()) return "Não informada";
+
+  return normalizeFilterText(situacao).includes("inativ") ? "Inativo" : "Ativo";
+}
+
+function getSituacaoBadgeClass(situacao: string | null) {
+  return normalizeFilterText(situacao ?? "").includes("inativ")
+    ? "bg-slate-100 text-slate-600"
+    : "bg-approve-default/10 text-approve-default";
 }
 
 function normalizeFilterText(value: string) {
@@ -419,26 +415,19 @@ function getStudentStatusFilterValue(status: string | null) {
 
   if (
     normalizedStatus.includes("reprov") ||
-    normalizedStatus.includes("rejeit")
+    normalizedStatus.includes("rejeit") ||
+    normalizedStatus.includes("recus")
   ) {
-    return "rejeitado";
-  }
-
-  if (
-    normalizedStatus.includes("inativo") ||
-    normalizedStatus.includes("inactive")
-  ) {
-    return "inativo";
-  }
-
-  if (
-    normalizedStatus.includes("ativo") ||
-    normalizedStatus.includes("active")
-  ) {
-    return "ativo";
+    return "recusado";
   }
 
   return normalizedStatus.replace(/\s+/g, "_");
+}
+
+function getStudentSituacaoFilterValue(situacao: string | null) {
+  return normalizeFilterText(situacao ?? "").includes("inativ")
+    ? "inativo"
+    : "ativo";
 }
 
 function getStudentsListErrorMessage(error: unknown) {
@@ -492,6 +481,19 @@ function StatusBadge({ status }: { status: string | null }) {
       )}
     >
       {getStatusLabel(status)}
+    </span>
+  );
+}
+
+function SituacaoBadge({ situacao }: { situacao: string | null }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit rounded-md px-2 py-1 text-xs font-bold",
+        getSituacaoBadgeClass(situacao),
+      )}
+    >
+      {getSituacaoLabel(situacao)}
     </span>
   );
 }
@@ -645,6 +647,7 @@ function hasStudentMatchingFilters(
   filters: StudentFilters,
 ) {
   const studentStatus = getStudentStatusFilterValue(student.status);
+  const studentSituacao = getStudentSituacaoFilterValue(student.situacao);
   const institutionId = student.instituicao_id
     ? String(student.instituicao_id)
     : "";
@@ -654,6 +657,9 @@ function hasStudentMatchingFilters(
 
   const matchesStatus =
     filters.statuses.length === 0 || filters.statuses.includes(studentStatus);
+  const matchesSituacao =
+    filters.situacoes.length === 0 ||
+    filters.situacoes.includes(studentSituacao);
   const matchesInstitution =
     filters.institutionIds.length === 0 ||
     filters.institutionIds.includes(institutionId);
@@ -668,6 +674,7 @@ function hasStudentMatchingFilters(
 
   return (
     matchesStatus &&
+    matchesSituacao &&
     matchesInstitution &&
     matchesLine &&
     matchesCourse &&
@@ -833,6 +840,7 @@ export function StudentsWorkspace() {
           student.course,
           student.semester,
           getStatusLabel(student.status),
+          getSituacaoLabel(student.situacao),
           getLineLabel(student, lineNamesById),
           getInstitutionLabel(student, institutionNamesById),
         ]
@@ -1101,14 +1109,10 @@ export function StudentsWorkspace() {
               </span>
             </div>
             <div>
-              <span
-                className={cn(
-                  "inline-flex rounded px-2 py-1 text-xs font-semibold",
-                  getStatusBadgeClass(student.status),
-                )}
-              >
-                {getStatusLabel(student.status)}
-              </span>
+              <div className="flex flex-col items-start gap-1">
+                <StatusBadge status={student.status} />
+                <SituacaoBadge situacao={student.situacao} />
+              </div>
             </div>
             <p className="text-xs font-medium text-slate-600">
               {getLineLabel(student, lineNamesById)}
@@ -1282,19 +1286,24 @@ function StudentDetailsModal({
               <DetailGroup title="Identificação">
                 <dl className="grid gap-x-6 gap-y-4 md:grid-cols-12">
                   <DetailItem
-                    className="md:col-span-6"
+                    className="md:col-span-4"
                     label="Nome completo"
                     value={student.name}
                   />
                   <DetailItem
-                    className="md:col-span-3"
+                    className="md:col-span-2"
                     label="Data de nascimento"
                     value={formatDateLabel(student.birth_date)}
                   />
                   <DetailItem
                     className="md:col-span-3"
-                    label="Status"
+                    label="Resultado"
                     value={<StatusBadge status={student.status} />}
+                  />
+                  <DetailItem
+                    className="md:col-span-3"
+                    label="Situação do benefício"
+                    value={<SituacaoBadge situacao={student.situacao} />}
                   />
                   <DetailItem
                     className="md:col-span-6"

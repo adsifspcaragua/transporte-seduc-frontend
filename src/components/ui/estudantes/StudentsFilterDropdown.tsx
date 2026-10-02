@@ -16,6 +16,7 @@ export type StudentFilters = {
   lineIds: string[];
   semesterValues: string[];
   statuses: string[];
+  situacoes: string[];
 };
 
 type StudentsFilterDropdownProps = {
@@ -46,12 +47,16 @@ export const EMPTY_STUDENT_FILTERS: StudentFilters = {
   lineIds: [],
   semesterValues: [],
   statuses: [],
+  situacoes: [],
 };
 
 export const STUDENT_STATUS_OPTIONS: StudentFilterOption[] = [
   { label: "Lista de espera", value: "lista_espera" },
   { label: "Aprovado", value: "aprovado" },
-  { label: "Rejeitado", value: "rejeitado" },
+  { label: "Recusado", value: "recusado" },
+];
+
+export const STUDENT_SITUACAO_OPTIONS: StudentFilterOption[] = [
   { label: "Ativo", value: "ativo" },
   { label: "Inativo", value: "inativo" },
 ];
@@ -59,6 +64,7 @@ export const STUDENT_STATUS_OPTIONS: StudentFilterOption[] = [
 function hasActiveFilters(filters: StudentFilters) {
   return Boolean(
     filters.statuses.length ||
+      filters.situacoes.length ||
       filters.institutionIds.length ||
       filters.lineIds.length ||
       filters.courseValues.length ||
@@ -141,10 +147,20 @@ export function StudentsFilterDropdown({
         allLabel="Todos"
         containerClassName="min-w-0 xl:col-span-2"
         labelClassName={labelClassName}
-        label="Status"
+        label="Resultado"
         onChange={(nextValue) => updateFilters("statuses", nextValue)}
         options={STUDENT_STATUS_OPTIONS}
         value={filters.statuses}
+      />
+
+      <FilterSelect
+        allLabel="Todas"
+        containerClassName="min-w-0 xl:col-span-2"
+        labelClassName={labelClassName}
+        label="Situação"
+        onChange={(nextValue) => updateFilters("situacoes", nextValue)}
+        options={STUDENT_SITUACAO_OPTIONS}
+        value={filters.situacoes}
       />
 
       <FilterSelect
@@ -167,7 +183,7 @@ export function StudentsFilterDropdown({
         value={filters.semesterValues}
       />
 
-      <div className="pt-5 xl:col-start-12">
+      <div className="pt-5 xl:col-span-2">
         <Button
           className="px-4 text-sm"
           disabled={!hasFilters}
