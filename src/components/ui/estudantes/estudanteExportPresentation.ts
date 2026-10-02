@@ -1,4 +1,4 @@
-export type EstudanteExportFormat = "csv" | "pdf" | "xlsx";
+export type EstudanteExportFormat = "pdf" | "xlsx";
 
 function decodeFilename(value: string) {
   try {

@@ -87,6 +87,6 @@ export const API_ENDPOINTS = {
     BASE: "/estudantes",
     COUNT: "/contar-estudantes",
     BY_ID: (id: number | string) => `/estudantes/${id}`,
-    EXPORT: (type: "csv" | "pdf" | "xlsx") => `/exportar-estudantes/${type}`,
+    EXPORT: (type: "pdf" | "xlsx") => `/exportar-estudantes/${type}`,
   },
 } as const;

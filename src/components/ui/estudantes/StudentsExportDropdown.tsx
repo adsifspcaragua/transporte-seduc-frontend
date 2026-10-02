@@ -5,7 +5,6 @@ import {
   FileText,
   LoaderCircle,
   MoreVertical,
-  Table,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -26,7 +25,6 @@ type ExportOption = {
 const exportOptions: ExportOption[] = [
   { icon: <FileText />, label: "PDF", value: "pdf" },
   { icon: <FileSpreadsheet />, label: "Excel (.xlsx)", value: "xlsx" },
-  { icon: <Table />, label: "CSV", value: "csv" },
 ];
 
 export function StudentsExportDropdown() {

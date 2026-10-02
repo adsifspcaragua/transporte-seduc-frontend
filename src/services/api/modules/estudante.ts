@@ -80,7 +80,7 @@ export const estudanteService = {
     await api.delete<{ message?: string }>(API_ENDPOINTS.ESTUDANTES.BY_ID(id));
   },
 
-  async export(type: "csv" | "pdf" | "xlsx") {
+  async export(type: "pdf" | "xlsx") {
     const response = await api.get<Blob>(
       API_ENDPOINTS.ESTUDANTES.EXPORT(type),
       {
