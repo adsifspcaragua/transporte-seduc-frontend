@@ -35,13 +35,13 @@ import {
   PhoneInput,
   Select,
 } from "@/components/form/inputs";
+import { STUDENT_ACCESS_STORAGE_KEY } from "@/components/ui/area-estudante/AreaEstudanteWorkspace";
 import Register, {
   type RegisterStepStatus,
 } from "@/components/ui/layout/RegisterLayout";
 import { cepService } from "@/services/api/modules/cep";
 import { inscricaoService } from "@/services/api/modules/inscricao";
 import { recadastroService } from "@/services/api/modules/recadastro";
-import { STUDENT_ACCESS_STORAGE_KEY } from "@/components/ui/area-estudante/AreaEstudanteWorkspace";
 import type {
   Curso,
   InscricaoInstituicaoPayload,
@@ -228,11 +228,12 @@ const WEEKDAYS = [
 ] as const;
 
 const CITY_DESTINATION_OPTIONS = [
-  { value: "Caraguatatuba", label: "Caraguatatuba" },
-  { value: "São Sebastião", label: "São Sebastião" },
-  { value: "Ubatuba", label: "Ubatuba" },
-  { value: "Ilha Bela", label: "Ilha Bela" },
+  { value: "São José dos Campos", label: "São José dos Campos" },
 ];
+
+function isValidCityDestination(value: string) {
+  return CITY_DESTINATION_OPTIONS.some((option) => option.value === value);
+}
 
 const initialForm: RegistrationForm = {
   name: "",
@@ -493,7 +494,7 @@ function getFieldErrors(form: RegistrationForm, todayIso: string): FieldErrors {
     errors.shift = "Selecione o turno.";
   }
 
-  if (!form.city_destination) {
+  if (!isValidCityDestination(form.city_destination)) {
     errors.city_destination = "Selecione a cidade de destino.";
   }
 
@@ -903,7 +904,7 @@ function buildInstituicaoPayload(
     payload.expected_completion = form.expected_completion;
   }
   if (form.shift) payload.shift = Number(form.shift);
-  if (hasMinLength(form.city_destination, 3)) {
+  if (isValidCityDestination(form.city_destination)) {
     payload.city_destination = trim(form.city_destination);
   }
   if (form.used_transport !== "") {

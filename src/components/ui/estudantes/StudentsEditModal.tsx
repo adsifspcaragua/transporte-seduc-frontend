@@ -161,11 +161,12 @@ const SCHOLARSHIP_OPTIONS = [
 ];
 
 const CITY_DESTINATION_OPTIONS = [
-  { value: "Caraguatatuba", label: "Caraguatatuba" },
-  { value: "São Sebastião", label: "São Sebastião" },
-  { value: "Ubatuba", label: "Ubatuba" },
-  { value: "Ilha Bela", label: "Ilha Bela" },
+  { value: "São José dos Campos", label: "São José dos Campos" },
 ];
+
+function isValidCityDestination(value: string) {
+  return CITY_DESTINATION_OPTIONS.some((option) => option.value === value);
+}
 
 function normalizeBooleanAnswer(value: unknown) {
   if (value === null || value === undefined) return "";
@@ -705,7 +706,7 @@ export function StudentsEditModal({
       nextErrors.shift = "Selecione o turno.";
     }
 
-    if (!form.city_destination) {
+    if (!isValidCityDestination(form.city_destination)) {
       nextErrors.city_destination = "Selecione a cidade de destino.";
     }
 
