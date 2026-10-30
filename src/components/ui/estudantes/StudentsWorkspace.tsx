@@ -15,7 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { SearchInput } from "@/components/form/inputs";
 import { Skeleton } from "@/components/loading";
@@ -39,9 +39,13 @@ import {
   StudentsFilterDropdown,
 } from "@/components/ui/estudantes/StudentsFilterDropdown";
 import { useAuthz } from "@/hooks/use-authz";
-import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { estudanteService } from "@/services/api/modules/estudante";
-import { inscricaoService } from "@/services/api/modules/inscricao";
+import {
+  studentOptionsQuery,
+  studentsQuery,
+} from "@/services/api/page-queries";
+import { getQuerySessionVersion } from "@/services/api/query-cache";
 import type {
   Estudante,
   PaginatedEstudantes,
@@ -91,16 +95,6 @@ const STUDENTS_TABLE_COLUMNS: DataTableColumn[] = [
 
 const FILTER_LABEL_CLASS =
   "mb-1.5 block text-xs font-bold text-content-secondary";
-
-let studentsPageCache: {
-  cursos: Curso[];
-  instituicoes: Instituicao[];
-  linhas: Linha[];
-  meta: StudentsPaginationMeta;
-  page: number;
-  perPage: number;
-  students: Estudante[];
-} | null = null;
 
 const SEMESTER_FILTER_OPTIONS: StudentFilterOption[] = Array.from(
   { length: 12 },
@@ -776,23 +770,12 @@ export function StudentsWorkspace() {
   const { can } = useAuthz();
   const canEdit = can("estudantes.write");
   const canDelete = can("estudantes.delete");
-  const hasCachedPage = Boolean(studentsPageCache);
-  const [studentsLoading, setStudentsLoading] = useState(!hasCachedPage);
   const [deleteLoadingId, setDeleteLoadingId] = useState<number | null>(null);
   const [editLoading, setEditLoading] = useState(false);
-  const [students, setStudents] = useState<Estudante[]>(
-    () => studentsPageCache?.students ?? [],
-  );
-  const [studentsError, setStudentsError] = useState("");
-  const [cursos, setCursos] = useState<Curso[]>(
-    () => studentsPageCache?.cursos ?? [],
-  );
-  const [instituicoes, setInstituicoes] = useState<Instituicao[]>(
-    () => studentsPageCache?.instituicoes ?? [],
-  );
-  const [linhas, setLinhas] = useState<Linha[]>(
-    () => studentsPageCache?.linhas ?? [],
-  );
+  const optionsResult = useCachedQuery(studentOptionsQuery);
+  const cursos = optionsResult.data?.cursos ?? [];
+  const instituicoes = optionsResult.data?.instituicoes ?? [];
+  const linhas = optionsResult.data?.linhas ?? [];
   const [deleteError, setDeleteError] = useState("");
   const [editError, setEditError] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Estudante | null>(
@@ -803,17 +786,23 @@ export function StudentsWorkspace() {
     null,
   );
   const [filters, setFilters] = useState<StudentFilters>(EMPTY_STUDENT_FILTERS);
-  const [page, setPage] = useState(() => studentsPageCache?.page ?? 1);
+  const [page, setPage] = useState(
+    () => studentsQuery.getLatestArgs()?.[0] ?? 1,
+  );
   const [perPage, setPerPage] = useState(
-    () => studentsPageCache?.perPage ?? 10,
+    () => studentsQuery.getLatestArgs()?.[1] ?? 10,
   );
-  const [paginationMeta, setPaginationMeta] = useState<StudentsPaginationMeta>(
-    () => studentsPageCache?.meta ?? DEFAULT_STUDENTS_PAGINATION_META,
-  );
+  const studentsResult = useCachedQuery(studentsQuery, page, perPage);
+  const students = studentsResult.data?.data ?? [];
+  const paginationMeta =
+    studentsResult.data?.meta ?? DEFAULT_STUDENTS_PAGINATION_META;
+  const studentsLoading = studentsResult.isLoading;
+  const studentsError = studentsResult.error
+    ? getStudentsListErrorMessage(studentsResult.error)
+    : "";
+  const loadStudents = studentsResult.refresh;
   const [query, setQuery] = useState("");
-  const showPageSkeleton = useMinimumVisibleLoading(
-    studentsLoading && !studentsPageCache,
-  );
+  const showPageSkeleton = studentsLoading;
 
   const institutionNamesById = useMemo(
     () =>
@@ -862,94 +851,6 @@ export function StudentsWorkspace() {
 
   const lineOptions = useMemo(() => buildLineOptions(linhas), [linhas]);
 
-  const loadStudents = useCallback(
-    async (currentPage = page) => {
-      const shouldShowLoading =
-        !studentsPageCache ||
-        studentsPageCache.page !== currentPage ||
-        studentsPageCache.perPage !== perPage;
-
-      try {
-        if (shouldShowLoading) {
-          setStudentsLoading(true);
-        }
-        setStudentsError("");
-
-        const studentsResponse = await estudanteService.list(
-          currentPage,
-          perPage,
-        );
-
-        setStudents(studentsResponse.data);
-        setPaginationMeta(
-          studentsResponse.meta ?? DEFAULT_STUDENTS_PAGINATION_META,
-        );
-        studentsPageCache = {
-          cursos: studentsPageCache?.cursos ?? [],
-          instituicoes: studentsPageCache?.instituicoes ?? [],
-          linhas: studentsPageCache?.linhas ?? [],
-          meta: studentsResponse.meta ?? DEFAULT_STUDENTS_PAGINATION_META,
-          page: currentPage,
-          perPage,
-          students: studentsResponse.data,
-        };
-      } catch (error) {
-        setStudents([]);
-        setPaginationMeta(DEFAULT_STUDENTS_PAGINATION_META);
-        setStudentsError(getStudentsListErrorMessage(error));
-      } finally {
-        if (shouldShowLoading) {
-          setStudentsLoading(false);
-        }
-      }
-    },
-    [page, perPage],
-  );
-
-  useEffect(() => {
-    void loadStudents(page);
-  }, [loadStudents, page]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    async function loadFilterOptions() {
-      try {
-        const [nextCursos, nextInstituicoes, nextLinhas] = await Promise.all([
-          inscricaoService.listCursos(),
-          inscricaoService.listInstituicoes(),
-          inscricaoService.listLinhas().catch(() => []),
-        ]);
-
-        if (!ignore) {
-          setCursos(nextCursos);
-          setInstituicoes(nextInstituicoes);
-          setLinhas(nextLinhas);
-          studentsPageCache = studentsPageCache
-            ? {
-                ...studentsPageCache,
-                cursos: nextCursos,
-                instituicoes: nextInstituicoes,
-                linhas: nextLinhas,
-              }
-            : null;
-        }
-      } catch {
-        if (!ignore) {
-          setCursos([]);
-          setInstituicoes([]);
-          setLinhas([]);
-        }
-      }
-    }
-
-    void loadFilterOptions();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
   function openDeleteModal(student: Estudante) {
     setDeleteError("");
     setStudentToDelete(student);
@@ -975,13 +876,26 @@ export function StudentsWorkspace() {
   }
 
   async function handleConfirmDelete() {
+    const sessionVersion = getQuerySessionVersion();
     if (!studentToDelete) return;
 
     try {
       setDeleteError("");
       setDeleteLoadingId(studentToDelete.id);
       await estudanteService.remove(studentToDelete.id);
-      await loadStudents(page);
+      if (sessionVersion !== getQuerySessionVersion()) return;
+      studentsQuery.updateData(
+        sessionVersion,
+        (current) => ({
+          ...current,
+          data: current.data.filter(
+            (student) => student.id !== studentToDelete.id,
+          ),
+        }),
+        page,
+        perPage,
+      );
+      await loadStudents();
       setStudentToDelete(null);
     } catch (error) {
       setDeleteError(getStudentDeleteErrorMessage(error));
@@ -991,6 +905,7 @@ export function StudentsWorkspace() {
   }
 
   async function handleSaveStudent(payload: UpdateEstudantePayload) {
+    const sessionVersion = getQuerySessionVersion();
     if (!studentToEdit) return;
 
     try {
@@ -1001,13 +916,20 @@ export function StudentsWorkspace() {
         studentToEdit.id,
         payload,
       );
-
-      setStudents((currentStudents) =>
-        currentStudents.map((student) =>
-          student.id === updatedStudent.id ? updatedStudent : student,
-        ),
+      if (sessionVersion !== getQuerySessionVersion()) return;
+      studentsQuery.updateData(
+        sessionVersion,
+        (current) => ({
+          ...current,
+          data: current.data.map((student) =>
+            student.id === updatedStudent.id ? updatedStudent : student,
+          ),
+        }),
+        page,
+        perPage,
       );
-      await loadStudents(page);
+
+      await loadStudents();
       setStudentToEdit(null);
     } catch (error) {
       setEditError(getStudentUpdateErrorMessage(error));
@@ -1073,7 +995,7 @@ export function StudentsWorkspace() {
         getRowKey={(student) => student.id}
         gridClassName={STUDENTS_TABLE_GRID_CLASS}
         loading={studentsLoading}
-        onRetry={() => loadStudents(page)}
+        onRetry={() => void loadStudents()}
         pagination={{
           currentPage: page,
           disabled: studentsLoading || Boolean(studentsError),

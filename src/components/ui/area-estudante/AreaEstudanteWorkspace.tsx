@@ -92,7 +92,8 @@ export function AreaEstudanteWorkspace() {
                 Área do estudante
               </h1>
               <p className="text-base leading-relaxed text-content-secondary sm:text-lg">
-                Informe seu CPF para dar continuidade.
+                Já possui uma conta? Entre no portal com seu CPF e senha. Para
+                iniciar sua inscrição, informe o CPF abaixo.
               </p>
             </div>
 
@@ -124,10 +125,10 @@ export function AreaEstudanteWorkspace() {
 
               <Link
                 className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-action-light-default bg-action-light-default px-4 text-sm font-semibold normal-case tracking-normal text-brand-600 shadow-sm transition-all duration-200 hover:border-action-light-hover hover:bg-action-light-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 active:scale-[0.99] active:border-action-light-pressing active:bg-action-light-pressing"
-                href="/login"
+                href="/portal-estudante"
               >
                 <LogIn className="size-5" />
-                <span>Acesso administrativo</span>
+                <span>Entrar no Portal do Estudante</span>
               </Link>
             </form>
           </div>

@@ -71,6 +71,7 @@ export type PaginatedEstudantes = {
 };
 
 export type UpdateEstudantePayload = {
+  user_id?: number | null;
   address?: string;
   birth_date?: string;
   cep?: string;

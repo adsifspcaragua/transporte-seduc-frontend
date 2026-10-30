@@ -1,11 +1,11 @@
 import {
+  BusFront,
   ClipboardCheck,
   ClipboardEdit,
   GraduationCap,
   LayoutDashboard,
   type LucideIcon,
   MapIcon,
-  Users,
 } from "lucide-react";
 
 export type SidebarItem = {
@@ -49,9 +49,20 @@ export const sidebarItems: SidebarItem[] = [
     permissions: ["periodos.view", "solicitacoes.view"],
   },
   {
-    label: "Usuários",
-    icon: Users,
-    href: "/usuarios",
-    permissions: ["users.view"],
+    label: "Transporte e presença",
+    icon: BusFront,
+    href: "/transportes",
+    permissions: [
+      "veiculos.view",
+      "viagens.view",
+      "geocercas.view",
+      "estudantes.view",
+      "dispositivos.view",
+      "presencas.view",
+      "auditoria.view",
+      "roles.view",
+      "instituicoes.write",
+      "instituicoes.delete",
+    ],
   },
 ];

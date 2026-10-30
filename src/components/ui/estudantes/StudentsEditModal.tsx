@@ -26,8 +26,15 @@ import {
   ModalSectionContent,
   ModalSectionHeader,
 } from "@/components/modal";
+import {
+  buildStudentAccountPayload,
+  getStudentAccountOptions,
+} from "@/components/ui/estudantes/studentAccountPresentation";
+import { useAuthz } from "@/hooks/use-authz";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { inscricaoService } from "@/services/api/modules/inscricao";
 import { linhaService } from "@/services/api/modules/linha";
+import { usersQuery } from "@/services/api/page-queries";
 import type { Estudante, UpdateEstudantePayload } from "@/types/estudante";
 import type { Curso, Instituicao, Linha } from "@/types/inscricao";
 import { cleanCep } from "@/utils/cep";
@@ -74,6 +81,7 @@ type EditStudentForm = {
   status: string;
   situacao: string;
   used_transport: string;
+  user_id: string;
 };
 
 type FieldErrors = Partial<Record<keyof EditStudentForm, string>>;
@@ -121,6 +129,7 @@ const EMPTY_FORM: EditStudentForm = {
   status: "",
   situacao: "",
   used_transport: "",
+  user_id: "",
 };
 
 const WEEKDAYS = [
@@ -350,6 +359,7 @@ function getStudentForm(student: Estudante | null): EditStudentForm {
     status: normalizeStatusValue(student.status),
     situacao: normalizeSituacaoValue(student.situacao),
     used_transport: normalizeBooleanAnswer(student.used_transport),
+    user_id: student.user_id ? String(student.user_id) : "",
   };
 }
 
@@ -473,6 +483,48 @@ function SegmentedQuestion({
   );
 }
 
+function StudentAccountField({
+  currentUserId,
+  value,
+  onChange,
+}: {
+  currentUserId: number | null;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const result = useCachedQuery(usersQuery);
+  const options = getStudentAccountOptions(result.data ?? [], currentUserId);
+
+  return (
+    <FormGroup title="Conta de acesso do estudante">
+      <Select
+        className="bg-white"
+        containerClassName="md:col-span-12"
+        disabled={result.isLoading || Boolean(result.error)}
+        hint={
+          result.error
+            ? "Não foi possível carregar as contas. O vínculo atual será preservado."
+            : "Selecione uma conta ativa com papel Estudante. A conta deve pertencer a esta pessoa; uma conta só pode ser vinculada a um estudante."
+        }
+        label="Conta de acesso"
+        onChange={(event) => onChange(event.target.value)}
+        options={[{ value: "", label: "Sem conta vinculada" }, ...options]}
+        placeholder={
+          result.isLoading ? "Carregando contas..." : "Sem conta vinculada"
+        }
+        value={value}
+      />
+      {!result.isLoading && !result.error && options.length === 0 && (
+        <p className="text-sm text-content-secondary md:col-span-12">
+          Não há contas de estudante disponíveis. O provisionamento desse papel
+          depende do backend; o formulário de usuários atual ainda não permite
+          atribuí-lo.
+        </p>
+      )}
+    </FormGroup>
+  );
+}
+
 export function StudentsEditModal({
   error = "",
   loading = false,
@@ -481,6 +533,8 @@ export function StudentsEditModal({
   open,
   student,
 }: StudentsEditModalProps) {
+  const { can } = useAuthz();
+  const canAssociateAccount = can("users.view") && can("estudantes.write");
   const [form, setForm] = useState<EditStudentForm>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [instituicoes, setInstituicoes] = useState<Instituicao[]>([]);
@@ -759,6 +813,11 @@ export function StudentsEditModal({
 
     const instituicaoId = numberOrUndefined(form.instituicao_id);
     const payload: UpdateEstudantePayload = {
+      ...buildStudentAccountPayload(
+        form.user_id,
+        student.user_id,
+        canAssociateAccount,
+      ),
       email: form.email.trim(),
       name: form.name.trim(),
       observation: form.observation.trim() || null,
@@ -988,6 +1047,13 @@ export function StudentsEditModal({
               value={form.phone}
             />
           </FormGroup>
+          {open && canAssociateAccount && (
+            <StudentAccountField
+              currentUserId={student?.user_id ?? null}
+              onChange={(value) => setField("user_id", value)}
+              value={form.user_id}
+            />
+          )}
         </div>
       </CollapsibleSection>
 

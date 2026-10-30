@@ -5,6 +5,23 @@ type RoutePermission = {
 
 const routePermissions: RoutePermission[] = [
   {
+    prefix: "/transportes",
+    permissions: [
+      "veiculos.view",
+      "viagens.view",
+      "geocercas.view",
+      "estudantes.view",
+      "dispositivos.view",
+      "presencas.view",
+      "auditoria.view",
+      "roles.view",
+      "instituicoes.write",
+      "instituicoes.delete",
+    ],
+  },
+  { prefix: "/portal-estudante", permissions: ["presencas.registrar"] },
+  { prefix: "/presenca/scan", permissions: ["presencas.registrar"] },
+  {
     prefix: "/frequencias/justificativas",
     permissions: ["justificativas.view"],
   },
