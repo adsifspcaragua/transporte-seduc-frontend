@@ -499,7 +499,7 @@ export function LoginWorkspace() {
                   </span>
                 )}
 
-                <div className="flex items-center">
+                <div className="flex items-center justify-between gap-4">
                   <Checkbox
                     name="rememberLogin"
                     variant="white"
@@ -508,6 +508,12 @@ export function LoginWorkspace() {
                     onChange={handleRememberLoginChange}
                     labelClassName="text-sm sm:text-base"
                   />
+                  <Link
+                    href="/recuperar-senha"
+                    className="shrink-0 text-sm font-semibold text-brand-600 underline underline-offset-4"
+                  >
+                    Esqueci minha senha
+                  </Link>
                 </div>
 
                 {isRateLimited && (
@@ -529,13 +535,6 @@ export function LoginWorkspace() {
                     ? `Tente novamente em ${retryAfterSeconds}s`
                     : "Entrar"}
                 </Button>
-
-                <Link
-                  href="/recuperar-senha"
-                  className="text-center text-sm font-semibold text-brand-600 underline underline-offset-4"
-                >
-                  Esqueci minha senha
-                </Link>
 
                 <Link
                   href="/area-aluno"
