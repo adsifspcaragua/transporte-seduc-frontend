@@ -9,6 +9,10 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/buttons";
 import { Checkbox, CpfInput, PasswordInput } from "@/components/form/inputs";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  accountHome,
+  PENDING_PRESENCE_QR_KEY,
+} from "@/services/navigation/account-navigation";
 import { cleanCpf, isValidCpf } from "@/utils/cpf";
 import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
 
@@ -340,12 +344,17 @@ export function LoginWorkspace() {
         form: undefined,
       }));
 
-      await signIn({
+      const authenticatedUser = await signIn({
         login: getLoginPayload(form.login),
         password: form.password,
       });
 
-      router.replace("/");
+      router.replace(
+        accountHome(
+          authenticatedUser,
+          Boolean(window.sessionStorage.getItem(PENDING_PRESENCE_QR_KEY)),
+        ),
+      );
     } catch (error) {
       if (axios.isAxiosError<ApiErrorResponse>(error)) {
         const apiErrors = error.response?.data?.errors;
@@ -520,6 +529,13 @@ export function LoginWorkspace() {
                     ? `Tente novamente em ${retryAfterSeconds}s`
                     : "Entrar"}
                 </Button>
+
+                <Link
+                  href="/recuperar-senha"
+                  className="text-center text-sm font-semibold text-brand-600 underline underline-offset-4"
+                >
+                  Esqueci minha senha
+                </Link>
 
                 <Link
                   href="/area-aluno"
