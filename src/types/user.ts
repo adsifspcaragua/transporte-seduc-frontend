@@ -3,7 +3,12 @@ export type DriverOption = {
   name: string;
 };
 
-export type UserRole = "admin" | "gestor" | "operador" | "motorista";
+export type UserRole =
+  | "admin"
+  | "gestor"
+  | "operador"
+  | "motorista"
+  | "estudante";
 
 export type SystemUser = {
   id: number;

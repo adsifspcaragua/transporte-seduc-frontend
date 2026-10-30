@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/buttons";
 import { SearchInput, Textarea } from "@/components/form/inputs";
@@ -38,8 +38,9 @@ import {
   SolicitationsFilterDropdown,
 } from "@/components/ui/solicitacoes/SolicitationsFilterDropdown";
 import { useAuthz } from "@/hooks/use-authz";
-import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { inscricaoService } from "@/services/api/modules/inscricao";
+import { solicitacoesQuery } from "@/services/api/page-queries";
 import type {
   Curso,
   Inscricao,
@@ -82,13 +83,6 @@ const FILTER_LABEL_CLASS =
   "mb-1.5 block text-xs font-bold text-content-secondary";
 
 const ITEMS_PER_PAGE = 10;
-
-let solicitacoesPageCache: {
-  cursos: Curso[];
-  instituicoes: Instituicao[];
-  linhas: Linha[];
-  solicitacoes: EnrichedInscricao[];
-} | null = null;
 
 const SEMESTER_FILTER_OPTIONS = Array.from({ length: 12 }, (_, index) => {
   const semester = String(index + 1);
@@ -568,23 +562,20 @@ const CAMPOS_CORRIGIVEIS: { campo: string; label: string }[] = [
 export function SolicitacoesWorkspace() {
   const { can } = useAuthz();
   const canAnalyze = can("inscricoes.analise");
-  const loadVersion = useRef(0);
-  const hasCachedPage = Boolean(solicitacoesPageCache);
-  const [loading, setLoading] = useState(!hasCachedPage);
+  const result = useCachedQuery(solicitacoesQuery);
+  const loading = result.isLoading;
+  const loadSolicitacoes = result.refresh;
   const [actionLoading, setActionLoading] = useState(false);
-  const [solicitacoes, setSolicitacoes] = useState<EnrichedInscricao[]>(
-    () => solicitacoesPageCache?.solicitacoes ?? [],
-  );
-  const [cursos, setCursos] = useState<Curso[]>(
-    () => solicitacoesPageCache?.cursos ?? [],
-  );
-  const [instituicoes, setInstituicoes] = useState<Instituicao[]>(
-    () => solicitacoesPageCache?.instituicoes ?? [],
-  );
-  const [linhas, setLinhas] = useState<Linha[]>(
-    () => solicitacoesPageCache?.linhas ?? [],
-  );
-  const [error, setError] = useState("");
+  const solicitacoes = result.data?.solicitacoes ?? [];
+  const cursos = result.data?.cursos ?? [];
+  const instituicoes = result.data?.instituicoes ?? [];
+  const linhas = result.data?.linhas ?? [];
+  const error = result.error
+    ? getErrorMessage(
+        result.error,
+        "Não foi possível carregar as solicitações.",
+      )
+    : "";
   const [actionError, setActionError] = useState("");
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<SolicitationFilters>(
@@ -609,9 +600,7 @@ export function SolicitacoesWorkspace() {
   const [returnReasonError, setReturnReasonError] = useState("");
   const [returnDocuments, setReturnDocuments] = useState<string[]>([]);
   const [returnFields, setReturnFields] = useState<string[]>([]);
-  const showPageSkeleton = useMinimumVisibleLoading(
-    loading && !solicitacoesPageCache,
-  );
+  const showPageSkeleton = loading;
 
   const institutionNamesById = useMemo(
     () =>
@@ -636,69 +625,6 @@ export function SolicitacoesWorkspace() {
       ),
     [instituicoes],
   );
-
-  const loadSolicitacoes = useCallback(
-    async (showLoading = true, reloadOptions = false) => {
-      const version = ++loadVersion.current;
-      const cachedOptions = reloadOptions ? null : solicitacoesPageCache;
-      try {
-        if (showLoading) {
-          setLoading(true);
-        }
-        setError("");
-
-        const [nextInscricoes, nextCursos, nextInstituicoes, nextLinhas] =
-          await Promise.all([
-            inscricaoService.listInscricoes(),
-            cachedOptions
-              ? cachedOptions.cursos
-              : inscricaoService.listCursos(),
-            cachedOptions
-              ? cachedOptions.instituicoes
-              : inscricaoService.listInstituicoes(),
-            cachedOptions
-              ? cachedOptions.linhas
-              : inscricaoService.listLinhas().catch(() => []),
-          ]);
-
-        if (version !== loadVersion.current) return;
-
-        const enrichedSolicitacoes = nextInscricoes;
-
-        setCursos(nextCursos);
-        setInstituicoes(nextInstituicoes);
-        setLinhas(nextLinhas);
-        setSolicitacoes(enrichedSolicitacoes);
-        solicitacoesPageCache = {
-          cursos: nextCursos,
-          instituicoes: nextInstituicoes,
-          linhas: nextLinhas,
-          solicitacoes: enrichedSolicitacoes,
-        };
-      } catch (currentError) {
-        if (version !== loadVersion.current) return;
-        setSolicitacoes([]);
-        setError(
-          getErrorMessage(
-            currentError,
-            "Não foi possível carregar as solicitações.",
-          ),
-        );
-      } finally {
-        if (showLoading && version === loadVersion.current) {
-          setLoading(false);
-        }
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    void loadSolicitacoes(!solicitacoesPageCache, true);
-    return () => {
-      loadVersion.current += 1;
-    };
-  }, [loadSolicitacoes]);
 
   const currentSolicitacoes = useMemo(
     () =>
@@ -976,7 +902,7 @@ export function SolicitacoesWorkspace() {
         getRowKey={(solicitacao) => solicitacao.id}
         gridClassName={SOLICITACOES_TABLE_GRID_CLASS}
         loading={loading}
-        onRetry={loadSolicitacoes}
+        onRetry={() => void loadSolicitacoes()}
         pagination={{
           currentPage: page,
           disabled: loading || Boolean(error),

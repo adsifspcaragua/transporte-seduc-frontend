@@ -2,14 +2,15 @@
 
 import axios from "axios";
 import { Check, RefreshCw, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/buttons";
 import { Select, Textarea } from "@/components/form/inputs";
 import { Modal } from "@/components/modal";
 import { RecadastroPageSkeleton } from "@/components/ui/recadastro/RecadastroRouteSkeletons";
 import { useAuthz } from "@/hooks/use-authz";
-import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { recadastroService } from "@/services/api/modules/recadastro";
+import { recadastroQuery } from "@/services/api/page-queries";
 import type {
   AusentesRecadastro,
   DocumentoRecadastroTipo,
@@ -101,8 +102,15 @@ export function RecadastroAdminWorkspace() {
   const canWritePeriodos = can("periodos.write");
   const canViewSolicitacoes = can("solicitacoes.view");
   const canAnalyzeSolicitacoes = can("solicitacoes.analise");
-  const [periodos, setPeriodos] = useState<PeriodoRecadastro[]>([]);
-  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoRecadastro[]>([]);
+  const result = useCachedQuery(
+    recadastroQuery,
+    canViewPeriodos,
+    canViewSolicitacoes,
+  );
+  const periodos = result.data?.periodos ?? [];
+  const solicitacoes = result.data?.solicitacoes ?? [];
+  const loadData = result.refresh;
+  const loading = result.isLoading;
   const [periodoForm, setPeriodoForm] = useState(initialPeriodo);
   // null = o formulário está criando; com id = está editando aquele período.
   const [periodoEmEdicao, setPeriodoEmEdicao] = useState<number | null>(null);
@@ -116,38 +124,10 @@ export function RecadastroAdminWorkspace() {
     [],
   );
   const [confirmandoInativacao, setConfirmandoInativacao] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [hasLoaded, setHasLoaded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [feedback, setFeedback] = useState("");
-
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setFeedback("");
-      const [nextPeriodos, nextSolicitacoes] = await Promise.all([
-        canViewPeriodos
-          ? recadastroService.listPeriodos()
-          : Promise.resolve([] as PeriodoRecadastro[]),
-        canViewSolicitacoes
-          ? recadastroService.listSolicitacoes()
-          : Promise.resolve([] as SolicitacaoRecadastro[]),
-      ]);
-      setPeriodos(nextPeriodos);
-      setSolicitacoes(nextSolicitacoes);
-    } catch (error) {
-      setFeedback(errorMessage(error));
-    } finally {
-      setLoading(false);
-      setHasLoaded(true);
-    }
-  }, [canViewPeriodos, canViewSolicitacoes]);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
-
-  const showPageSkeleton = useMinimumVisibleLoading(loading && !hasLoaded);
+  const [actionFeedback, setFeedback] = useState("");
+  const feedback = result.error ? errorMessage(result.error) : actionFeedback;
+  const showPageSkeleton = result.isLoading;
 
   async function createPeriodo() {
     try {

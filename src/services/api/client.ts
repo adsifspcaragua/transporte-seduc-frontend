@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "@/services/api/endpoints";
 import { env } from "@/services/api/env";
 import { setupInterceptors } from "@/services/api/interceptors";
 import { invalidatePendingRequests } from "@/services/api/pending-request";
+import { invalidateQueries } from "@/services/api/query-cache";
 
 function getBackendBaseURL() {
   if (!env.apiUrl) return "";
@@ -49,6 +50,7 @@ publicApi.interceptors.request.use((config) => {
 publicApi.interceptors.response.use((response) => {
   if (response.config.method && response.config.method !== "get") {
     invalidatePendingRequests();
+    invalidateQueries();
   }
   return response;
 });

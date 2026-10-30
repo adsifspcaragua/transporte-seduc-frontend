@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { CalendarDays, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/buttons";
 import { DateInput } from "@/components/form/inputs";
@@ -14,8 +14,9 @@ import {
   localDateIso,
 } from "@/components/ui/frequencias/frequenciaPresentation";
 import { useAuthz } from "@/hooks/use-authz";
-import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { frequenciaService } from "@/services/api/modules/frequencia";
+import { frequenciaLinhasQuery } from "@/services/api/page-queries";
 import type { Chamada, FrequenciaLinha } from "@/types/frequencia";
 
 type ApiError = { message?: string; errors?: Record<string, string[]> };
@@ -37,31 +38,15 @@ export function FrequenciasWorkspace() {
   const canWrite = can("frequencias.write");
   const today = useMemo(() => localDateIso(), []);
   const [date, setDate] = useState(today);
-  const [linhas, setLinhas] = useState<FrequenciaLinha[]>([]);
+  const result = useCachedQuery(frequenciaLinhasQuery, today);
+  const linhas = result.data ?? [];
+  const loadLinhas = result.refresh;
   const [chamada, setChamada] = useState<Chamada | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const loading = result.isLoading;
   const [openingLineId, setOpeningLineId] = useState<number | null>(null);
-  const [loadError, setLoadError] = useState("");
+  const loadError = result.error ? errorMessage(result.error) : "";
   const [openError, setOpenError] = useState("");
-  const showPageSkeleton = useMinimumVisibleLoading(loading && !hasLoaded);
-
-  const loadLinhas = useCallback(async () => {
-    try {
-      setLoading(true);
-      setLoadError("");
-      setLinhas(await frequenciaService.listLinhas());
-    } catch (error) {
-      setLoadError(errorMessage(error));
-    } finally {
-      setLoading(false);
-      setHasLoaded(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadLinhas();
-  }, [loadLinhas]);
+  const showPageSkeleton = loading;
 
   async function openChamada(linha: FrequenciaLinha) {
     if (!date || openingLineId !== null) return;
@@ -129,7 +114,7 @@ export function FrequenciasWorkspace() {
         </p>
       )}
 
-      {loadError ? (
+      {loadError && (
         <section
           className="flex flex-col items-center gap-4 rounded-lg bg-white px-5 py-14 text-center shadow-sm"
           role="alert"
@@ -150,7 +135,8 @@ export function FrequenciasWorkspace() {
             Tentar novamente
           </Button>
         </section>
-      ) : linhas.length === 0 && !loading ? (
+      )}
+      {linhas.length === 0 && !loading && !loadError ? (
         <section className="rounded-lg bg-white px-5 py-14 text-center shadow-sm">
           <CalendarDays
             aria-hidden="true"

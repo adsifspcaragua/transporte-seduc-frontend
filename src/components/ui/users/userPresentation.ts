@@ -14,6 +14,8 @@ export const USER_ROLE_OPTIONS: { value: UserRole; label: string }[] = [
 ];
 
 export function getUserRoleLabel(role?: string) {
+  // A API retorna este papel, mas os requests de criação/edição ainda o recusam.
+  if (role === "estudante") return "Estudante";
   return (
     USER_ROLE_OPTIONS.find((option) => option.value === role)?.label ??
     "Sem papel"

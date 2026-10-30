@@ -172,6 +172,15 @@ export function UserFormModal({
           onChange={(event) => setField("role", event.target.value)}
           options={[
             { value: "", label: "Selecione um papel" },
+            ...(user?.roles[0] === "estudante"
+              ? [
+                  {
+                    value: "estudante",
+                    label: "Estudante (papel atual)",
+                    disabled: true,
+                  },
+                ]
+              : []),
             ...USER_ROLE_OPTIONS,
           ]}
           required

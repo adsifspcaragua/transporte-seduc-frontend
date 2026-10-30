@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { LayoutGrid, List, Plus } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "@/components/buttons";
 import {
@@ -25,11 +25,10 @@ import {
   ocupacaoDe,
 } from "@/components/ui/linhas/linhaPresentation";
 import { useAuthz } from "@/hooks/use-authz";
-import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { linhaService } from "@/services/api/modules/linha";
-import { userService } from "@/services/api/modules/user";
+import { driversQuery, linhasQuery } from "@/services/api/page-queries";
 import type { Linha } from "@/types/inscricao";
-import type { DriverOption } from "@/types/user";
 import { cn } from "@/utils/cn";
 import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
 
@@ -65,13 +64,17 @@ export function LinhasWorkspace() {
   const canDelete = can("linhas.delete");
   const [viewMode, setViewMode] = useState<LinhasViewMode>("grid");
   const [detalhes, setDetalhes] = useState<Linha | null>(null);
-  const [linhas, setLinhas] = useState<Linha[]>([]);
-  const [drivers, setDrivers] = useState<DriverOption[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const linhasResult = useCachedQuery(linhasQuery);
+  const driversResult = useCachedQuery(driversQuery, canWrite);
+  const linhas = linhasResult.data ?? [];
+  const drivers = driversResult.data ?? [];
+  const loading = linhasResult.isLoading;
+  const carregar = linhasResult.refresh;
   const [actionLoading, setActionLoading] = useState(false);
-  const [loadError, setLoadError] = useState("");
-  const [driversError, setDriversError] = useState("");
+  const loadError = linhasResult.error ? errorMessage(linhasResult.error) : "";
+  const driversError = driversResult.error
+    ? "A lista de motoristas não está disponível para este usuário."
+    : "";
   const [formError, setFormError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<LinhaFieldErrors>({});
@@ -80,48 +83,8 @@ export function LinhasWorkspace() {
   const [editando, setEditando] = useState<Linha | null>(null);
   const [modalAberta, setModalAberta] = useState(false);
   const [excluindo, setExcluindo] = useState<Linha | null>(null);
-  const showSkeleton = useMinimumVisibleLoading(loading);
-  const showPageSkeleton = useMinimumVisibleLoading(loading && !hasLoaded);
-
-  const carregar = useCallback(async () => {
-    try {
-      setLoading(true);
-      setLoadError("");
-      setLinhas(await linhaService.list());
-    } catch (error) {
-      setLoadError(errorMessage(error));
-    } finally {
-      setLoading(false);
-      setHasLoaded(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    void carregar();
-  }, [carregar]);
-
-  useEffect(() => {
-    if (!canWrite) return;
-
-    let active = true;
-    void userService
-      .listDrivers()
-      .then((data) => {
-        if (active) setDrivers(data);
-      })
-      .catch(() => {
-        if (active) {
-          setDrivers([]);
-          setDriversError(
-            "A lista de motoristas não está disponível para este usuário.",
-          );
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [canWrite]);
+  const showSkeleton = loading;
+  const showPageSkeleton = loading;
 
   function abrirCriacao() {
     setEditando(null);

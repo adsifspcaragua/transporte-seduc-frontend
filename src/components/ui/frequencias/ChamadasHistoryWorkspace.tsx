@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { Modal } from "@/components/modal";
 import { ChamadaSheet } from "@/components/ui/frequencias/ChamadaSheet";
@@ -12,14 +12,18 @@ import {
   type ChamadaHistoryFilters,
   EMPTY_CHAMADA_HISTORY_FILTERS,
 } from "@/components/ui/frequencias/chamadaHistoryPresentation";
-import { formatCallDate } from "@/components/ui/frequencias/frequenciaPresentation";
+import {
+  formatCallDate,
+  localDateIso,
+} from "@/components/ui/frequencias/frequenciaPresentation";
 import { useAuthz } from "@/hooks/use-authz";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { frequenciaService } from "@/services/api/modules/frequencia";
-import type {
-  Chamada,
-  FrequenciaLinha,
-  PaginatedChamadas,
-} from "@/types/frequencia";
+import {
+  chamadasQuery,
+  frequenciaLinhasQuery,
+} from "@/services/api/page-queries";
+import type { Chamada, PaginatedChamadas } from "@/types/frequencia";
 
 type ApiError = { message?: string; errors?: Record<string, string[]> };
 type PerPage = 10 | 15 | 20 | 30;
@@ -64,61 +68,24 @@ export function ChamadasHistoryWorkspace() {
   });
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState<PerPage>(10);
-  const [response, setResponse] = useState<PaginatedChamadas>(EMPTY_RESPONSE);
-  const [linhas, setLinhas] = useState<FrequenciaLinha[]>([]);
+  const result = useCachedQuery(
+    chamadasQuery,
+    buildChamadaHistoryParams(appliedFilters, page, perPage),
+  );
+  const response = result.data ?? EMPTY_RESPONSE;
+  const loadChamadas = result.refresh;
+  const linhasResult = useCachedQuery(frequenciaLinhasQuery, localDateIso());
+  const linhas = linhasResult.data ?? [];
   const [activeChamada, setActiveChamada] = useState<Chamada | null>(null);
   const [deleting, setDeleting] = useState<Chamada | null>(null);
-  const [loading, setLoading] = useState(true);
+  const loading = result.isLoading;
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [loadError, setLoadError] = useState("");
+  const loadError = result.error
+    ? errorMessage(result.error, "Não foi possível carregar o histórico.")
+    : "";
   const [actionError, setActionError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const requestIdRef = useRef(0);
-
-  const loadChamadas = useCallback(async () => {
-    const requestId = ++requestIdRef.current;
-
-    try {
-      setLoading(true);
-      setLoadError("");
-      const nextResponse = await frequenciaService.list(
-        buildChamadaHistoryParams(appliedFilters, page, perPage),
-      );
-      if (requestId === requestIdRef.current) setResponse(nextResponse);
-      return nextResponse;
-    } catch (error) {
-      if (requestId === requestIdRef.current) {
-        setLoadError(
-          errorMessage(error, "Não foi possível carregar o histórico."),
-        );
-      }
-      return null;
-    } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
-    }
-  }, [appliedFilters, page, perPage]);
-
-  useEffect(() => {
-    void loadChamadas();
-  }, [loadChamadas]);
-
-  useEffect(() => {
-    let active = true;
-    void frequenciaService
-      .listLinhas()
-      .then((data) => {
-        if (active) setLinhas(data);
-      })
-      .catch(() => {
-        if (active) setLinhas([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
   function applyFilters() {
     setPage(1);
     setAppliedFilters({ ...filters });

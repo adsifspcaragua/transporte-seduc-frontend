@@ -1,7 +1,8 @@
 "use client";
 
 import axios from "axios";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { localDateIso } from "@/components/ui/frequencias/frequenciaPresentation";
 import { findAbsenceFrequencyId } from "@/components/ui/frequencias/justificativaPresentation";
 import { RelatorioEstudanteModal } from "@/components/ui/frequencias/RelatorioEstudanteModal";
 import { RelatorioFrequenciaFilterCard } from "@/components/ui/frequencias/RelatorioFrequenciaFilterCard";
@@ -12,13 +13,16 @@ import {
   EMPTY_RELATORIO_FILTERS,
   type RelatorioFrequenciaFilters,
 } from "@/components/ui/frequencias/relatorioFrequenciaPresentation";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { frequenciaService } from "@/services/api/modules/frequencia";
+import {
+  frequenciaLinhasQuery,
+  relatorioQuery,
+} from "@/services/api/page-queries";
 import type {
-  FrequenciaLinha,
   HistoricoFrequenciaItem,
   RelatorioEstudanteResponse,
   RelatorioFrequenciaItem,
-  RelatorioFrequenciaResponse,
 } from "@/types/frequencia";
 
 type ApiError = { message?: string; errors?: Record<string, string[]> };
@@ -42,60 +46,24 @@ export function RelatorioFrequenciaWorkspace() {
   });
   const [appliedFilters, setAppliedFilters] =
     useState<RelatorioFrequenciaFilters>({ ...EMPTY_RELATORIO_FILTERS });
-  const [response, setResponse] = useState<RelatorioFrequenciaResponse | null>(
-    null,
+  const result = useCachedQuery(
+    relatorioQuery,
+    buildRelatorioParams(appliedFilters),
   );
-  const [linhas, setLinhas] = useState<FrequenciaLinha[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const response = result.data;
+  const loadReport = result.refresh;
+  const linhasResult = useCachedQuery(frequenciaLinhasQuery, localDateIso());
+  const linhas = linhasResult.data ?? [];
+  const loading = result.isLoading;
+  const loadError = result.error
+    ? errorMessage(result.error, "Não foi possível carregar o relatório.")
+    : "";
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [detailReport, setDetailReport] =
     useState<RelatorioEstudanteResponse | null>(null);
-  const listRequestIdRef = useRef(0);
   const detailRequestIdRef = useRef(0);
-
-  const loadReport = useCallback(async () => {
-    const requestId = ++listRequestIdRef.current;
-
-    try {
-      setLoading(true);
-      setLoadError("");
-      const nextResponse = await frequenciaService.report(
-        buildRelatorioParams(appliedFilters),
-      );
-      if (requestId === listRequestIdRef.current) setResponse(nextResponse);
-    } catch (error) {
-      if (requestId === listRequestIdRef.current) {
-        setLoadError(
-          errorMessage(error, "Não foi possível carregar o relatório."),
-        );
-      }
-    } finally {
-      if (requestId === listRequestIdRef.current) setLoading(false);
-    }
-  }, [appliedFilters]);
-
-  useEffect(() => {
-    void loadReport();
-  }, [loadReport]);
-
-  useEffect(() => {
-    let active = true;
-    void frequenciaService
-      .listLinhas()
-      .then((data) => {
-        if (active) setLinhas(data);
-      })
-      .catch(() => {
-        if (active) setLinhas([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   function applyFilters() {
     setAppliedFilters({ ...filters });
@@ -166,17 +134,15 @@ export function RelatorioFrequenciaWorkspace() {
         motivo: reason,
       });
 
-      const listRequestId = ++listRequestIdRef.current;
       const period = currentDetail.periodo;
-      const [nextDetail, nextReport] = await Promise.all([
+      const [nextDetail] = await Promise.all([
         frequenciaService.studentReport(currentDetail.data.estudante.id, {
           de: period.de,
           ate: period.ate,
         }),
-        frequenciaService.report(buildRelatorioParams(appliedFilters)),
+        loadReport(),
       ]);
       setDetailReport(nextDetail);
-      if (listRequestId === listRequestIdRef.current) setResponse(nextReport);
     } catch (error) {
       if (error instanceof Error && !axios.isAxiosError(error)) throw error;
       throw new Error(

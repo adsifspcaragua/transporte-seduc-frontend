@@ -6,6 +6,7 @@ import type {
 
 import { useAuthStore } from "@/contexts/auth-store";
 import { invalidatePendingRequests } from "@/services/api/pending-request";
+import { invalidateQueries } from "@/services/api/query-cache";
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retryAfterCsrfRefresh?: boolean;
@@ -34,6 +35,7 @@ export function setupInterceptors(
     (response) => {
       if (response.config.method && response.config.method !== "get") {
         invalidatePendingRequests();
+        invalidateQueries();
       }
       return response;
     },

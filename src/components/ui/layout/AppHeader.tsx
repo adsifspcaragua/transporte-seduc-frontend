@@ -4,15 +4,16 @@ import {
   ChevronDown,
   LogOut,
   Menu,
-  Moon,
   Settings,
-  SlidersHorizontal,
-  Sun,
   UserCircle,
+  Users,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/hooks/use-auth";
+import { useAuthz } from "@/hooks/use-authz";
 import { cn } from "@/utils/cn";
 
 type AppHeaderProps = {
@@ -21,9 +22,10 @@ type AppHeaderProps = {
 
 export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
   const { signOut, user } = useAuth();
+  const { can } = useAuthz();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isThemeToggleActive, setIsThemeToggleActive] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const userMenuButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -37,6 +39,9 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsUserMenuOpen(false);
+        if (userMenuRef.current?.contains(document.activeElement)) {
+          userMenuButtonRef.current?.focus();
+        }
       }
     }
 
@@ -55,10 +60,17 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between bg-white px-5 shadow-sm lg:justify-end lg:px-8">
+    <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between gap-3 bg-white px-5 shadow-sm lg:px-8">
+      <Image
+        alt="Prefeitura Municipal de Caraguatatuba"
+        className="h-10 w-36 min-w-0 object-contain object-left sm:h-12 sm:w-44 lg:w-48"
+        height={176}
+        src="/logo_caraguatatuba.svg"
+        width={622}
+      />
       <button
         aria-label="Abrir menu"
-        className="flex size-10 cursor-pointer items-center justify-center rounded-md bg-brand-600 text-white lg:hidden"
+        className="ml-auto flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md bg-brand-600 text-white lg:hidden"
         onClick={onOpenMobileSidebar}
         type="button"
       >
@@ -66,13 +78,18 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
       </button>
 
       <div className="flex items-center gap-4">
-        <div className="relative" ref={userMenuRef}>
+        {/* A coluna compartilhada mantém a largura estável, inclusive com o menu fechado. */}
+        <div
+          className="relative grid h-12 grid-cols-[max-content] grid-rows-1"
+          ref={userMenuRef}
+        >
           <button
             aria-expanded={isUserMenuOpen}
             aria-haspopup="menu"
             aria-label="Abrir menu do usuário"
-            className="flex h-12 cursor-pointer items-center gap-2 rounded-md px-2 text-brand-600 transition-colors hover:bg-brand-100/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            className="col-start-1 row-start-1 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-md px-2 text-brand-600 transition-colors hover:bg-brand-100/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 sm:justify-start"
             onClick={() => setIsUserMenuOpen((current) => !current)}
+            ref={userMenuButtonRef}
             type="button"
           >
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/80 ring-1 ring-brand-600/15">
@@ -94,74 +111,64 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
             />
           </button>
 
-          {isUserMenuOpen && (
-            <div
-              className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-56 overflow-hidden rounded-md border border-brand-600/10 bg-white py-2 shadow-[0_12px_30px_rgba(0,0,0,0.16)]"
-              role="menu"
+          <div
+            aria-hidden={!isUserMenuOpen}
+            aria-label="Menu do usuário"
+            className={cn(
+              "relative top-[calc(100%+0.5rem)] z-50 col-start-1 row-start-1 w-full self-start overflow-hidden rounded-md border border-brand-600/10 bg-white py-2 shadow-[0_12px_30px_rgba(0,0,0,0.16)]",
+              !isUserMenuOpen && "pointer-events-none invisible",
+            )}
+            inert={!isUserMenuOpen}
+            role="menu"
+          >
+            <Link
+              className="flex w-full items-center gap-3 whitespace-nowrap px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-brand-100/40"
+              href="/perfil"
+              onClick={() => setIsUserMenuOpen(false)}
+              role="menuitem"
             >
-              <button
-                className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-brand-100/40"
+              <UserCircle
+                aria-hidden="true"
+                className="size-4 shrink-0 text-brand-600"
+              />
+              Meu perfil
+            </Link>
+            <button
+              className="flex w-full cursor-pointer items-center gap-3 whitespace-nowrap px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-brand-100/40"
+              role="menuitem"
+              type="button"
+            >
+              <Settings
+                aria-hidden="true"
+                className="size-4 shrink-0 text-brand-600"
+              />
+              Configurações
+            </button>
+            {can("users.view") && (
+              <Link
+                className="flex w-full items-center gap-3 whitespace-nowrap px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-brand-100/40"
+                href="/usuarios"
+                onClick={() => setIsUserMenuOpen(false)}
                 role="menuitem"
-                type="button"
               >
-                <Settings className="size-4 text-brand-600" />
-                Configurações
-              </button>
-              <button
-                className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-brand-100/40"
-                role="menuitem"
-                type="button"
-              >
-                <SlidersHorizontal className="size-4 text-brand-600" />
-                Preferências
-              </button>
-              <button
-                aria-checked={isThemeToggleActive}
-                className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-brand-100/40"
-                onClick={() => setIsThemeToggleActive((current) => !current)}
-                role="menuitemcheckbox"
-                type="button"
-              >
-                <span className="flex items-center gap-3">
-                  {isThemeToggleActive ? (
-                    <Moon className="size-4 text-brand-600" />
-                  ) : (
-                    <Sun className="size-4 text-brand-600" />
-                  )}
-                  Tema
-                </span>
-                <span
-                  className={cn(
-                    "flex h-6 w-12 shrink-0 items-center rounded-full border border-brand-600/15 bg-white p-0.5 transition-colors",
-                    isThemeToggleActive && "bg-brand-100",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex size-5 items-center justify-center rounded-full bg-brand-600 text-white shadow-sm transition-transform",
-                      isThemeToggleActive && "translate-x-6",
-                    )}
-                  >
-                    {isThemeToggleActive ? (
-                      <Moon className="size-3 fill-white text-white" />
-                    ) : (
-                      <Sun className="size-3 text-white" />
-                    )}
-                  </span>
-                </span>
-              </button>
-              <div className="my-1 h-px bg-slate-100" />
-              <button
-                className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-danger-600 transition-colors hover:bg-danger-600/10"
-                onClick={handleSignOut}
-                role="menuitem"
-                type="button"
-              >
-                <LogOut className="size-4" />
-                Sair
-              </button>
-            </div>
-          )}
+                <Users
+                  aria-hidden="true"
+                  className="size-4 shrink-0 text-brand-600"
+                />
+                Usuários
+              </Link>
+            )}
+            <div aria-hidden="true" className="my-1 h-px bg-slate-100" />
+            <button
+              className="flex w-full cursor-pointer items-center gap-3 whitespace-nowrap px-4 py-2.5 text-left text-sm font-medium text-danger-600 transition-colors hover:bg-danger-600/10"
+              onClick={handleSignOut}
+              role="menuitem"
+              type="button"
+            >
+              <LogOut aria-hidden="true" className="size-4 shrink-0" />
+              Sair
+            </button>
+          </div>
         </div>
       </div>
     </header>

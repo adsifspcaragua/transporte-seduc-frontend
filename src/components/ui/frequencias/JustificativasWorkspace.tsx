@@ -1,8 +1,8 @@
 "use client";
 
 import axios from "axios";
-import { useCallback, useEffect, useRef, useState } from "react";
-
+import { useState } from "react";
+import { localDateIso } from "@/components/ui/frequencias/frequenciaPresentation";
 import {
   JustificativaAnalysisModal,
   type JustificativaModalMode,
@@ -15,10 +15,14 @@ import {
   type JustificativaFilters,
 } from "@/components/ui/frequencias/justificativaPresentation";
 import { useAuthz } from "@/hooks/use-authz";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { frequenciaService } from "@/services/api/modules/frequencia";
+import {
+  frequenciaLinhasQuery,
+  justificativasQuery,
+} from "@/services/api/page-queries";
 import type {
   AnaliseJustificativaPayload,
-  FrequenciaLinha,
   Justificativa,
   PaginatedJustificativas,
 } from "@/types/frequencia";
@@ -67,64 +71,26 @@ export function JustificativasWorkspace() {
   });
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState<PerPage>(10);
-  const [response, setResponse] =
-    useState<PaginatedJustificativas>(EMPTY_RESPONSE);
-  const [linhas, setLinhas] = useState<FrequenciaLinha[]>([]);
+  const result = useCachedQuery(
+    justificativasQuery,
+    buildJustificativaParams(appliedFilters, page, perPage),
+  );
+  const response = result.data ?? EMPTY_RESPONSE;
+  const loadJustificativas = result.refresh;
+  const linhasResult = useCachedQuery(frequenciaLinhasQuery, localDateIso());
+  const linhas = linhasResult.data ?? [];
   const [selected, setSelected] = useState<Justificativa | null>(null);
   const [modalMode, setModalMode] = useState<JustificativaModalMode | null>(
     null,
   );
-  const [loading, setLoading] = useState(true);
+  const loading = result.isLoading;
   const [actionLoading, setActionLoading] = useState(false);
-  const [loadError, setLoadError] = useState("");
+  const loadError = result.error
+    ? errorMessage(result.error, "Não foi possível carregar as justificativas.")
+    : "";
   const [modalError, setModalError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
-  const requestIdRef = useRef(0);
-
-  const loadJustificativas = useCallback(async () => {
-    const requestId = ++requestIdRef.current;
-
-    try {
-      setLoading(true);
-      setLoadError("");
-      const nextResponse = await frequenciaService.listJustificativas(
-        buildJustificativaParams(appliedFilters, page, perPage),
-      );
-      if (requestId === requestIdRef.current) setResponse(nextResponse);
-      return nextResponse;
-    } catch (error) {
-      if (requestId === requestIdRef.current) {
-        setLoadError(
-          errorMessage(error, "Não foi possível carregar as justificativas."),
-        );
-      }
-      return null;
-    } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
-    }
-  }, [appliedFilters, page, perPage]);
-
-  useEffect(() => {
-    void loadJustificativas();
-  }, [loadJustificativas]);
-
-  useEffect(() => {
-    let active = true;
-    void frequenciaService
-      .listLinhas()
-      .then((data) => {
-        if (active) setLinhas(data);
-      })
-      .catch(() => {
-        if (active) setLinhas([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
   function applyFilters() {
     setPage(1);
     setAppliedFilters({ ...filters });

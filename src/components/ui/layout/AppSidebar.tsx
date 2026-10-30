@@ -1,7 +1,6 @@
 "use client";
 
 import { Menu } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -105,21 +104,6 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
             })}
           </div>
         </nav>
-
-        <div
-          className={cn(
-            "mt-auto w-[180px] shrink-0 transition-all duration-300 ease-in-out will-change-transform",
-            isOpen ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0",
-          )}
-        >
-          <Image
-            alt="Governo Municipal de Caraguatatuba - Educação"
-            className="h-auto w-full"
-            height={175}
-            src="/logo_caraguatatuba_white.svg"
-            width={633}
-          />
-        </div>
       </div>
     </aside>
   );

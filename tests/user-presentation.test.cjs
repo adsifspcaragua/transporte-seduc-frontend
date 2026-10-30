@@ -147,3 +147,30 @@ test("impede alterar situacao ou excluir o proprio usuario", () => {
   assert.equal(canChangeUserStatusOrDelete(7, 7), false);
   assert.equal(canChangeUserStatusOrDelete(8, 7), true);
 });
+
+test("reconhece estudante na leitura sem oferecer papel rejeitado pela escrita", () => {
+  const { getUserRoleLabel, USER_ROLE_OPTIONS } = loadPresentation();
+  assert.equal(getUserRoleLabel("estudante"), "Estudante");
+  assert.equal(
+    USER_ROLE_OPTIONS.some(({ value }) => value === "estudante"),
+    false,
+  );
+});
+
+test("preserva o papel estudante existente sem reenviá-lo ao backend", () => {
+  const { buildUserPayload } = loadPresentation();
+  const result = buildUserPayload(
+    {
+      name: "Aluno",
+      email: "aluno@example.com",
+      password: "",
+      cpf: "",
+      matricula: "",
+      data_nascimento: "",
+      role: "estudante",
+    },
+    "edit",
+    "estudante",
+  );
+  assert.equal("role" in result, false);
+});

@@ -86,7 +86,7 @@ export default function DataTable<TData>({
 
       <Skeleton fallback={skeleton} loading={loading}>
         <div>
-          {hasError ? (
+          {hasError && (
             <div
               className="flex flex-col items-center gap-4 px-5 py-14 text-center"
               role="alert"
@@ -115,15 +115,16 @@ export default function DataTable<TData>({
                 </Button>
               )}
             </div>
-          ) : data.length === 0 ? (
-            <div className="px-5 py-14 text-center text-sm font-medium text-slate-500">
-              {emptyMessage}
-            </div>
-          ) : (
-            data.map((row) => (
-              <Fragment key={getRowKey(row)}>{renderRow(row)}</Fragment>
-            ))
           )}
+          {data.length === 0
+            ? !hasError && (
+                <div className="px-5 py-14 text-center text-sm font-medium text-slate-500">
+                  {emptyMessage}
+                </div>
+              )
+            : data.map((row) => (
+                <Fragment key={getRowKey(row)}>{renderRow(row)}</Fragment>
+              ))}
         </div>
       </Skeleton>
 

@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { Plus } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/buttons";
 import { Modal } from "@/components/modal";
@@ -11,9 +11,11 @@ import { UsersPageSkeleton } from "@/components/ui/users/UsersSkeleton";
 import { UsersTable } from "@/components/ui/users/UsersTable";
 import { useAuthStore } from "@/contexts/auth-store";
 import { useAuthz } from "@/hooks/use-authz";
-import { useMinimumVisibleLoading } from "@/hooks/use-minimum-visible-loading";
+import { useCachedQuery } from "@/hooks/use-cached-query";
 import { authService } from "@/services/api/modules/auth";
 import { userService } from "@/services/api/modules/user";
+import { usersQuery } from "@/services/api/page-queries";
+import { getQuerySessionVersion } from "@/services/api/query-cache";
 import type {
   SystemUser,
   UserFormErrors,
@@ -38,10 +40,14 @@ export function UsersWorkspace() {
   const { can } = useAuthz();
   const canWrite = can("users.write");
   const canDelete = can("users.delete");
-  const [users, setUsers] = useState<SystemUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [loadError, setLoadError] = useState("");
+  const result = useCachedQuery(usersQuery);
+  const users = result.data ?? [];
+  const loading = result.isLoading;
+  const loadUsers = result.refresh;
+  const [actionError, setLoadError] = useState("");
+  const loadError = result.error
+    ? errorMessage(result.error, "Não foi possível carregar os usuários.")
+    : actionError;
   const [successMessage, setSuccessMessage] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<SystemUser | null>(null);
@@ -51,37 +57,7 @@ export function UsersWorkspace() {
   const [loadingUserId, setLoadingUserId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState<SystemUser | null>(null);
   const [deleteError, setDeleteError] = useState("");
-  const requestId = useRef(0);
-
-  const loadUsers = useCallback(async () => {
-    const id = ++requestId.current;
-    try {
-      setLoading(true);
-      setLoadError("");
-      const data = await userService.list();
-      if (id === requestId.current) setUsers(data);
-    } catch (error) {
-      if (id === requestId.current) {
-        setLoadError(
-          errorMessage(error, "Não foi possível carregar os usuários."),
-        );
-      }
-    } finally {
-      if (id === requestId.current) {
-        setLoading(false);
-        setHasLoaded(true);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadUsers();
-    return () => {
-      requestId.current += 1;
-    };
-  }, [loadUsers]);
-
-  const showPageSkeleton = useMinimumVisibleLoading(loading && !hasLoaded);
+  const showPageSkeleton = loading;
 
   function openForm(user: SystemUser | null) {
     setEditing(user);
@@ -97,6 +73,7 @@ export function UsersWorkspace() {
   }
 
   async function save(payload: UserPayload) {
+    const sessionVersion = getQuerySessionVersion();
     try {
       setFormLoading(true);
       setFormError("");
@@ -106,6 +83,7 @@ export function UsersWorkspace() {
       } else {
         await userService.create(payload);
       }
+      if (sessionVersion !== getQuerySessionVersion()) return;
       setSuccessMessage(
         editing
           ? "Usuário atualizado com sucesso."
@@ -117,6 +95,7 @@ export function UsersWorkspace() {
 
       if (editedCurrentUser) {
         const currentUser = await authService.me();
+        if (sessionVersion !== getQuerySessionVersion()) return;
         setCurrentUser(currentUser);
         if (!currentUser.permissions.includes("users.view")) return;
       }
@@ -144,6 +123,7 @@ export function UsersWorkspace() {
   }
 
   async function toggleStatus(user: SystemUser) {
+    const sessionVersion = getQuerySessionVersion();
     if (user.id === currentUserId || loadingUserId !== null) return;
     try {
       setLoadingUserId(user.id);
@@ -151,9 +131,11 @@ export function UsersWorkspace() {
       const updated = user.ativo
         ? await userService.inactivate(user.id)
         : await userService.activate(user.id);
-      setUsers((current) =>
+      if (sessionVersion !== getQuerySessionVersion()) return;
+      usersQuery.updateData(sessionVersion, (current) =>
         current.map((item) => (item.id === updated.id ? updated : item)),
       );
+      await loadUsers();
       setSuccessMessage(
         `Usuário ${user.ativo ? "inativado" : "ativado"} com sucesso.`,
       );
@@ -165,13 +147,18 @@ export function UsersWorkspace() {
   }
 
   async function remove() {
+    const sessionVersion = getQuerySessionVersion();
     if (!deleting || deleting.id === currentUserId || loadingUserId !== null)
       return;
     try {
       setLoadingUserId(deleting.id);
       setDeleteError("");
       await userService.remove(deleting.id);
-      setUsers((current) => current.filter((user) => user.id !== deleting.id));
+      if (sessionVersion !== getQuerySessionVersion()) return;
+      usersQuery.updateData(sessionVersion, (current) =>
+        current.filter((user) => user.id !== deleting.id),
+      );
+      await loadUsers();
       setSuccessMessage("Usuário excluído com sucesso.");
       setDeleting(null);
     } catch (error) {
