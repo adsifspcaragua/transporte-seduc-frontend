@@ -52,12 +52,15 @@ function ModalHeader({ title, onClose, titleId }: ModalHeaderProps) {
   return (
     <header className="shrink-0 border-b border-border-subtle px-5 py-4">
       <div className="flex items-center justify-between gap-4">
-        <h2 id={titleId} className="text-base font-bold text-brand-600">
+        <h2
+          id={titleId}
+          className="min-w-0 break-words text-base font-bold text-brand-600"
+        >
           {title}
         </h2>
         <button
           aria-label="Fechar modal"
-          className="flex size-9 cursor-pointer items-center justify-center rounded-md text-content-muted transition-colors hover:bg-surface-muted hover:text-content-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+          className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-content-muted transition-colors hover:bg-surface-muted hover:text-content-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
           onClick={onClose}
           type="button"
         >
@@ -70,7 +73,12 @@ function ModalHeader({ title, onClose, titleId }: ModalHeaderProps) {
 
 function ModalContent({ children, className }: ModalContentProps) {
   return (
-    <div className={cn("min-h-0 flex-1 overflow-y-auto px-5 py-5", className)}>
+    <div
+      className={cn(
+        "min-h-0 min-w-0 flex-1 overflow-y-auto break-words px-5 py-5",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -87,9 +95,9 @@ function ModalFooter({
   onSave,
 }: ModalFooterProps) {
   return (
-    <footer className="flex shrink-0 flex-col-reverse gap-3 border-t border-border-subtle px-5 py-4 sm:flex-row sm:justify-end">
+    <footer className="flex shrink-0 flex-col-reverse gap-3 border-t border-border-subtle px-5 py-4 sm:flex-row sm:flex-wrap sm:justify-end">
       <Button
-        className="min-h-10 px-4 py-2 text-sm"
+        className="w-full min-h-10 px-4 py-2 text-sm sm:w-auto"
         fullWidth={false}
         onClick={onClose}
         variant="ghost"
@@ -98,7 +106,7 @@ function ModalFooter({
       </Button>
       {!hideSave && (
         <Button
-          className="min-h-10 px-4 py-2 text-sm"
+          className="w-full min-h-10 px-4 py-2 text-sm sm:w-auto"
           disabled={saveDisabled}
           fullWidth={false}
           loading={saveLoading}
@@ -202,7 +210,7 @@ export function Modal({
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex min-h-screen items-start justify-center p-4">
+    <div className="fixed inset-0 z-[80] flex items-start justify-center p-4">
       <button
         aria-label="Fechar modal"
         className="absolute inset-0 cursor-default bg-overlay/45"
@@ -213,7 +221,7 @@ export function Modal({
         aria-labelledby={titleId}
         aria-modal="true"
         className={cn(
-          "relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-md bg-surface-primary shadow-[0_18px_50px_var(--color-modal-shadow)]",
+          "relative z-10 flex max-h-[calc(100dvh-2rem)] min-w-0 w-full max-w-xl flex-col overflow-hidden rounded-md bg-surface-primary shadow-[0_18px_50px_var(--color-modal-shadow)]",
           className,
         )}
         role="dialog"

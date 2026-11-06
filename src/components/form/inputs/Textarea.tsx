@@ -74,7 +74,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     return (
       <div
-        className={cn("flex w-full flex-col gap-2", containerClassName)}
+        className={cn("flex min-w-0 w-full flex-col gap-2", containerClassName)}
         data-field-container={hasError ? "true" : undefined}
       >
         <div className="relative w-full">

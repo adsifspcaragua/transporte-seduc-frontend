@@ -83,9 +83,9 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-10 px-3 text-sm",
-  md: "h-10 px-4 text-sm",
-  lg: "h-10 px-5 text-base",
+  sm: "min-h-10 px-3 py-2 text-sm",
+  md: "min-h-10 px-4 py-2 text-sm",
+  lg: "min-h-10 px-5 py-1.5 text-base",
   icon: "size-10 p-0",
 };
 
@@ -120,7 +120,7 @@ export default function Button({
       type={type}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg border font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-default",
+        "inline-flex min-w-0 max-w-full items-center justify-center gap-2 rounded-lg border font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-default",
         "normal-case tracking-normal",
         fullWidth && !isIconOnly && "w-full",
         !fullWidth && "self-center",
@@ -134,22 +134,26 @@ export default function Button({
       {loading ? (
         <span
           className={cn(
-            "h-5 w-5 animate-spin rounded-full border-2",
+            "h-5 w-5 shrink-0 animate-spin rounded-full border-2",
             spinnerClasses[variant],
           )}
         />
       ) : (
         <>
           {leftIcon && (
-            <span className="flex items-center justify-center [&>svg]:size-5">
+            <span className="flex shrink-0 items-center justify-center [&>svg]:size-5">
               {leftIcon}
             </span>
           )}
 
-          {!isIconOnly && children && <span>{children}</span>}
+          {!isIconOnly && children && (
+            <span className="min-w-0 whitespace-normal break-words">
+              {children}
+            </span>
+          )}
 
           {rightIcon && (
-            <span className="flex items-center justify-center [&>svg]:size-5">
+            <span className="flex shrink-0 items-center justify-center [&>svg]:size-5">
               {rightIcon}
             </span>
           )}

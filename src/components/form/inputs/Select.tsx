@@ -349,11 +349,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     }, [allOptions, isOpen, selectedValue]);
 
     useLayoutEffect(() => {
-      if (
-        !isOpen ||
-        !triggerRef.current ||
-        shouldRenderListboxInPopover
-      ) {
+      if (!isOpen || !triggerRef.current || shouldRenderListboxInPopover) {
         return;
       }
 
@@ -418,7 +414,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         const triggerRect = trigger.getBoundingClientRect();
         const spacing = 8;
         const desiredHeight = Math.min(256, Math.max(48, listbox.offsetHeight));
-        const availableBelow = window.innerHeight - triggerRect.bottom - spacing;
+        const availableBelow =
+          window.innerHeight - triggerRect.bottom - spacing;
         const top =
           availableBelow >= desiredHeight
             ? triggerRect.bottom + spacing
@@ -487,12 +484,12 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       <div
         ref={rootRef}
         className={cn(
-          "relative flex w-full flex-col gap-2",
+          "relative flex min-w-0 w-full flex-col gap-2",
           containerClassName,
         )}
         data-field-container={hasError ? "true" : undefined}
       >
-        <div className="relative w-full">
+        <div className="relative min-w-0 w-full">
           <select
             ref={setSelectRef}
             tabIndex={-1}
@@ -532,7 +529,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             onClick={() => setIsOpen((current) => !current && !disabled)}
             onKeyDown={handleKeyDown}
             className={cn(
-              "peer flex h-10 w-full cursor-pointer items-center justify-between gap-3 px-3.5 text-left text-sm font-medium outline-none transition-all duration-200 disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
+              "peer flex min-h-10 min-w-0 w-full cursor-pointer items-center justify-between gap-3 px-3.5 py-2 text-left text-sm font-medium outline-none transition-all duration-200 disabled:cursor-default disabled:border-field-disabled-border disabled:bg-field-disabled-surface disabled:text-field-disabled-content disabled:shadow-inner disabled:shadow-content-disabled/10",
               variantClasses[variant].field,
               hasError
                 ? "border-danger-600 focus:border-danger-600"
@@ -543,7 +540,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           >
             <span
               className={cn(
-                "min-w-0 truncate",
+                "min-w-0 whitespace-normal break-words",
                 !selectedValue && variantClasses[variant].placeholder,
               )}
             >
@@ -587,9 +584,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             <div
               ref={listboxRef}
               id={listboxId}
-              popover={
-                shouldRenderListboxInPopover ? "manual" : undefined
-              }
+              popover={shouldRenderListboxInPopover ? "manual" : undefined}
               role="listbox"
               aria-labelledby={selectId}
               className={cn(
@@ -641,7 +636,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                     >
                       <span
                         className={cn(
-                          "min-w-0 flex-1 truncate",
+                          "min-w-0 flex-1 whitespace-normal break-words",
                           isSelected && "font-bold",
                         )}
                       >

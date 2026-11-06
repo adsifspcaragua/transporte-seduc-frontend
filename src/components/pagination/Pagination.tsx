@@ -87,7 +87,7 @@ export default function Pagination({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 border-t border-border-default bg-white px-5 py-4 md:flex-row md:items-center md:justify-between",
+        "flex min-w-0 flex-wrap gap-4 border-t border-border-default bg-white px-5 py-4 md:items-center md:justify-between",
         className,
       )}
     >
@@ -97,7 +97,7 @@ export default function Pagination({
 
       <nav
         aria-label="Paginação"
-        className="flex flex-wrap items-center justify-start gap-3 md:justify-end"
+        className="flex min-w-0 max-w-full flex-wrap items-center justify-start gap-3 md:justify-end"
       >
         <label className="flex h-10 items-center gap-2 text-sm font-medium text-content-secondary">
           <span>Por página</span>
@@ -116,7 +116,7 @@ export default function Pagination({
         </label>
 
         {shouldShowPageButtons && (
-          <div className="inline-flex overflow-hidden rounded-lg border border-border-default bg-white shadow-sm">
+          <div className="inline-flex max-w-full flex-wrap rounded-lg border border-border-default bg-white shadow-sm">
             <button
               aria-label="Página anterior"
               className="flex h-10 min-w-10 cursor-pointer items-center justify-center text-content-secondary transition-colors hover:bg-brand-100/45 hover:text-brand-600 disabled:cursor-default disabled:bg-white disabled:text-content-disabled"

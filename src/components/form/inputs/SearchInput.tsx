@@ -33,7 +33,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
     return (
       <div
         className={cn(
-          "group flex h-10 w-full overflow-hidden rounded-lg border-2 border-border-default bg-surface-primary text-content-primary transition-colors duration-200 focus-within:border-brand-600",
+          "group flex h-10 min-w-0 w-full rounded-lg border-2 border-border-default bg-surface-primary text-content-primary transition-colors duration-200 focus-within:border-brand-600",
           disabled &&
             "border-field-disabled-border bg-field-disabled-surface shadow-inner shadow-content-disabled/10",
           containerClassName,

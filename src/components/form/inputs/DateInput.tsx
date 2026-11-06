@@ -8,7 +8,15 @@ import type {
   KeyboardEvent,
   MouseEvent,
 } from "react";
-import { forwardRef, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "@/utils/cn";
 import Input, { type InputProps } from "./Input";
 
@@ -280,7 +288,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       readOnly,
       name,
       id,
-      variant = "dark",
+      variant = "white",
       calendarAlign = "left",
       ...props
     },
@@ -290,6 +298,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
     const inputId = id ?? generatedId;
     const calendarId = `${inputId}-calendar`;
     const containerRef = useRef<HTMLDivElement>(null);
+    const calendarRef = useRef<HTMLDivElement>(null);
     const today = useMemo(() => getLocalToday(), []);
     const isControlled = value !== undefined;
     const currentValue = isControlled ? value : (defaultValue ?? "");
@@ -311,6 +320,43 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
     const [yearPageStart, setYearPageStart] = useState(
       getYearPageStart(initialViewDate.getFullYear()),
     );
+
+    useLayoutEffect(() => {
+      const calendar = calendarRef.current;
+      const container = containerRef.current;
+      if (!isOpen || !calendar || !container) return;
+
+      calendar.showPopover();
+      function positionCalendar() {
+        if (!calendar || !container) return;
+        const anchor = container.getBoundingClientRect();
+        const margin = 16;
+        const preferredLeft =
+          calendarAlign === "right"
+            ? anchor.right - calendar.offsetWidth
+            : anchor.left;
+        const top = anchor.bottom + 8;
+        calendar.style.left = `${Math.max(margin, Math.min(preferredLeft, window.innerWidth - calendar.offsetWidth - margin))}px`;
+        calendar.style.top = `${
+          top + calendar.offsetHeight <= window.innerHeight - margin
+            ? top
+            : Math.max(margin, anchor.top - calendar.offsetHeight - 8)
+        }px`;
+      }
+
+      positionCalendar();
+      const observer = new ResizeObserver(positionCalendar);
+      observer.observe(calendar);
+      observer.observe(container);
+      window.addEventListener("resize", positionCalendar);
+      window.addEventListener("scroll", positionCalendar, true);
+      return () => {
+        observer.disconnect();
+        window.removeEventListener("resize", positionCalendar);
+        window.removeEventListener("scroll", positionCalendar, true);
+        if (calendar.matches(":popover-open")) calendar.hidePopover();
+      };
+    }, [isOpen, calendarAlign]);
 
     const storedValue = isControlled ? value : committedValue;
     const storedDate = parseDateValue(storedValue);
@@ -831,7 +877,7 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
     return (
       <div
         ref={containerRef}
-        className={cn("relative w-full", containerClassName)}
+        className={cn("relative min-w-0 w-full", containerClassName)}
       >
         <Input
           ref={ref}
@@ -863,14 +909,13 @@ const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
 
         {isOpen && (
           <div
+            ref={calendarRef}
+            popover="manual"
             id={calendarId}
             role="dialog"
             aria-label="Selecionar data"
             onMouseDown={(event) => event.preventDefault()}
-            className={cn(
-              "absolute top-full z-50 mt-2 w-[min(20.5rem,calc(100vw-2rem))] rounded-2xl border border-brand-100 bg-surface-primary p-4 text-brand-700 shadow-xl shadow-brand-700/15",
-              calendarAlign === "right" ? "right-0" : "left-0",
-            )}
+            className="fixed inset-auto z-50 m-0 max-h-[calc(100dvh-2rem)] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-brand-100 bg-surface-primary p-3 text-brand-700 shadow-xl shadow-brand-700/15"
           >
             <div className="mb-3 flex items-center justify-between gap-3">
               {renderCalendarHeader()}
