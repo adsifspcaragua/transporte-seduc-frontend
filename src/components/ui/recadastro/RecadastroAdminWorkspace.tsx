@@ -294,7 +294,7 @@ export function RecadastroAdminWorkspace() {
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-brand-600">Recadastramento</h1>
         <Button
@@ -371,7 +371,7 @@ export function RecadastroAdminWorkspace() {
                       className="flex flex-wrap items-center justify-between gap-3 py-3"
                       key={estudante.id}
                     >
-                      <span className="flex items-center gap-2">
+                      <span className="flex min-w-0 items-center gap-2">
                         <input
                           checked={ausentesSelecionados.includes(estudante.id)}
                           disabled={!canWritePeriodos}
@@ -384,7 +384,7 @@ export function RecadastroAdminWorkspace() {
                           }
                           type="checkbox"
                         />
-                        <span className="font-semibold text-slate-800">
+                        <span className="min-w-0 break-words font-semibold text-slate-800">
                           {estudante.name}
                         </span>
                       </span>
@@ -492,7 +492,7 @@ export function RecadastroAdminWorkspace() {
                   className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-subtle px-3 py-2"
                   key={documento.id}
                 >
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex min-w-0 items-center gap-2 text-sm">
                     {decision === "Pendencia" && (
                       <input
                         aria-label={`Pedir reenvio de ${documento.label}`}
@@ -509,7 +509,7 @@ export function RecadastroAdminWorkspace() {
                         type="checkbox"
                       />
                     )}
-                    <span className="font-semibold text-slate-700">
+                    <span className="min-w-0 break-words font-semibold text-slate-700">
                       {documento.label}
                     </span>
                   </div>
@@ -579,9 +579,9 @@ export function RecadastroAdminWorkspace() {
           )}
           <div className="flex gap-3 rounded-lg bg-slate-50 p-3 text-sm text-content-muted">
             {decision === "Aprovado" ? (
-              <Check className="size-5 text-emerald-600" />
+              <Check className="size-5 shrink-0 text-emerald-600" />
             ) : (
-              <X className="size-5 text-danger-600" />
+              <X className="size-5 shrink-0 text-danger-600" />
             )}
             A decisão será registrada e refletida no status do estudante.
           </div>

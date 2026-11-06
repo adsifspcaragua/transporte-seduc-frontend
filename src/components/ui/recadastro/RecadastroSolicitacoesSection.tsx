@@ -52,13 +52,13 @@ export function RecadastroSolicitacoesSection({
   );
 
   return (
-    <section className="rounded-xl border border-border-subtle bg-white p-5 shadow-sm lg:p-6">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex items-start gap-3">
+    <section className="@container/solicitacoes min-w-0 rounded-xl border border-border-subtle bg-white p-5 shadow-sm lg:p-6">
+      <div className="flex min-w-0 flex-col gap-5 @min-[68rem]/solicitacoes:flex-row @min-[68rem]/solicitacoes:items-start @min-[68rem]/solicitacoes:justify-between">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-050 text-brand-600">
             <Clock3 className="size-5" />
           </span>
-          <div>
+          <div className="min-w-0 break-words">
             <h2 className="text-lg font-bold text-brand-700">
               Solicitações de recadastro
             </h2>
@@ -68,11 +68,12 @@ export function RecadastroSolicitacoesSection({
           </div>
         </div>
 
-        <div className="grid w-full gap-3 sm:grid-cols-[minmax(16rem,1fr)_13rem] lg:max-w-2xl">
+        <div className="grid w-full min-w-0 gap-3 @min-[40rem]/solicitacoes:grid-cols-[minmax(0,1fr)_minmax(12rem,0.5fr)] @min-[68rem]/solicitacoes:max-w-xl">
           <SearchInput
+            aria-label="Buscar por estudante, CPF ou período"
             onChange={(event) => setSearch(event.target.value)}
             onClear={() => setSearch("")}
-            placeholder="Buscar por estudante, CPF ou período..."
+            placeholder="Estudante, CPF ou período"
             value={search}
           />
           <Select
@@ -84,7 +85,7 @@ export function RecadastroSolicitacoesSection({
         </div>
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-xl border border-border-subtle">
+      <div className="mt-5 min-w-0 rounded-xl border border-border-subtle">
         {filteredSolicitacoes.length === 0 && !loading ? (
           <div className="flex flex-col items-center px-5 py-12 text-center">
             <FileSearch className="size-8 text-content-disabled" />
@@ -98,18 +99,18 @@ export function RecadastroSolicitacoesSection({
         ) : (
           filteredSolicitacoes.map((solicitacao) => (
             <article
-              className="flex flex-col gap-4 border-b border-border-subtle px-4 py-4 last:border-b-0 md:flex-row md:items-center md:justify-between"
+              className="flex min-w-0 flex-col gap-4 border-b border-border-subtle px-4 py-4 last:border-b-0 @min-[56rem]/solicitacoes:flex-row @min-[56rem]/solicitacoes:items-center @min-[56rem]/solicitacoes:justify-between"
               key={solicitacao.id}
             >
-              <div className="flex min-w-0 items-center gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
                   {getInitials(solicitacao.estudante.name)}
                 </span>
                 <div className="min-w-0">
-                  <h3 className="truncate text-sm font-bold text-content-primary">
+                  <h3 className="break-words text-sm font-bold text-content-primary">
                     {solicitacao.estudante.name}
                   </h3>
-                  <p className="mt-1 text-xs text-content-muted">
+                  <p className="mt-1 break-words text-xs leading-5 text-content-muted">
                     {solicitacao.estudante.cpf || "CPF não informado"} ·{" "}
                     {solicitacao.periodo.referencia} ·{" "}
                     {solicitacao.documentos.length} documento(s)
@@ -117,7 +118,7 @@ export function RecadastroSolicitacoesSection({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 md:justify-end">
+              <div className="flex min-w-0 flex-wrap items-center gap-3 @min-[56rem]/solicitacoes:justify-end">
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${getRecadastroBadgeClass(solicitacao.status)}`}
                 >
@@ -126,7 +127,7 @@ export function RecadastroSolicitacoesSection({
                   )}
                   {getRecadastroStatusLabel(solicitacao.status)}
                 </span>
-                <div className="min-w-36 text-xs text-content-muted">
+                <div className="text-xs text-content-muted">
                   <span className="block">Enviado em</span>
                   <span className="font-semibold text-content-secondary">
                     {formatRecadastroDateTime(solicitacao.enviada_em)}

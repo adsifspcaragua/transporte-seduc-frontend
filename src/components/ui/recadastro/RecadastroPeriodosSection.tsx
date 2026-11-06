@@ -68,15 +68,15 @@ export function RecadastroPeriodosSection({
   );
 
   return (
-    <section className="space-y-5">
+    <section className="@container/periodos min-w-0 space-y-5">
       {canWrite && (
         <div className="rounded-xl border border-border-subtle bg-white p-5 shadow-sm lg:p-6">
           <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
+            <div className="flex min-w-0 items-start gap-3">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-050 text-brand-600">
                 <CalendarDays className="size-5" />
               </span>
-              <div>
+              <div className="min-w-0 break-words">
                 <h2 className="text-lg font-bold text-brand-700">
                   {editingId === null
                     ? "Períodos de recadastro"
@@ -114,9 +114,9 @@ export function RecadastroPeriodosSection({
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
+          <div className="grid grid-cols-1 gap-4 @min-[32rem]/periodos:grid-cols-2 @min-[68rem]/periodos:grid-cols-12">
             <Input
-              containerClassName="xl:col-span-2"
+              containerClassName="@min-[68rem]/periodos:col-span-2"
               label="Ano"
               min="2000"
               onChange={(event) => onFormChange("ano", event.target.value)}
@@ -124,7 +124,7 @@ export function RecadastroPeriodosSection({
               value={form.ano}
             />
             <Select
-              containerClassName="xl:col-span-2"
+              containerClassName="@min-[68rem]/periodos:col-span-2"
               label="Semestre"
               onChange={(event) => onFormChange("semestre", event.target.value)}
               options={[
@@ -134,7 +134,7 @@ export function RecadastroPeriodosSection({
               value={form.semestre}
             />
             <DateInput
-              containerClassName="xl:col-span-2"
+              containerClassName="@min-[68rem]/periodos:col-span-2"
               label="Início"
               onChange={(event) =>
                 onFormChange("data_inicio", event.target.value)
@@ -143,14 +143,14 @@ export function RecadastroPeriodosSection({
               variant="white"
             />
             <DateInput
-              containerClassName="xl:col-span-2"
+              containerClassName="@min-[68rem]/periodos:col-span-2"
               label="Fim"
               onChange={(event) => onFormChange("data_fim", event.target.value)}
               value={form.data_fim}
               variant="white"
             />
             <Input
-              containerClassName="md:col-span-2 xl:col-span-4"
+              containerClassName="@min-[32rem]/periodos:col-span-2 @min-[68rem]/periodos:col-span-4"
               label="Observações"
               onChange={(event) =>
                 onFormChange("observacoes", event.target.value)
@@ -172,14 +172,14 @@ export function RecadastroPeriodosSection({
               {periodos.length} período(s) encontrado(s)
             </p>
           </div>
-          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
-            <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 @min-[40rem]/periodos:w-auto">
+            <div className="flex min-w-0 basis-full items-center gap-2 @min-[32rem]/periodos:basis-auto">
               <span className="shrink-0 text-xs text-content-muted">
                 Ordenar por:
               </span>
               <Select
                 aria-label="Ordenar períodos"
-                containerClassName="min-w-0 flex-1 sm:w-44"
+                containerClassName="min-w-0 flex-1 @min-[32rem]/periodos:w-44"
                 onChange={(event) =>
                   setSortOrder(event.target.value as PeriodoSortOrder)
                 }
@@ -237,32 +237,33 @@ export function RecadastroPeriodosSection({
         ) : (
           <div
             className={cn(
-              "grid gap-4",
+              "grid min-w-0 gap-4",
               viewMode === "grid"
-                ? "md:grid-cols-2 xl:grid-cols-3"
+                ? "grid-cols-[repeat(auto-fit,minmax(min(100%,22rem),1fr))]"
                 : "grid-cols-1",
             )}
           >
             {sortedPeriodos.map((periodo) => (
               <article
                 className={cn(
-                  "flex flex-col rounded-xl border border-border-subtle bg-white p-4 shadow-sm transition-shadow hover:shadow-md",
+                  "@container/periodo flex min-w-0 flex-col rounded-xl border border-border-subtle bg-white p-4 shadow-sm transition-shadow hover:shadow-md",
                   viewMode === "list" &&
-                    "lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(28rem,0.7fr)] lg:items-center lg:gap-x-5",
+                    "@min-[64rem]/periodos:grid @min-[64rem]/periodos:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @min-[64rem]/periodos:items-center @min-[64rem]/periodos:gap-x-5",
                 )}
                 key={periodo.id}
               >
                 <div
                   className={cn(
-                    "flex items-start justify-between gap-3",
-                    viewMode === "list" && "lg:col-start-1 lg:row-start-1",
+                    "flex min-w-0 flex-wrap items-start justify-between gap-3",
+                    viewMode === "list" &&
+                      "@min-[64rem]/periodos:col-start-1 @min-[64rem]/periodos:row-start-1",
                   )}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-050 text-brand-600">
                       <CalendarDays className="size-5" />
                     </span>
-                    <div>
+                    <div className="min-w-0 break-words">
                       <h3 className="font-bold text-content-primary">
                         {periodo.referencia}
                       </h3>
@@ -281,8 +282,9 @@ export function RecadastroPeriodosSection({
 
                 <p
                   className={cn(
-                    "mt-3 min-h-5 text-sm leading-5 text-content-muted",
-                    viewMode === "list" && "lg:col-start-1 lg:row-start-2",
+                    "mt-3 min-h-5 min-w-0 break-words text-sm leading-5 text-content-muted",
+                    viewMode === "list" &&
+                      "@min-[64rem]/periodos:col-start-1 @min-[64rem]/periodos:row-start-2",
                   )}
                 >
                   {periodo.observacoes || "Nenhuma observação informada."}
@@ -290,16 +292,16 @@ export function RecadastroPeriodosSection({
 
                 <div
                   className={cn(
-                    "mt-auto grid grid-cols-1 gap-2 pt-4 sm:grid-cols-3 xl:grid-cols-[0.75fr_1fr_1.45fr]",
+                    "mt-auto flex min-w-0 flex-wrap gap-2 pt-4",
                     viewMode === "list" &&
-                      "lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:pt-0",
+                      "@min-[64rem]/periodos:col-start-2 @min-[64rem]/periodos:row-span-2 @min-[64rem]/periodos:row-start-1 @min-[64rem]/periodos:my-auto @min-[64rem]/periodos:pt-0",
                   )}
                 >
                   {canWrite && (
                     <>
                       <Button
-                        className="px-3"
-                        fullWidth
+                        className="flex-1 basis-full px-3 @min-[20rem]/periodo:basis-auto"
+                        fullWidth={false}
                         leftIcon={
                           periodo.status === "Aberto" ? (
                             <LockKeyhole />
@@ -316,8 +318,8 @@ export function RecadastroPeriodosSection({
                         {periodo.status === "Aberto" ? "Fechar" : "Abrir"}
                       </Button>
                       <Button
-                        className="px-3"
-                        fullWidth
+                        className="flex-1 basis-full px-3 @min-[20rem]/periodo:basis-auto"
+                        fullWidth={false}
                         leftIcon={<Pencil />}
                         onClick={() => onEdit(periodo)}
                         size="sm"
@@ -328,8 +330,8 @@ export function RecadastroPeriodosSection({
                     </>
                   )}
                   <Button
-                    className="px-3"
-                    fullWidth
+                    className="flex-1 basis-full px-3 @min-[32rem]/periodo:basis-auto"
+                    fullWidth={false}
                     leftIcon={<UsersRound />}
                     onClick={() => onShowMissing(periodo)}
                     size="sm"
