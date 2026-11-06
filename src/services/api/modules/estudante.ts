@@ -30,33 +30,41 @@ function isEmptyMessageResponse(
 }
 
 export const estudanteService = {
-  list: sharePendingRequest(async (page = 1, perPage = 10) => {
-    const { data } = await api.get<PaginatedEstudantes | EmptyMessageResponse>(
-      API_ENDPOINTS.ESTUDANTES.BASE,
-      {
+  detail: sharePendingRequest(async (id: number) => {
+    const { data } = await api.get<LaravelDataResponse<Estudante>>(
+      API_ENDPOINTS.ESTUDANTES.BY_ID(id),
+    );
+    return data.data;
+  }),
+  list: sharePendingRequest(
+    async (page: number = 1, perPage: number = 10, search: string = "") => {
+      const { data } = await api.get<
+        PaginatedEstudantes | EmptyMessageResponse
+      >(API_ENDPOINTS.ESTUDANTES.BASE, {
         params: {
           page,
           per_page: perPage,
+          ...(search.trim() ? { search: search.trim() } : {}),
         },
-      },
-    );
+      });
 
-    if (isEmptyMessageResponse(data)) {
-      return {
-        data: [],
-        meta: {
-          current_page: 1,
-          from: null,
-          last_page: 1,
-          per_page: 10,
-          to: null,
-          total: 0,
-        },
-      } satisfies PaginatedEstudantes;
-    }
+      if (isEmptyMessageResponse(data)) {
+        return {
+          data: [],
+          meta: {
+            current_page: 1,
+            from: null,
+            last_page: 1,
+            per_page: 10,
+            to: null,
+            total: 0,
+          },
+        } satisfies PaginatedEstudantes;
+      }
 
-    return data;
-  }),
+      return data;
+    },
+  ),
 
   count: sharePendingRequest(async () => {
     const { data } = await api.get<CountResponse>(

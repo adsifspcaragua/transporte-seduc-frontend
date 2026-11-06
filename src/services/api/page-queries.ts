@@ -16,6 +16,12 @@ export const studentsQuery = createCachedQuery(
   (page: number = 1, perPage: number = 10): Promise<PaginatedEstudantes> =>
     estudanteService.list(page, perPage),
 );
+export const studentSearchQuery = createCachedQuery(
+  (search: string, page: number) => estudanteService.list(page, 15, search),
+);
+export const studentReferenceQuery = createCachedQuery((id: string) =>
+  id ? estudanteService.detail(Number(id)) : Promise.resolve(null),
+);
 
 export const studentOptionsQuery = createCachedQuery(async () => {
   const [cursos, instituicoes, linhas] = await Promise.all([
