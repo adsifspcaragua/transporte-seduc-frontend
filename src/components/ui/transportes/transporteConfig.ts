@@ -487,7 +487,7 @@ export const transporteConfigs: TransporteConfig[] = [
     filters: [],
     columns: columns(["title", "Cargo"]),
     notice:
-      "A API de cargos devolve somente o título, sem identificador. A criação e a consulta estão disponíveis; edição e exclusão dependem de o backend fornecer o ID. Esta API não oferece gestão de permissões do cargo.",
+      "Consulte os cargos cadastrados ou cadastre um novo cargo. A edição de cargos e a configuração de permissões não estão disponíveis nesta tela.",
   },
   {
     key: "instituicoes",
@@ -512,7 +512,7 @@ export const transporteConfigs: TransporteConfig[] = [
       ["linhas_ids", "Linhas vinculadas"],
     ),
     notice:
-      "A listagem usa páginas de 15 registros. O servidor não informa o total; avance até o final ou consulte diretamente pelo ID.",
+      "Consulte as instituições em páginas de até 15 registros. Use as ações de cada instituição para visualizar ou editar seus dados.",
   },
 ];
 

@@ -7,15 +7,30 @@ import { getQuerySessionVersion } from "@/services/api/query-cache";
 import { TransporteIndicadores } from "./TransporteIndicadores";
 import { TransporteResourcePanel } from "./TransporteResourcePanel";
 import { transporteConfigs } from "./transporteConfig";
+import { transporteGroups } from "./transporteNavigation";
 
 export function TransportesWorkspace() {
   const { can, canAny } = useAuthz();
   const available = transporteConfigs.filter((config) => canAny(config.view));
   const [selected, setSelected] = useState("");
+  const groups = transporteGroups.filter((group) =>
+    group.sections.some((key) =>
+      key === "indicadores"
+        ? can("presencas.view")
+        : available.some((config) => config.key === key),
+    ),
+  );
+  const [selectedGroup, setSelectedGroup] = useState("");
+  const group = groups.find((item) => item.key === selectedGroup) ?? groups[0];
+  const sections = available.filter((config) =>
+    group?.sections.includes(config.key),
+  );
   const active =
-    available.find((config) => config.key === selected) ?? available[0];
+    sections.find((config) => config.key === selected) ?? sections[0];
   const indicatorsSelected =
-    selected === "indicadores" && can("presencas.view");
+    group?.sections.includes("indicadores") &&
+    can("presencas.view") &&
+    (selected === "indicadores" || !active);
   const session = getQuerySessionVersion();
 
   return (
@@ -30,9 +45,29 @@ export function TransportesWorkspace() {
       </header>
       <nav
         aria-label="Áreas de gestão do transporte"
-        className="flex flex-wrap gap-2"
+        className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap"
       >
-        {available.map((config) => (
+        {groups.map((item) => (
+          <Button
+            key={item.key}
+            size="sm"
+            fullWidth={false}
+            variant={group?.key === item.key ? "primary" : "secondary"}
+            aria-pressed={group?.key === item.key}
+            onClick={() => {
+              setSelectedGroup(item.key);
+              setSelected("");
+            }}
+          >
+            {item.label}
+          </Button>
+        ))}
+      </nav>
+      <nav
+        aria-label={`Seções de ${group?.label ?? "transporte"}`}
+        className="flex flex-wrap gap-2 rounded-xl border border-border-subtle bg-white p-3"
+      >
+        {sections.map((config) => (
           <Button
             key={config.key}
             size="sm"
@@ -48,7 +83,7 @@ export function TransportesWorkspace() {
             {config.label}
           </Button>
         ))}
-        {can("presencas.view") && (
+        {group?.sections.includes("indicadores") && can("presencas.view") && (
           <Button
             size="sm"
             fullWidth={false}

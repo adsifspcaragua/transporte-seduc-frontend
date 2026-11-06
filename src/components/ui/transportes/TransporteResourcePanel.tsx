@@ -1,11 +1,21 @@
 "use client";
 
+import {
+  Ban,
+  Check,
+  ClipboardCheck,
+  Eye,
+  Pencil,
+  QrCode,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/buttons";
 import { Input, NumberInput } from "@/components/form/inputs";
 import { TextSkeleton } from "@/components/loading";
 import { Modal } from "@/components/modal";
-import { DataTable } from "@/components/table";
+import { DataTable, TableActionButton } from "@/components/table";
 import { useAuthz } from "@/hooks/use-authz";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import {
@@ -75,12 +85,12 @@ const detailResources = new Set([
   "instituicoes",
 ]);
 const gridClasses: Record<number, string> = {
-  2: "md:grid-cols-2",
-  3: "md:grid-cols-3",
-  4: "md:grid-cols-4",
-  5: "md:grid-cols-5",
-  6: "md:grid-cols-6",
-  7: "md:grid-cols-7",
+  2: "md:grid-cols-[minmax(0,1fr)_9rem]",
+  3: "md:grid-cols-[repeat(2,minmax(0,1fr))_9rem]",
+  4: "md:min-w-[40rem] md:grid-cols-[repeat(3,minmax(0,1fr))_9rem]",
+  5: "md:min-w-[48rem] md:grid-cols-[repeat(4,minmax(0,1fr))_9rem]",
+  6: "md:min-w-[52rem] md:grid-cols-[repeat(5,minmax(0,1fr))_9rem]",
+  7: "md:min-w-[56rem] md:grid-cols-[repeat(6,minmax(0,1fr))_9rem]",
 };
 
 export function TransporteResourcePanel({
@@ -98,6 +108,7 @@ export function TransporteResourcePanel({
     config.key === "tentativas" ? { resultado: "Negada" } : {},
   );
   const [page, setPage] = useState(1);
+  const [filterReset, setFilterReset] = useState(0);
   const [perPage, setPerPage] = useState(15);
   const result = useCachedQuery(transporteQuery, config.key, {
     ...filters,
@@ -399,13 +410,17 @@ export function TransporteResourcePanel({
           }}
         >
           <TransporteFields
+            key={filterReset}
             fields={config.filters}
+            responsaveis={(result.data?.data ?? [])
+              .map((record) => getTransporteValue(record, "user"))
+              .filter(Boolean)}
             values={filterValues}
             onChange={(key, value) =>
               setFilterValues((current) => ({ ...current, [key]: value }))
             }
           />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button size="sm" fullWidth={false} type="submit">
               Filtrar
             </Button>
@@ -415,6 +430,7 @@ export function TransporteResourcePanel({
               variant="secondary"
               onClick={() => {
                 setFilterValues({});
+                setFilterReset((current) => current + 1);
                 setFilters({});
                 setPage(1);
               }}
@@ -504,49 +520,33 @@ export function TransporteResourcePanel({
                   )}
               </div>
             ))}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
+            <div className="flex flex-nowrap items-center gap-1">
+              <TableActionButton
+                ariaLabel="Detalhes"
+                tooltip="Detalhes"
+                icon={<Eye />}
                 variant="secondary"
-                fullWidth={false}
-                disabled={detailBusy}
+                loading={detailBusy}
                 onClick={() => void showDetails(record)}
-              >
-                Detalhes
-              </Button>
+              />
               {canWrite && config.edit && (
-                <Button
-                  size="sm"
+                <TableActionButton
+                  ariaLabel="Editar"
+                  tooltip="Editar"
+                  icon={<Pencil />}
                   variant="secondary"
-                  fullWidth={false}
                   onClick={() =>
                     open("edit", `Editar: ${config.label}`, record)
                   }
-                >
-                  Editar
-                </Button>
+                />
               )}
-              {canRemove && (
-                <Button
-                  size="sm"
-                  variant="danger"
-                  fullWidth={false}
-                  onClick={() =>
-                    open(
-                      "remove",
-                      `Excluir registro #${String(getTransporteValue(record, "id"))}`,
-                      record,
-                    )
-                  }
-                >
-                  Excluir
-                </Button>
-              )}
+
               {canWrite && config.key === "veiculos" && (
-                <Button
-                  size="sm"
+                <TableActionButton
+                  ariaLabel="Novo QR"
+                  tooltip="Novo QR"
+                  icon={<QrCode />}
                   variant="secondary"
-                  fullWidth={false}
                   onClick={() =>
                     open(
                       "qr",
@@ -554,16 +554,16 @@ export function TransporteResourcePanel({
                       record,
                     )
                   }
-                >
-                  Novo QR
-                </Button>
+                />
               )}
               {canWrite &&
                 config.key === "solicitacoes" &&
                 getTransporteValue(record, "status") === "Pendente" && (
-                  <Button
-                    size="sm"
-                    fullWidth={false}
+                  <TableActionButton
+                    ariaLabel="Aprovar"
+                    tooltip="Aprovar"
+                    icon={<Check />}
+                    variant="approved"
                     onClick={() =>
                       open(
                         "approve",
@@ -571,19 +571,18 @@ export function TransporteResourcePanel({
                         record,
                       )
                     }
-                  >
-                    Aprovar
-                  </Button>
+                  />
                 )}
               {canWrite &&
                 config.key === "solicitacoes" &&
                 ["Pendente", "Aprovada"].includes(
                   String(getTransporteValue(record, "status")),
                 ) && (
-                  <Button
-                    size="sm"
+                  <TableActionButton
+                    ariaLabel="Rejeitar"
+                    tooltip="Rejeitar"
+                    icon={<X />}
                     variant="danger"
-                    fullWidth={false}
                     onClick={() =>
                       open(
                         "reject",
@@ -591,17 +590,16 @@ export function TransporteResourcePanel({
                         record,
                       )
                     }
-                  >
-                    Rejeitar
-                  </Button>
+                  />
                 )}
               {canWrite &&
                 config.key === "dispositivos" &&
                 getTransporteValue(record, "status") === "Ativo" && (
-                  <Button
-                    size="sm"
+                  <TableActionButton
+                    ariaLabel="Revogar"
+                    tooltip="Revogar"
+                    icon={<Ban />}
                     variant="danger"
-                    fullWidth={false}
                     onClick={() =>
                       open(
                         "revoke",
@@ -609,23 +607,36 @@ export function TransporteResourcePanel({
                         record,
                       )
                     }
-                  >
-                    Revogar
-                  </Button>
+                  />
                 )}
               {canWrite &&
                 config.key === "tentativas" &&
                 getTransporteValue(record, "revisao.status") === "Pendente" && (
-                  <Button
-                    size="sm"
-                    fullWidth={false}
+                  <TableActionButton
+                    ariaLabel="Analisar"
+                    tooltip="Analisar"
+                    icon={<ClipboardCheck />}
+                    variant="primary"
                     onClick={() =>
                       open("review", "Analisar revisão de presença", record)
                     }
-                  >
-                    Analisar
-                  </Button>
+                  />
                 )}
+              {canRemove && (
+                <TableActionButton
+                  ariaLabel="Excluir"
+                  tooltip="Excluir"
+                  icon={<Trash2 />}
+                  variant="danger"
+                  onClick={() =>
+                    open(
+                      "remove",
+                      `Excluir registro #${String(getTransporteValue(record, "id"))}`,
+                      record,
+                    )
+                  }
+                />
+              )}
             </div>
           </article>
         )}

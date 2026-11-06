@@ -22,11 +22,12 @@ const fields = [
 export function TransporteIndicadores() {
   const [values, setValues] = useState<TransporteFormValues>({});
   const [filters, setFilters] = useState<TransporteFiltros>({});
+  const [filterReset, setFilterReset] = useState(0);
   const result = useCachedQuery(indicadoresTransporteQuery, filters);
   const data = result.data;
   return (
     <section className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-brand-700">
           Indicadores de presença
         </h2>
@@ -52,15 +53,30 @@ export function TransporteIndicadores() {
         }}
       >
         <TransporteFields
+          key={filterReset}
           fields={fields}
           values={values}
           onChange={(key, value) =>
             setValues((current) => ({ ...current, [key]: value }))
           }
         />
-        <Button type="submit" size="sm" fullWidth={false}>
-          Consultar indicadores
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" size="sm" fullWidth={false}>
+            Consultar indicadores
+          </Button>
+          <Button
+            size="sm"
+            fullWidth={false}
+            variant="secondary"
+            onClick={() => {
+              setValues({});
+              setFilters({});
+              setFilterReset((current) => current + 1);
+            }}
+          >
+            Limpar filtros
+          </Button>
+        </div>
       </form>
       {result.error ? (
         <div

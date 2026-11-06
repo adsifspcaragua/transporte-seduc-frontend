@@ -10,9 +10,13 @@ import {
   TimeInput,
 } from "@/components/form/inputs";
 import { useAuthz } from "@/hooks/use-authz";
+import { TransporteEstudanteField } from "./TransporteEstudanteField";
 import {
   TransporteLinhaField,
+  TransporteLinhasField,
   TransporteReferenceField,
+  TransporteResponsavelDisponivelField,
+  TransporteResponsavelField,
 } from "./TransporteReferenceField";
 import type { TransporteField } from "./transporteConfig";
 import type { TransporteFormValues } from "./transportePresentation";
@@ -23,6 +27,7 @@ type Props = {
   values: TransporteFormValues;
   errors?: Record<string, string>;
   disabled?: boolean;
+  responsaveis?: unknown[];
   onChange: (key: string, value: string) => void;
 };
 
@@ -31,6 +36,7 @@ export function TransporteFields({
   values,
   errors = {},
   disabled,
+  responsaveis = [],
   onChange,
 }: Props) {
   const { can } = useAuthz();
@@ -120,6 +126,49 @@ export function TransporteFields({
               }))}
             />
           );
+        if (field.key === "estudante_id")
+          return can("estudantes.view") ? (
+            <TransporteEstudanteField
+              {...props}
+              field={field}
+              key={field.key}
+            />
+          ) : (
+            <Input
+              {...props}
+              key={field.key}
+              label="Estudante"
+              disabled
+              hint="Seu perfil não permite consultar o cadastro de estudantes."
+            />
+          );
+        if (field.key === "linhas_ids")
+          return can("linhas.view") ? (
+            <TransporteLinhasField {...props} field={field} key={field.key} />
+          ) : (
+            <Input
+              {...props}
+              key={field.key}
+              label="Linhas vinculadas"
+              disabled
+              hint="Seu perfil não permite consultar as linhas."
+            />
+          );
+        if (field.key === "user_id")
+          return can("users.view") ? (
+            <TransporteResponsavelField
+              {...props}
+              field={field}
+              key={field.key}
+            />
+          ) : (
+            <TransporteResponsavelDisponivelField
+              {...props}
+              field={field}
+              records={responsaveis}
+              key={field.key}
+            />
+          );
         if (field.key === "linha_id" && can("linhas.view"))
           return (
             <TransporteLinhaField {...props} field={field} key={field.key} />
@@ -140,6 +189,29 @@ export function TransporteFields({
               field={field}
               resource="pontos"
               key={field.key}
+            />
+          );
+        if (field.key === "viagem_id" && can("viagens.view"))
+          return (
+            <TransporteReferenceField
+              {...props}
+              field={field}
+              resource="viagens"
+              key={field.key}
+            />
+          );
+        if (
+          ["linha_id", "veiculo_id", "ponto_id", "viagem_id"].includes(
+            field.key,
+          )
+        )
+          return (
+            <Input
+              {...props}
+              key={field.key}
+              disabled
+              label={field.label.replace(/^ID (da|do) /, "")}
+              hint="Seu perfil não permite consultar este cadastro."
             />
           );
         if (field.type === "number")
