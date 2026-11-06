@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { PermissionBoundary } from "@/components/guard";
 import { AppFooter } from "@/components/ui/layout/AppFooter";
@@ -14,16 +14,23 @@ import {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const closeMobileSidebar = useCallback(
+    () => setIsMobileSidebarOpen(false),
+    [],
+  );
 
   return (
     <div className="min-h-screen bg-app-surface text-slate-950">
       <AppSidebar
         isOpen={isSidebarOpen}
+        isMobileOpen={isMobileSidebarOpen}
+        onMobileClose={closeMobileSidebar}
         onToggle={() => setIsSidebarOpen((current) => !current)}
       />
 
       <div
-        className="transition-[padding-left] duration-300 ease-in-out lg:pl-[var(--sidebar-width)]"
+        className="min-w-0 transition-[padding-left] duration-300 ease-in-out lg:pl-[var(--sidebar-width)]"
         style={
           {
             "--sidebar-width": `${
@@ -32,8 +39,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           } as React.CSSProperties
         }
       >
-        <AppHeader />
-        <main className="px-5 py-6 lg:px-8">
+        <AppHeader
+          isMobileSidebarOpen={isMobileSidebarOpen}
+          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
+        />
+        <main className="min-w-0 px-5 py-6 lg:px-8">
           <PermissionBoundary>{children}</PermissionBoundary>
         </main>
         <AppFooter />

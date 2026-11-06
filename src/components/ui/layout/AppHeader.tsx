@@ -17,10 +17,14 @@ import { useAuthz } from "@/hooks/use-authz";
 import { cn } from "@/utils/cn";
 
 type AppHeaderProps = {
+  isMobileSidebarOpen?: boolean;
   onOpenMobileSidebar?: () => void;
 };
 
-export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
+export function AppHeader({
+  isMobileSidebarOpen = false,
+  onOpenMobileSidebar,
+}: AppHeaderProps) {
   const { signOut, user } = useAuth();
   const { can } = useAuthz();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -60,7 +64,7 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-[70px] items-center justify-between gap-3 bg-white px-5 shadow-sm lg:px-8">
+    <header className="sticky top-0 z-10 flex h-[70px] min-w-0 items-center justify-between gap-3 bg-white px-5 shadow-sm lg:px-8">
       <Image
         alt="Prefeitura Municipal de Caraguatatuba"
         className="h-10 w-36 min-w-0 object-contain object-left sm:h-12 sm:w-44 lg:w-48"
@@ -69,6 +73,8 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
         width={622}
       />
       <button
+        aria-controls="mobile-sidebar"
+        aria-expanded={isMobileSidebarOpen}
         aria-label="Abrir menu"
         className="ml-auto flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md bg-brand-600 text-white lg:hidden"
         onClick={onOpenMobileSidebar}
@@ -77,12 +83,8 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
         <Menu className="size-5" />
       </button>
 
-      <div className="flex items-center gap-4">
-        {/* A coluna compartilhada mantém a largura estável, inclusive com o menu fechado. */}
-        <div
-          className="relative grid h-12 grid-cols-[max-content] grid-rows-1"
-          ref={userMenuRef}
-        >
+      <div className="flex min-w-0 shrink-0 items-center gap-4">
+        <div className="relative h-12" ref={userMenuRef}>
           <button
             aria-expanded={isUserMenuOpen}
             aria-haspopup="menu"
@@ -115,7 +117,7 @@ export function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
             aria-hidden={!isUserMenuOpen}
             aria-label="Menu do usuário"
             className={cn(
-              "relative top-[calc(100%+0.5rem)] z-50 col-start-1 row-start-1 w-full self-start overflow-hidden rounded-md border border-brand-600/10 bg-white py-2 shadow-[0_12px_30px_rgba(0,0,0,0.16)]",
+              "absolute right-0 top-[calc(100%+0.5rem)] z-50 w-max min-w-full max-w-[calc(100vw-2.5rem)] rounded-md border border-brand-600/10 bg-white py-2 shadow-[0_12px_30px_rgba(0,0,0,0.16)]",
               !isUserMenuOpen && "pointer-events-none invisible",
             )}
             inert={!isUserMenuOpen}
