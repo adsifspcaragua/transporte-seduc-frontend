@@ -437,7 +437,7 @@ export const transporteConfigs: TransporteConfig[] = [
       {
         key: "resultado",
         label: "Resultado",
-        options: ["Negada", "Registrada"],
+        options: ["Negada", "Em revisao", "Registrada"],
       },
       {
         key: "revisao_status",

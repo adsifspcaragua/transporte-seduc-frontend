@@ -13,4 +13,5 @@ export const PORTAL_ENDPOINTS = {
   RESOLVE_QR: "/presencas/resolver-qr",
   PRESENCE_CHALLENGE: "/presencas/desafios",
   CONFIRM_PRESENCE: "/presencas",
+  OFFLINE_PRESENCE: "/presencas/offline",
 } as const;

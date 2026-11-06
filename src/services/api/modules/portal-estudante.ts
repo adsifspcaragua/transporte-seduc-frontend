@@ -107,6 +107,15 @@ export const portalEstudanteService = {
       )
     ).data;
   },
+  /** Comprovante feito sem conexão; a API o coloca na revisão da gestão. */
+  async sendOfflineProof(payload: { comprovante: string; assinatura: string }) {
+    return (
+      await api.post<PortalDataResponse<PortalTentativa>>(
+        PORTAL_ENDPOINTS.OFFLINE_PRESENCE,
+        payload,
+      )
+    ).data;
+  },
   async requestReview(id: number, motivo: string) {
     return (
       await api.post<PortalDataResponse<PortalTentativa>>(

@@ -12,10 +12,15 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Button } from "@/components/buttons";
 import { useAuth } from "@/hooks/use-auth";
+import { env } from "@/services/api/env";
+import { portalEstudanteService } from "@/services/api/modules/portal-estudante";
+import { syncOfflineProofs } from "@/services/offline-presence";
+import { deviceScope } from "@/services/student-device";
 import { cn } from "@/utils/cn";
+import { portalError } from "./portalPresentation";
 
 const navigation = [
   { href: "/portal-estudante", label: "Início", icon: House },
@@ -37,6 +42,19 @@ export function PortalEstudanteLayout({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
   const allowed = user?.permissions.includes("presencas.registrar");
+  const userId = user?.id;
+  useEffect(() => {
+    if (!allowed || !userId) return;
+    const send = () =>
+      void syncOfflineProofs(
+        deviceScope(userId, env.apiUrl),
+        (payload) => portalEstudanteService.sendOfflineProof(payload),
+        portalError,
+      ).catch(() => undefined);
+    send();
+    window.addEventListener("online", send);
+    return () => window.removeEventListener("online", send);
+  }, [allowed, userId]);
   return (
     <div className="min-h-screen bg-app-surface text-content-primary">
       <header className="sticky top-0 z-20 flex h-[70px] items-center justify-between gap-3 bg-white px-4 shadow-sm sm:px-6">
