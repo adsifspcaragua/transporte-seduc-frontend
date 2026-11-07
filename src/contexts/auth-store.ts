@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { esquecerConta } from "@/services/offline-session";
 
 import type { AuthStatus, AuthUser } from "@/types/auth";
 
@@ -19,9 +20,12 @@ export const useAuthStore = create<AuthState>()((set) => ({
       status: "authenticated",
     }),
 
-  clearAuth: () =>
+  // Sair ou sessão recusada (401) também apaga a conta lembrada para uso offline.
+  clearAuth: () => {
+    esquecerConta();
     set({
       user: null,
       status: "guest",
-    }),
+    });
+  },
 }));

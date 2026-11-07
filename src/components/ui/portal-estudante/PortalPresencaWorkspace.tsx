@@ -1,13 +1,7 @@
 "use client";
 
 import axios from "axios";
-import {
-  Camera,
-  CheckCircle2,
-  CloudUpload,
-  MapPin,
-  QrCode,
-} from "lucide-react";
+import { Camera, CheckCircle2, MapPin, QrCode } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/buttons";
@@ -23,8 +17,6 @@ import { PENDING_PRESENCE_QR_KEY } from "@/services/navigation/account-navigatio
 import {
   createOfflineProof,
   isConnectionError,
-  pendingProofs,
-  syncOfflineProofs,
 } from "@/services/offline-presence";
 import {
   deviceScope,
@@ -89,8 +81,6 @@ export function PortalPresencaWorkspace() {
     | "queued"
     | "error"
   >("idle");
-  const [pendentes, setPendentes] = useState(0);
-  const [sending, setSending] = useState(false);
   const [preview, setPreview] = useState<PortalQrResolvido | null>(null);
   const [presence, setPresence] = useState<PortalPresenca | null>(null);
   const [feedback, setFeedback] = useState("");
@@ -120,51 +110,6 @@ export function PortalPresencaWorkspace() {
       window.history.replaceState(window.history.state, "", url.pathname);
   }, []);
 
-  const userId = user?.id;
-  useEffect(() => {
-    if (!userId) return;
-    const scope = deviceScope(userId, env.apiUrl);
-    const update = () =>
-      void pendingProofs(scope)
-        .then((items) => setPendentes(items.length))
-        .catch(() => undefined);
-    update();
-    window.addEventListener("online", update);
-    return () => window.removeEventListener("online", update);
-  }, [userId]);
-
-  async function sendPending() {
-    if (!user || sending) return;
-    setSending(true);
-    try {
-      const result = await syncOfflineProofs(
-        deviceScope(user.id, env.apiUrl),
-        (payload) => portalEstudanteService.sendOfflineProof(payload),
-        portalError,
-      );
-      setPendentes(result.remaining);
-      const messages = [
-        result.sent.length > 0 &&
-          `${result.sent.length} registro(s) feito(s) sem conexão enviado(s). A gestão vai confirmar a presença.`,
-        ...result.rejected.map(
-          (item) =>
-            `Registro de ${portalDate(new Date(item.proof.capturadoEm).toISOString(), true)} recusado: ${item.message}`,
-        ),
-        result.remaining > 0 &&
-          "Ainda não foi possível enviar. Tente de novo quando a internet voltar.",
-      ].filter(Boolean);
-      if (messages.length > 0) {
-        setFeedback(messages.join(" "));
-        setPhase(result.rejected.length > 0 ? "error" : "queued");
-      }
-    } catch (currentError) {
-      setFeedback(portalError(currentError));
-      setPhase("error");
-    } finally {
-      setSending(false);
-    }
-  }
-
   /**
    * A requisição nem chegou à API: grava o comprovante assinado neste celular
    * para enviar depois. A gestão confirma a presença quando ele chegar.
@@ -180,7 +125,6 @@ export function PortalPresencaWorkspace() {
       token,
       location ?? (await currentLocation()),
     );
-    setPendentes((await pendingProofs(scope)).length);
     setFeedback(
       `Sem conexão com a internet. O registro de ${portalDate(new Date(proof.capturadoEm).toISOString(), true)} foi guardado neste celular e será enviado quando a conexão voltar; depois a gestão confirma a sua presença.`,
     );
@@ -288,37 +232,24 @@ export function PortalPresencaWorkspace() {
         <h2 className="text-lg font-bold text-brand-700">Registrar presença</h2>
         <p className="mt-1 text-sm text-content-secondary">
           Leia o QR afixado na van durante o horário da sua viagem. Use o
-          navegador autorizado e permita o acesso à localização. Sem internet,
-          mantenha esta página aberta: o registro fica guardado no celular e é
-          enviado depois para a gestão confirmar.
+          navegador autorizado e permita o acesso à localização. Funciona sem
+          internet: o registro fica guardado no celular e é enviado sozinho
+          quando a conexão voltar, para a gestão confirmar.
         </p>
       </section>
-      <PortalError error={device.error} onRetry={() => void device.refresh()} />
+      {/* Sem rede o aviso de conexão do portal já explica; o registro segue possível. */}
+      <PortalError
+        error={
+          device.error && !isConnectionError(device.error) ? device.error : null
+        }
+        onRetry={() => void device.refresh()}
+      />
       {feedback && (
         <PortalFeedback
           success={phase === "success" || phase === "queued" || already}
         >
           {feedback}
         </PortalFeedback>
-      )}
-      {pendentes > 0 && (
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
-          <p className="text-sm text-content-secondary">
-            {pendentes === 1
-              ? "1 registro feito sem conexão aguardando envio."
-              : `${pendentes} registros feitos sem conexão aguardando envio.`}{" "}
-            Eles são enviados sozinhos quando a internet volta.
-          </p>
-          <Button
-            fullWidth={false}
-            loading={sending}
-            leftIcon={<CloudUpload />}
-            onClick={() => void sendPending()}
-            variant="secondary"
-          >
-            Enviar agora
-          </Button>
-        </section>
       )}
       {presence && (
         <section className="space-y-2 rounded-lg border border-emerald-600/20 bg-white p-5 shadow-sm">

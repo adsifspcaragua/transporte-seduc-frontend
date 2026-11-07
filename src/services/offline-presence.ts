@@ -40,6 +40,11 @@ type SendProof = (payload: {
   assinatura: string;
 }) => Promise<PortalDataResponse<PortalTentativa>>;
 
+/** Disparado quando um comprovante é guardado. */
+export const OFFLINE_QUEUE_EVENT = "sigtu:presenca-offline-guardada";
+/** Disparado ao fim de cada envio, com o resultado em `detail`. */
+export const OFFLINE_SYNC_EVENT = "sigtu:presenca-offline-enviada";
+
 const DATABASE = "sigtu-presenca-offline";
 const STORE = "comprovantes";
 
@@ -116,6 +121,7 @@ export async function createOfflineProof(
   );
   const proof = { id, scope, comprovante, assinatura, capturadoEm };
   await withStore("readwrite", (store) => store.put(proof));
+  window.dispatchEvent(new CustomEvent(OFFLINE_QUEUE_EVENT));
   return proof;
 }
 
@@ -166,6 +172,11 @@ export function syncOfflineProofs(
       }
     }
     result.remaining = (await pendingProofs(scope)).length;
+    window.dispatchEvent(
+      new CustomEvent<OfflineSyncResult>(OFFLINE_SYNC_EVENT, {
+        detail: result,
+      }),
+    );
     return result;
   })().finally(() => {
     running = null;

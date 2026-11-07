@@ -414,7 +414,11 @@ export const transporteConfigs: TransporteConfig[] = [
       studentFilter,
       lineFilter,
       id("viagem_id", "ID da viagem", false),
-      { key: "metodo", label: "Método", options: ["Dispositivo", "Manual"] },
+      {
+        key: "metodo",
+        label: "Método",
+        options: ["Dispositivo", "Manual", "Offline"],
+      },
     ],
     columns: columns(
       ["estudante.name", "Estudante"],
