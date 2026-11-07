@@ -114,6 +114,8 @@ As validações de payload do servidor estão no inventário de Requests. As est
 
 ## 5. Transporte: navegação, campos e operações
 
+**Atualização de 06/11/2026 — MVP guiado:** `/transportes` agora prioriza visão por linha e assistente de seis etapas. Os grupos e contratos abaixo permanecem em **Cadastros e manutenção**. Consulte [Gestão Guiada — entrega, testes e limitações](GESTAO_GUIADA_TRANSPORTE_MVP.md). Não há rascunho persistente, aplicação global ou mudança de regras no backend.
+
 A proposta foi registrada antes da alteração em `docs/superpowers/plans/2026-11-06-auditoria-unibus.md`.
 
 | Área nova | Seções anteriores preservadas |
