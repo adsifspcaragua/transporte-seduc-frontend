@@ -34,6 +34,7 @@ const EMPTY_FORM: UserFormValues = {
 };
 
 type UserFormModalProps = {
+  fixedRole?: "motorista";
   open: boolean;
   user: SystemUser | null;
   loading: boolean;
@@ -45,6 +46,7 @@ type UserFormModalProps = {
 };
 
 export function UserFormModal({
+  fixedRole,
   open,
   user,
   loading,
@@ -72,10 +74,10 @@ export function UserFormModal({
             data_nascimento: user.data_nascimento?.slice(0, 10) ?? "",
             role: user.roles[0] ?? "",
           }
-        : EMPTY_FORM,
+        : { ...EMPTY_FORM, role: fixedRole ?? "" },
     );
     setLocalErrors({});
-  }, [open, user]);
+  }, [open, user, fixedRole]);
 
   function setField(field: keyof UserFormValues, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -169,6 +171,7 @@ export function UserFormModal({
         <Select
           error={fieldError("role")}
           label="Papel"
+          disabled={Boolean(fixedRole)}
           onChange={(event) => setField("role", event.target.value)}
           options={[
             { value: "", label: "Selecione um papel" },

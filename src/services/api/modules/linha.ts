@@ -39,7 +39,10 @@ export const linhaService = {
     return data;
   },
 
-  async update(id: number, payload: LinhaPayload) {
+  async update(
+    id: number,
+    payload: Omit<LinhaPayload, "name"> & { name?: string },
+  ) {
     const { data } = await api.put<DataResponse<Linha>>(
       API_ENDPOINTS.LINHAS.BY_ID(id),
       payload,

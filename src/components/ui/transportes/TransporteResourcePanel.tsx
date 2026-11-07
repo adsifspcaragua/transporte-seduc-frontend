@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import {
   Ban,
   Check,
@@ -12,7 +13,7 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/buttons";
-import { Input, NumberInput } from "@/components/form/inputs";
+import { Checkbox, Input, NumberInput } from "@/components/form/inputs";
 import { TextSkeleton } from "@/components/loading";
 import { Modal } from "@/components/modal";
 import { DataTable, TableActionButton } from "@/components/table";
@@ -35,6 +36,10 @@ import type {
   TransporteRegistro,
   TransporteWritable,
 } from "@/types/transporte";
+import type {
+  TransportePeriod,
+  TransporteSaveNotice,
+} from "@/types/transporte-operacao";
 import { TransporteDetails } from "./TransporteDetails";
 import { TransporteFields } from "./TransporteFields";
 import { TransporteQrCode } from "./TransporteQrCode";
@@ -47,6 +52,12 @@ import {
   type TransporteConfig,
   type TransporteField,
 } from "./transporteConfig";
+import {
+  guidedDuplicate,
+  guidedFields,
+  scopedValues,
+  shouldReconcileGuidedFailure,
+} from "./transporteOperacaoPresentation";
 import {
   buildTransportePatch,
   buildTransportePayload,
@@ -95,8 +106,16 @@ const gridClasses: Record<number, string> = {
 
 export function TransporteResourcePanel({
   config,
+  guided,
 }: {
   config: TransporteConfig;
+  guided?: {
+    linhaId: number;
+    period: TransportePeriod;
+    hideList?: boolean;
+    defaults?: TransporteFormValues;
+    onSaved: (notice: TransporteSaveNotice) => void;
+  };
 }) {
   const { can, canAny } = useAuthz();
   const canWrite = Boolean(config.write && can(config.write));
@@ -112,6 +131,14 @@ export function TransporteResourcePanel({
   const [perPage, setPerPage] = useState(15);
   const result = useCachedQuery(transporteQuery, config.key, {
     ...filters,
+    ...(guided
+      ? {
+          linha_id: guided.linhaId,
+          ...(config.key === "viagens" || config.key === "dias"
+            ? guided.period
+            : {}),
+        }
+      : {}),
     page,
     per_page: perPage,
   });
@@ -125,7 +152,10 @@ export function TransporteResourcePanel({
   const [qr, setQr] = useState<QrVeiculo | null>(null);
   const [conflicts, setConflicts] = useState<ConflitoViagem[]>([]);
   const [lookupId, setLookupId] = useState("");
+  const [uncertain, setUncertain] = useState(false);
+  const [confirmedScope, setConfirmedScope] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const mutationLock = useRef(false);
   const columns = [...config.columns, { key: "actions", label: "Ações" }];
   const gridClassName = `${gridClasses[columns.length] ?? "md:grid-cols-4"} md:gap-4`;
 
@@ -134,6 +164,7 @@ export function TransporteResourcePanel({
     title: string,
     record?: TransporteRegistro,
   ) {
+    if (guided && uncertain) return;
     const fields =
       operation === "create" || operation === "edit"
         ? config.fields.filter(
@@ -152,12 +183,20 @@ export function TransporteResourcePanel({
                   : motivoFields;
     setError("");
     setFieldErrors({});
+    setConfirmedScope(false);
     setForm({
       operation,
       title,
       fields,
       record,
-      values: initialTransporteValues(fields, record),
+      values: {
+        ...initialTransporteValues(fields, record),
+        ...(guided && !record ? guided.defaults : {}),
+        ...(guided && fields.some((f) => f.key === "linha_id")
+          ? { linha_id: String(guided.linhaId) }
+          : {}),
+        ...(guided && operation === "generate" ? guided.period : {}),
+      },
     });
   }
 
@@ -187,24 +226,50 @@ export function TransporteResourcePanel({
   }
 
   async function save() {
-    if (!form || busy) return;
+    if (!form || busy || mutationLock.current) return;
+    if (guided && (uncertain || !confirmedScope)) return;
     const isRemove = form.operation === "remove";
     if (!(isRemove ? canRemove : canWrite) || !canAny(config.view)) return;
-    const nextErrors = validateTransporteForm(form.fields, form.values);
+    const values =
+      guided && form.fields.some((f) => f.key === "linha_id")
+        ? scopedValues(
+            form.values,
+            guided.linhaId,
+            form.operation === "generate" ? guided.period : undefined,
+          )
+        : form.values;
+    const nextErrors = validateTransporteForm(form.fields, values);
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
     const payload =
       form.operation === "edit"
-        ? buildTransportePatch(form.fields, form.values, form.record)
-        : buildTransportePayload(form.fields, form.values);
+        ? buildTransportePatch(form.fields, values, form.record)
+        : buildTransportePayload(form.fields, values);
     const id = getTransporteValue(form.record, "id");
     const session = getQuerySessionVersion();
     setBusy(true);
     setError("");
     setMessage("");
     setConflicts([]);
+    mutationLock.current = true;
+    let sent = false;
+    let accepted = false;
+    let issuedQr = false;
     try {
+      if (guided && form.operation === "create") {
+        const existing = await transporteService.list(config.key, {
+          linha_id: guided.linhaId,
+        });
+        if (session !== getQuerySessionVersion()) return;
+        if (guidedDuplicate(config.key, payload, existing.data)) {
+          setError(
+            "Já existe um cadastro equivalente. Use o registro existente ou confira seus dados antes de cadastrar outro.",
+          );
+          return;
+        }
+      }
       let response: TransporteMutation;
+      sent = true;
       switch (form.operation) {
         case "create":
         case "edit": {
@@ -266,17 +331,48 @@ export function TransporteResourcePanel({
           break;
       }
       if (session !== getQuerySessionVersion()) return;
+      accepted = true;
       const nextQr = getTransporteValue(response.data, "qr");
       if (
         nextQr &&
         typeof getTransporteValue(nextQr, "token") === "string" &&
         typeof getTransporteValue(nextQr, "url") === "string"
-      )
+      ) {
         setQr(nextQr as QrVeiculo);
+        issuedQr = true;
+      }
       const nextConflicts =
         response.conflitos ?? getTransporteValue(response.data, "conflitos");
       if (Array.isArray(nextConflicts))
         setConflicts(nextConflicts as ConflitoViagem[]);
+      if (guided) {
+        // A successful mutation is not enough: independently read its result.
+        const savedId = getTransporteValue(response.data, "id") ?? id;
+        if (form.operation === "generate") {
+          const { readAllTrips } = await import(
+            "@/services/api/modules/transporte-operacao"
+          );
+          await readAllTrips(guided.period);
+        } else if (detailResources.has(config.key) && savedId != null) {
+          await transporteService.detail(config.key, String(savedId));
+        } else {
+          const check = await transporteService.list(config.key, {
+            linha_id: guided.linhaId,
+          });
+          if (
+            savedId == null ||
+            !check.data.some(
+              (item) => getTransporteValue(item, "id") === savedId,
+            )
+          )
+            throw new Error("Resultado não confirmado");
+        }
+        if (session !== getQuerySessionVersion()) return;
+        guided.onSaved({
+          text: `${config.label}: ${response.message ?? "gravação conferida no servidor."}`,
+          confirmed: true,
+        });
+      }
       setMessage(
         `${response.message ?? "Operação concluída."}${response.viagens_canceladas !== undefined ? ` ${response.viagens_canceladas} viagem(ns) cancelada(s).` : ""}`,
       );
@@ -286,10 +382,40 @@ export function TransporteResourcePanel({
     } catch (failure) {
       if (session !== getQuerySessionVersion()) return;
       const failureData = transporteError(failure);
-      setError(failureData.message);
+      setError(
+        guided &&
+          config.key === "viagens" &&
+          axios.isAxiosError(failure) &&
+          failure.response?.status === 409
+          ? "Este veículo já está previsto em outra viagem com janela sobreposta. Confira o calendário e ajuste a janela ou escolha outro veículo."
+          : failureData.message,
+      );
       setFieldErrors(failureData.fields);
+      if (
+        guided &&
+        shouldReconcileGuidedFailure(
+          sent,
+          accepted,
+          axios.isAxiosError(failure) ? failure.response?.status : undefined,
+        )
+      ) {
+        setUncertain(true);
+        if (issuedQr) setForm(null);
+        setError(
+          "O resultado do envio não foi confirmado. A consulta dos registros foi atualizada. Para evitar duplicação, novos envios desta seção ficam bloqueados nesta configuração; confira os registros em Cadastros e manutenção.",
+        );
+        guided.onSaved({
+          text: `${config.label}: resultado do envio a conferir na manutenção. Não repita o cadastro sem consultar os registros.`,
+          confirmed: false,
+        });
+        invalidateQueries();
+        await result.refresh();
+      }
     } finally {
-      if (session === getQuerySessionVersion()) setBusy(false);
+      if (session === getQuerySessionVersion()) {
+        mutationLock.current = false;
+        setBusy(false);
+      }
     }
   }
 
@@ -307,10 +433,18 @@ export function TransporteResourcePanel({
     }
   }
 
-  const rows = (result.data?.data ?? []).map((record, index) => ({
-    record,
-    key: String(getTransporteValue(record, "id") ?? `${page}-${index}`),
-  }));
+  const rows = (result.data?.data ?? [])
+    .filter(
+      (record) =>
+        !guided ||
+        config.key !== "dias" ||
+        getTransporteValue(record, "linha_id") == null ||
+        getTransporteValue(record, "linha_id") === guided.linhaId,
+    )
+    .map((record, index) => ({
+      record,
+      key: String(getTransporteValue(record, "id") ?? `${page}-${index}`),
+    }));
   const meta = result.data?.meta;
 
   return (
@@ -327,7 +461,7 @@ export function TransporteResourcePanel({
           >
             Atualizar
           </Button>
-          {canWrite && config.create && (
+          {canWrite && config.create && !uncertain && (
             <Button
               size="sm"
               fullWidth={false}
@@ -336,7 +470,7 @@ export function TransporteResourcePanel({
               Cadastrar
             </Button>
           )}
-          {canWrite && config.key === "viagens" && (
+          {canWrite && config.key === "viagens" && !uncertain && (
             <Button
               size="sm"
               fullWidth={false}
@@ -386,15 +520,20 @@ export function TransporteResourcePanel({
           <ul className="mt-2 space-y-1">
             {conflicts.map((conflict) => (
               <li key={`${conflict.veiculo_id}-${conflict.viagens.join("-")}`}>
-                Veículo #{conflict.veiculo_id} em{" "}
+                {guided
+                  ? "Conflito informado pelo servidor em "
+                  : `Veículo #${conflict.veiculo_id} em `}{" "}
                 {formatTransporteValue(conflict.data)}: viagens{" "}
-                {conflict.viagens.map((trip) => `#${trip}`).join(" e ")}.
+                {guided
+                  ? "com janelas sobrepostas. Confira os detalhes no resumo do calendário."
+                  : conflict.viagens.map((trip) => `#${trip}`).join(" e ")}
+                .
               </li>
             ))}
           </ul>
         </div>
       )}
-      {config.filters.length > 0 && (
+      {!guided && config.filters.length > 0 && (
         <form
           className="space-y-4 rounded-xl border border-border-subtle bg-white p-5"
           onSubmit={(event) => {
@@ -466,181 +605,198 @@ export function TransporteResourcePanel({
           </Button>
         </form>
       )}
-      <DataTable
-        columns={columns}
-        data={rows}
-        getRowKey={(row) => row.key}
-        gridClassName={gridClassName}
-        loading={result.isLoading}
-        skeleton={
-          <div className="space-y-4 p-6">
-            <TextSkeleton />
-            <TextSkeleton />
-            <TextSkeleton />
-          </div>
-        }
-        errorMessage={result.error ? transporteError(result.error).message : ""}
-        onRetry={() => void result.refresh()}
-        pagination={
-          meta
-            ? {
-                currentPage: meta.current_page,
-                lastPage: meta.last_page,
-                perPage: meta.per_page,
-                total: meta.total,
-                from: meta.from,
-                to: meta.to,
-                disabled: result.isFetching,
-                onPageChange: setPage,
-                onPerPageChange: (value) => {
-                  setPage(1);
-                  setPerPage(value);
-                },
-              }
-            : undefined
-        }
-        renderRow={({ record }) => (
-          <article
-            className={`grid gap-3 border-b border-border-subtle px-5 py-4 text-sm last:border-b-0 md:items-center ${gridClassName}`}
-          >
-            {config.columns.map((column, index) => (
-              <div className="min-w-0 break-words" key={column.key}>
-                <span className="block text-xs font-semibold text-content-muted md:hidden">
-                  {column.label}
-                </span>
-                {formatTransporteValue(
-                  getTransporteValue(record, column.key),
-                  column.key,
-                )}
-                {index === 0 &&
-                  getTransporteValue(record, "id") !== undefined && (
-                    <span className="mt-1 block text-xs text-content-muted">
-                      #{String(getTransporteValue(record, "id"))}
-                    </span>
-                  )}
-              </div>
-            ))}
-            <div className="flex flex-nowrap items-center gap-1">
-              <TableActionButton
-                ariaLabel="Detalhes"
-                tooltip="Detalhes"
-                icon={<Eye />}
-                variant="secondary"
-                loading={detailBusy}
-                onClick={() => void showDetails(record)}
-              />
-              {canWrite && config.edit && (
-                <TableActionButton
-                  ariaLabel="Editar"
-                  tooltip="Editar"
-                  icon={<Pencil />}
-                  variant="secondary"
-                  onClick={() =>
-                    open("edit", `Editar: ${config.label}`, record)
-                  }
-                />
-              )}
-
-              {canWrite && config.key === "veiculos" && (
-                <TableActionButton
-                  ariaLabel="Novo QR"
-                  tooltip="Novo QR"
-                  icon={<QrCode />}
-                  variant="secondary"
-                  onClick={() =>
-                    open(
-                      "qr",
-                      "Gerar novo QR: o anterior deixará de valer",
-                      record,
-                    )
-                  }
-                />
-              )}
-              {canWrite &&
-                config.key === "solicitacoes" &&
-                getTransporteValue(record, "status") === "Pendente" && (
-                  <TableActionButton
-                    ariaLabel="Aprovar"
-                    tooltip="Aprovar"
-                    icon={<Check />}
-                    variant="approved"
-                    onClick={() =>
-                      open(
-                        "approve",
-                        "Aprovar vinculação de dispositivo",
-                        record,
-                      )
-                    }
-                  />
-                )}
-              {canWrite &&
-                config.key === "solicitacoes" &&
-                ["Pendente", "Aprovada"].includes(
-                  String(getTransporteValue(record, "status")),
-                ) && (
-                  <TableActionButton
-                    ariaLabel="Rejeitar"
-                    tooltip="Rejeitar"
-                    icon={<X />}
-                    variant="danger"
-                    onClick={() =>
-                      open(
-                        "reject",
-                        "Rejeitar vinculação de dispositivo",
-                        record,
-                      )
-                    }
-                  />
-                )}
-              {canWrite &&
-                config.key === "dispositivos" &&
-                getTransporteValue(record, "status") === "Ativo" && (
-                  <TableActionButton
-                    ariaLabel="Revogar"
-                    tooltip="Revogar"
-                    icon={<Ban />}
-                    variant="danger"
-                    onClick={() =>
-                      open(
-                        "revoke",
-                        "Revogar dispositivo imediatamente",
-                        record,
-                      )
-                    }
-                  />
-                )}
-              {canWrite &&
-                config.key === "tentativas" &&
-                getTransporteValue(record, "revisao.status") === "Pendente" && (
-                  <TableActionButton
-                    ariaLabel="Analisar"
-                    tooltip="Analisar"
-                    icon={<ClipboardCheck />}
-                    variant="primary"
-                    onClick={() =>
-                      open("review", "Analisar revisão de presença", record)
-                    }
-                  />
-                )}
-              {canRemove && (
-                <TableActionButton
-                  ariaLabel="Excluir"
-                  tooltip="Excluir"
-                  icon={<Trash2 />}
-                  variant="danger"
-                  onClick={() =>
-                    open(
-                      "remove",
-                      `Excluir registro #${String(getTransporteValue(record, "id"))}`,
-                      record,
-                    )
-                  }
-                />
-              )}
+      {!guided?.hideList && (
+        <DataTable
+          columns={columns}
+          data={rows}
+          getRowKey={(row) => row.key}
+          gridClassName={gridClassName}
+          loading={result.isLoading}
+          skeleton={
+            <div className="space-y-4 p-6">
+              <TextSkeleton />
+              <TextSkeleton />
+              <TextSkeleton />
             </div>
-          </article>
-        )}
-      />
+          }
+          errorMessage={
+            result.error ? transporteError(result.error).message : ""
+          }
+          onRetry={() => void result.refresh()}
+          pagination={
+            meta
+              ? {
+                  currentPage: meta.current_page,
+                  lastPage: meta.last_page,
+                  perPage: meta.per_page,
+                  total: meta.total,
+                  from: meta.from,
+                  to: meta.to,
+                  disabled: result.isFetching,
+                  onPageChange: setPage,
+                  onPerPageChange: (value) => {
+                    setPage(1);
+                    setPerPage(value);
+                  },
+                }
+              : undefined
+          }
+          renderRow={({ record }) => (
+            <article
+              className={`grid gap-3 border-b border-border-subtle px-5 py-4 text-sm last:border-b-0 md:items-center ${gridClassName}`}
+            >
+              {config.columns.map((column, index) => (
+                <div className="min-w-0 break-words" key={column.key}>
+                  <span className="block text-xs font-semibold text-content-muted md:hidden">
+                    {column.label}
+                  </span>
+                  {formatTransporteValue(
+                    getTransporteValue(record, column.key),
+                    column.key,
+                  )}
+                  {!guided &&
+                    index === 0 &&
+                    getTransporteValue(record, "id") !== undefined && (
+                      <span className="mt-1 block text-xs text-content-muted">
+                        #{String(getTransporteValue(record, "id"))}
+                      </span>
+                    )}
+                </div>
+              ))}
+              <div className="flex flex-nowrap items-center gap-1">
+                {!guided && (
+                  <TableActionButton
+                    ariaLabel="Detalhes"
+                    tooltip="Detalhes"
+                    icon={<Eye />}
+                    variant="secondary"
+                    loading={detailBusy}
+                    onClick={() => void showDetails(record)}
+                  />
+                )}
+                {canWrite &&
+                  config.edit &&
+                  !uncertain &&
+                  !(
+                    guided &&
+                    (config.key === "veiculos" ||
+                      config.key === "pontos" ||
+                      (config.key === "dias" &&
+                        getTransporteValue(record, "linha_id") == null))
+                  ) && (
+                    <TableActionButton
+                      ariaLabel="Editar"
+                      tooltip="Editar"
+                      icon={<Pencil />}
+                      variant="secondary"
+                      onClick={() =>
+                        open("edit", `Editar: ${config.label}`, record)
+                      }
+                    />
+                  )}
+
+                {!guided && canWrite && config.key === "veiculos" && (
+                  <TableActionButton
+                    ariaLabel="Novo QR"
+                    tooltip="Novo QR"
+                    icon={<QrCode />}
+                    variant="secondary"
+                    onClick={() =>
+                      open(
+                        "qr",
+                        "Gerar novo QR: o anterior deixará de valer",
+                        record,
+                      )
+                    }
+                  />
+                )}
+                {canWrite &&
+                  config.key === "solicitacoes" &&
+                  getTransporteValue(record, "status") === "Pendente" && (
+                    <TableActionButton
+                      ariaLabel="Aprovar"
+                      tooltip="Aprovar"
+                      icon={<Check />}
+                      variant="approved"
+                      onClick={() =>
+                        open(
+                          "approve",
+                          "Aprovar vinculação de dispositivo",
+                          record,
+                        )
+                      }
+                    />
+                  )}
+                {canWrite &&
+                  config.key === "solicitacoes" &&
+                  ["Pendente", "Aprovada"].includes(
+                    String(getTransporteValue(record, "status")),
+                  ) && (
+                    <TableActionButton
+                      ariaLabel="Rejeitar"
+                      tooltip="Rejeitar"
+                      icon={<X />}
+                      variant="danger"
+                      onClick={() =>
+                        open(
+                          "reject",
+                          "Rejeitar vinculação de dispositivo",
+                          record,
+                        )
+                      }
+                    />
+                  )}
+                {canWrite &&
+                  config.key === "dispositivos" &&
+                  getTransporteValue(record, "status") === "Ativo" && (
+                    <TableActionButton
+                      ariaLabel="Revogar"
+                      tooltip="Revogar"
+                      icon={<Ban />}
+                      variant="danger"
+                      onClick={() =>
+                        open(
+                          "revoke",
+                          "Revogar dispositivo imediatamente",
+                          record,
+                        )
+                      }
+                    />
+                  )}
+                {canWrite &&
+                  config.key === "tentativas" &&
+                  getTransporteValue(record, "revisao.status") ===
+                    "Pendente" && (
+                    <TableActionButton
+                      ariaLabel="Analisar"
+                      tooltip="Analisar"
+                      icon={<ClipboardCheck />}
+                      variant="primary"
+                      onClick={() =>
+                        open("review", "Analisar revisão de presença", record)
+                      }
+                    />
+                  )}
+                {!guided && canRemove && (
+                  <TableActionButton
+                    ariaLabel="Excluir"
+                    tooltip="Excluir"
+                    icon={<Trash2 />}
+                    variant="danger"
+                    onClick={() =>
+                      open(
+                        "remove",
+                        `Excluir registro #${String(getTransporteValue(record, "id"))}`,
+                        record,
+                      )
+                    }
+                  />
+                )}
+              </div>
+            </article>
+          )}
+        />
+      )}
       {config.key === "instituicoes" && !meta && (
         <nav
           aria-label="Páginas de instituições"
@@ -688,6 +844,9 @@ export function TransporteResourcePanel({
             : "primary"
         }
         saveLoading={busy}
+        saveDisabled={Boolean(
+          guided && (!confirmedScope || uncertain || !canWrite),
+        )}
       >
         {form && (
           <form
@@ -698,7 +857,7 @@ export function TransporteResourcePanel({
               void save();
             }}
           >
-            {form.record && (
+            {form.record && !guided && (
               <div className="rounded-lg bg-surface-muted p-3 text-sm">
                 <strong>
                   Registro #{String(getTransporteValue(form.record, "id"))}
@@ -732,8 +891,49 @@ export function TransporteResourcePanel({
                 {error}
               </p>
             )}
+            {guided && (
+              <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+                <p>
+                  Confirmar grava imediatamente no cadastro compartilhado.
+                  Voltar ou sair do assistente não desfaz esta ação.
+                </p>
+                <p>
+                  {config.key === "horarios"
+                    ? "Salvar horário pode gerar viagens de hoje e descartar viagens futuras sem presença ou ajuste manual. Gere novamente o período quando necessário."
+                    : config.key === "atribuicoes"
+                      ? "A alocação pode mudar o veículo de viagens programadas ainda não encerradas, preservando substituições manuais. Conflitos podem ser informados depois da gravação."
+                      : config.key === "dias"
+                        ? "Esta suspensão será desta linha e cancela viagens programadas da data. Sua remoção não reativa viagens."
+                        : config.key === "viagens"
+                          ? form.operation === "generate"
+                            ? "A geração cria viagens no período selecionado. Eventuais conflitos não desfazem as viagens geradas."
+                            : "Este ajuste muda somente a viagem selecionada e exige motivo. Envie apenas as alterações pretendidas."
+                          : "Este recurso ficará disponível para outras configurações, mesmo que você não conclua as etapas."}
+                </p>
+                {form.operation === "generate" && (
+                  <p>
+                    Período: {formatTransporteValue(guided.period.de)} a{" "}
+                    {formatTransporteValue(guided.period.ate)}.
+                  </p>
+                )}
+                <Checkbox
+                  label="Entendi o alcance e quero gravar esta alteração."
+                  checked={confirmedScope}
+                  disabled={busy || uncertain}
+                  onChange={(event) => setConfirmedScope(event.target.checked)}
+                />
+              </div>
+            )}
             <TransporteFields
-              fields={form.fields}
+              fields={
+                guided
+                  ? guidedFields(form.fields).filter(
+                      (f) =>
+                        form.operation !== "generate" ||
+                        (f.key !== "de" && f.key !== "ate"),
+                    )
+                  : form.fields
+              }
               values={form.values}
               errors={fieldErrors}
               disabled={busy}

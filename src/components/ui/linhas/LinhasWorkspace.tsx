@@ -5,12 +5,6 @@ import { LayoutGrid, List, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/buttons";
-import {
-  Input,
-  NumberInput,
-  Select,
-  TimeInput,
-} from "@/components/form/inputs";
 import { Modal } from "@/components/modal";
 import { LinhaCard, LinhaCreateCard } from "@/components/ui/linhas/LinhaCard";
 import { LinhaDetailsModal } from "@/components/ui/linhas/LinhaDetailsModal";
@@ -19,18 +13,22 @@ import {
   LinhasSkeleton,
 } from "@/components/ui/linhas/LinhasSkeleton";
 import {
+  buildLinhaPayload,
   getAvailableDrivers,
   horaParaInput,
   type LinhasViewMode,
   ocupacaoDe,
+  validateLinhaForm,
 } from "@/components/ui/linhas/linhaPresentation";
 import { useAuthz } from "@/hooks/use-authz";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { linhaService } from "@/services/api/modules/linha";
 import { driversQuery, linhasQuery } from "@/services/api/page-queries";
 import type { Linha } from "@/types/inscricao";
+import { hasRouteAccess } from "@/utils/authz";
 import { cn } from "@/utils/cn";
 import { scheduleFocusFirstFieldError } from "@/utils/focus-first-field-error";
+import { LinhaFormFields } from "./LinhaFormFields";
 
 type ApiError = { message?: string; errors?: Record<string, string[]> };
 
@@ -59,7 +57,7 @@ type LinhaFormField = keyof typeof formInicial;
 type LinhaFieldErrors = Partial<Record<LinhaFormField, string>>;
 
 export function LinhasWorkspace() {
-  const { can } = useAuthz();
+  const { can, permissions } = useAuthz();
   const canWrite = can("linhas.write");
   const canDelete = can("linhas.delete");
   const [viewMode, setViewMode] = useState<LinhasViewMode>("grid");
@@ -127,25 +125,8 @@ export function LinhasWorkspace() {
   async function salvar() {
     if (actionLoading) return;
 
-    const nextErrors: LinhaFieldErrors = {};
+    const nextErrors = validateLinhaForm(form);
     setFormError("");
-
-    if (form.name.trim().length < 3) {
-      nextErrors.name = "O nome da linha deve ter ao menos 3 caracteres.";
-    }
-
-    const capacidade = Number(form.max_capacity);
-
-    for (const field of ["departure_time", "return_time"] as const) {
-      if (form[field] && !/^([01]\d|2[0-3]):[0-5]\d$/.test(form[field])) {
-        nextErrors[field] = "Informe um horário válido no formato HH:MM.";
-      }
-    }
-
-    if (!Number.isInteger(capacidade) || capacidade < 1) {
-      nextErrors.max_capacity =
-        "Informe a capacidade em número de lugares (mínimo 1).";
-    }
 
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
@@ -153,18 +134,7 @@ export function LinhasWorkspace() {
       return;
     }
 
-    // Campos opcionais vazios não são enviados: o backend valida formato de
-    // hora e recusaria a string vazia.
-    const payload = {
-      name: form.name.trim(),
-      max_capacity: capacidade,
-      ...(form.description.trim()
-        ? { description: form.description.trim() }
-        : {}),
-      ...(form.departure_time ? { departure_time: form.departure_time } : {}),
-      ...(form.return_time ? { return_time: form.return_time } : {}),
-      motorista_id: form.motorista_id ? Number(form.motorista_id) : null,
-    };
+    const payload = buildLinhaPayload(form);
 
     try {
       setActionLoading(true);
@@ -310,6 +280,11 @@ export function LinhasWorkspace() {
               linha={linha}
               viewMode={viewMode}
               onDetails={setDetalhes}
+              configureHref={
+                hasRouteAccess("/transportes", permissions)
+                  ? `/transportes?linha=${linha.id}&configurar=1`
+                  : undefined
+              }
               onEdit={canWrite ? abrirEdicao : undefined}
               onDelete={
                 canDelete
@@ -352,63 +327,12 @@ export function LinhasWorkspace() {
               {formError}
             </div>
           )}
-          <Input
-            aria-invalid={Boolean(fieldErrors.name)}
-            error={fieldErrors.name}
-            label="Nome"
-            onChange={(event) => setField("name", event.target.value)}
-            required
-            value={form.name}
-          />
-          <Input
-            aria-invalid={Boolean(fieldErrors.description)}
-            error={fieldErrors.description}
-            label="Descrição da rota"
-            onChange={(event) => setField("description", event.target.value)}
-            placeholder="Bairros e instituições atendidas"
-            value={form.description}
-          />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TimeInput
-              aria-invalid={Boolean(fieldErrors.departure_time)}
-              error={fieldErrors.departure_time}
-              label="Horário de saída"
-              onChange={(event) =>
-                setField("departure_time", event.target.value)
-              }
-              value={form.departure_time}
-            />
-            <TimeInput
-              aria-invalid={Boolean(fieldErrors.return_time)}
-              error={fieldErrors.return_time}
-              label="Horário de retorno"
-              onChange={(event) => setField("return_time", event.target.value)}
-              value={form.return_time}
-            />
-          </div>
-          <NumberInput
-            aria-invalid={Boolean(fieldErrors.max_capacity)}
-            error={fieldErrors.max_capacity}
-            label="Capacidade (lugares)"
-            min={1}
-            onChange={(event) => setField("max_capacity", event.target.value)}
-            required
-            value={form.max_capacity}
-          />
-          <Select
-            aria-invalid={Boolean(fieldErrors.motorista_id)}
-            error={fieldErrors.motorista_id}
-            hint={driversError}
-            label="Motorista responsável"
-            onChange={(event) => setField("motorista_id", event.target.value)}
-            options={[
-              { value: "", label: "Nenhum motorista vinculado" },
-              ...availableDrivers.map((driver) => ({
-                value: String(driver.id),
-                label: driver.name,
-              })),
-            ]}
-            value={form.motorista_id}
+          <LinhaFormFields
+            values={form}
+            errors={fieldErrors}
+            onChange={setField}
+            drivers={availableDrivers}
+            driversError={driversError}
           />
           {editando && (
             <p className="text-sm text-content-muted">

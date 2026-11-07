@@ -20,7 +20,7 @@ type Props = {
   onChange: (event: ChangeEvent<HTMLSelectElement | HTMLInputElement>) => void;
 };
 
-function ReferenceSelect({
+export function ReferenceSelect({
   field,
   value,
   disabled,
