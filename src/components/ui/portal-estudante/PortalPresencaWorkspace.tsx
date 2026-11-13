@@ -15,6 +15,12 @@ import { portalDeviceQuery } from "@/services/api/portal-queries";
 import { getQuerySessionVersion } from "@/services/api/query-cache";
 import { PENDING_PRESENCE_QR_KEY } from "@/services/navigation/account-navigation";
 import {
+  createOfflineProof,
+  isConnectionError,
+  OFFLINE_SYNC_EVENT,
+  type OfflineSyncResult,
+} from "@/services/offline-presence";
+import {
   deviceScope,
   loadDeviceKeys,
   parsePresenceQr,
@@ -69,7 +75,13 @@ export function PortalPresencaWorkspace() {
   const device = useCachedQuery(portalDeviceQuery);
   const [qrUrl, setQrUrl] = useState("");
   const [phase, setPhase] = useState<
-    "idle" | "resolving" | "locating" | "confirming" | "success" | "error"
+    | "idle"
+    | "resolving"
+    | "locating"
+    | "confirming"
+    | "success"
+    | "queued"
+    | "error"
   >("idle");
   const [preview, setPreview] = useState<PortalQrResolvido | null>(null);
   const [presence, setPresence] = useState<PortalPresenca | null>(null);
@@ -78,12 +90,35 @@ export function PortalPresencaWorkspace() {
   const [reviewable, setReviewable] = useState(false);
   const busy = useRef(false);
   const viewVersion = useRef(0);
+  const queuedProof = useRef<string | null>(null);
   useEffect(
     () => () => {
       viewVersion.current++;
     },
     [],
   );
+  // Quando o registro guardado sai (ou é recusado), quem avisa é a faixa do
+  // portal; a mensagem de "guardado neste celular" deixa de valer.
+  useEffect(() => {
+    const onSync = (event: Event) => {
+      const { sent, rejected } = (event as CustomEvent<OfflineSyncResult>)
+        .detail;
+      const id = queuedProof.current;
+      if (
+        !id ||
+        !(
+          sent.some((tentativa) => tentativa.comprovante_id === id) ||
+          rejected.some((item) => item.proof.id === id)
+        )
+      )
+        return;
+      queuedProof.current = null;
+      setFeedback("");
+      setPhase("idle");
+    };
+    window.addEventListener(OFFLINE_SYNC_EVENT, onSync);
+    return () => window.removeEventListener(OFFLINE_SYNC_EVENT, onSync);
+  }, []);
   useEffect(() => {
     const url = new URL(window.location.href);
     const token =
@@ -100,12 +135,36 @@ export function PortalPresencaWorkspace() {
       window.history.replaceState(window.history.state, "", url.pathname);
   }, []);
 
+  /**
+   * A requisição nem chegou à API: grava o comprovante assinado neste celular
+   * para enviar depois. A gestão confirma a presença quando ele chegar.
+   */
+  async function saveOffline(
+    token: string,
+    scope: string,
+    location: LocationResult | null,
+  ) {
+    setPhase("locating");
+    const proof = await createOfflineProof(
+      scope,
+      token,
+      location ?? (await currentLocation()),
+    );
+    queuedProof.current = proof.id;
+    setFeedback(
+      `Sem conexão com a internet. O registro de ${portalDate(new Date(proof.capturadoEm).toISOString(), true)} foi guardado neste celular e será enviado quando a conexão voltar; depois a gestão confirma a sua presença.`,
+    );
+    setPhase("queued");
+    setQrUrl("");
+  }
+
   async function register(value: string) {
     if (!user || busy.current) return;
     busy.current = true;
     camera.stop();
     setPhase("resolving");
     setFeedback("");
+    queuedProof.current = null;
     setAlready(false);
     setReviewable(false);
     setPresence(null);
@@ -114,9 +173,12 @@ export function PortalPresencaWorkspace() {
     const view = viewVersion.current;
     const current = () =>
       session === getQuerySessionVersion() && view === viewVersion.current;
+    let token: string | null = null;
+    let scope: string | null = null;
+    let location: LocationResult | null = null;
     try {
-      const token = parsePresenceQr(value, window.location.origin);
-      const scope = deviceScope(user.id, env.apiUrl);
+      token = parsePresenceQr(value, window.location.origin);
+      scope = deviceScope(user.id, env.apiUrl);
       const state = await portalEstudanteService.device();
       if (!current()) return;
       const local = await loadDeviceKeys(scope);
@@ -133,7 +195,7 @@ export function PortalPresencaWorkspace() {
       if (!current()) return;
       setPreview(resolved.data);
       setPhase("locating");
-      const location = await currentLocation();
+      location = await currentLocation();
       if (!current()) return;
       const challenge = await portalEstudanteService.presenceChallenge(token);
       if (!current()) return;
@@ -158,6 +220,15 @@ export function PortalPresencaWorkspace() {
       setQrUrl("");
     } catch (currentError) {
       if (!current()) return;
+      if (token && scope && isConnectionError(currentError)) {
+        try {
+          await saveOffline(token, scope, location);
+        } catch (offlineError) {
+          setFeedback(portalError(offlineError));
+          setPhase("error");
+        }
+        return;
+      }
       const apiError = axios.isAxiosError<PortalErroResposta>(currentError)
         ? currentError.response?.data
         : null;
@@ -188,12 +259,22 @@ export function PortalPresencaWorkspace() {
         <h2 className="text-lg font-bold text-brand-700">Registrar presença</h2>
         <p className="mt-1 text-sm text-content-secondary">
           Leia o QR afixado na van durante o horário da sua viagem. Use o
-          navegador autorizado e permita o acesso à localização.
+          navegador autorizado e permita o acesso à localização. Funciona sem
+          internet: o registro fica guardado no celular e é enviado sozinho
+          quando a conexão voltar, para a gestão confirmar.
         </p>
       </section>
-      <PortalError error={device.error} onRetry={() => void device.refresh()} />
+      {/* Sem rede o aviso de conexão do portal já explica; o registro segue possível. */}
+      <PortalError
+        error={
+          device.error && !isConnectionError(device.error) ? device.error : null
+        }
+        onRetry={() => void device.refresh()}
+      />
       {feedback && (
-        <PortalFeedback success={phase === "success" || already}>
+        <PortalFeedback
+          success={phase === "success" || phase === "queued" || already}
+        >
           {feedback}
         </PortalFeedback>
       )}

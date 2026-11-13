@@ -12,6 +12,11 @@ import {
   isStudentAccount,
   PENDING_PRESENCE_QR_KEY,
 } from "@/services/navigation/account-navigation";
+import {
+  contaLembrada,
+  lembrarConta,
+  semConexao,
+} from "@/services/offline-session";
 
 const guestOnlyRoutes = [
   "/login",
@@ -64,9 +69,19 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
         if (!isActive) return;
 
+        lembrarConta(me);
         setUser(me);
-      } catch {
+      } catch (error) {
         if (!isActive) return;
+
+        // Sem internet, o estudante que já entrou neste aparelho continua no
+        // portal: dá para ler o QR e guardar a presença para enviar depois.
+        const lembrada = semConexao(error) ? contaLembrada() : null;
+
+        if (lembrada) {
+          setUser(lembrada);
+          return;
+        }
 
         clearAuth();
       }

@@ -111,6 +111,20 @@ export type CadastroRecadastro = {
   scholarship_type: string | null;
 };
 
+/**
+ * Resposta da primeira etapa quando o CPF tem cadastro: a API so envia um
+ * codigo ao e-mail do cadastro. Os dados saem na etapa de verificacao.
+ */
+export type CodigoAcessoEnviado = {
+  fluxo: "verificacao";
+  data: {
+    email_mascarado: string;
+    validade_minutos: number;
+    reenvio_em_segundos: number;
+  };
+  message?: string;
+};
+
 export type AcessoEstudanteResponse =
   | { fluxo: "inscricao"; data: { cpf: string } }
   | {
