@@ -157,6 +157,12 @@ body {
   animation: shimmer 1.5s infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animation-loading-skeleton::after {
+    animation: none;
+  }
+}
+
 @keyframes shimmer {
   to {
     left: 150%;
