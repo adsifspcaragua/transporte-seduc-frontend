@@ -182,6 +182,10 @@ async function sign(
   privateKey: CryptoKey,
   challenge: PortalDesafio,
 ): Promise<string> {
+  return signText(privateKey, challenge.desafio);
+}
+
+async function signText(privateKey: CryptoKey, text: string): Promise<string> {
   if (
     privateKey.extractable ||
     privateKey.type !== "private" ||
@@ -192,7 +196,7 @@ async function sign(
   const signature = await crypto.subtle.sign(
     { name: "ECDSA", hash: "SHA-256" },
     privateKey,
-    new TextEncoder().encode(challenge.desafio),
+    new TextEncoder().encode(text),
   );
   return encodeBase64Url(signature);
 }
@@ -257,6 +261,27 @@ export async function signPresence(
       "Este navegador não possui a chave do dispositivo autorizado. Solicite a troca no atendimento.",
     );
   return sign(active.privateKey, challenge);
+}
+
+/**
+ * Offline presence proof: no server challenge, so the text is built from the
+ * locally stored device id and signed with the same non-exportable key.
+ */
+export async function signOfflineProof(
+  scope: string,
+  build: (deviceId: string) => string,
+  storage: StudentDeviceStorage = browserStorage,
+): Promise<{ comprovante: string; assinatura: string }> {
+  const { active } = await storage.load(scope);
+  if (!active)
+    throw new Error(
+      "Sem conexão, e este navegador não tem a chave do dispositivo autorizado.",
+    );
+  const comprovante = build(active.deviceId);
+  return {
+    comprovante,
+    assinatura: await signText(active.privateKey, comprovante),
+  };
 }
 
 /** Explicit local removal only; this does not revoke the server credential. */

@@ -162,11 +162,16 @@ export const inscricaoService = {
   ),
 
   listInstituicoes: sharePendingRequest(async () => {
-    const { data } = await publicApi.get<
-      LaravelCollectionResponse<Instituicao>
-    >(API_ENDPOINTS.INSTITUICOES.BASE);
-
-    return unwrapCollection(data);
+    const instituicoes: Instituicao[] = [];
+    for (let page = 1; ; page++) {
+      const { data } = await publicApi.get<
+        LaravelCollectionResponse<Instituicao>
+      >(API_ENDPOINTS.INSTITUICOES.BASE, { params: { page } });
+      const batch = unwrapCollection(data);
+      instituicoes.push(...batch);
+      // InstituicaoService::index pagina em 15, mas não envia meta na resposta.
+      if (batch.length < 15) return instituicoes;
+    }
   }),
 
   listCursos: sharePendingRequest(async () => {

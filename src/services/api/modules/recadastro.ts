@@ -6,12 +6,15 @@ import type {
   AnaliseRecadastroPayload,
   AusentesRecadastro,
   CadastroRecadastro,
+  CodigoAcessoEnviado,
   DocumentoRecadastroTipo,
   FinalizarRecadastroPayload,
+  PaginatedSolicitacoesRecadastro,
   PeriodoRecadastro,
   PeriodoRecadastroPayload,
   SituacaoRecadastro,
   SolicitacaoRecadastro,
+  SolicitacoesRecadastroParams,
 } from "@/types/recadastro";
 
 type DataResponse<T> = { data: T; message?: string };
@@ -26,17 +29,32 @@ function unwrapCollection<T>(payload: CollectionResponse<T>) {
 }
 
 export const recadastroService = {
+  /** Primeira etapa: CPF novo segue para a inscricao; com cadastro, so envia o codigo. */
   async acessar(cpf: string) {
+    const { data } = await publicApi.post<
+      AcessoEstudanteResponse | CodigoAcessoEnviado
+    >(API_ENDPOINTS.AREA_ESTUDANTE.ACESSO, { cpf });
+    return data;
+  },
+  /** Segunda etapa: com o codigo do e-mail, devolve o fluxo e os dados. */
+  async verificarAcesso(cpf: string, codigo: string) {
     const { data } = await publicApi.post<AcessoEstudanteResponse>(
-      API_ENDPOINTS.AREA_ESTUDANTE.ACESSO,
-      { cpf },
+      API_ENDPOINTS.AREA_ESTUDANTE.ACESSO_VERIFICAR,
+      { cpf, codigo },
     );
     return data;
   },
   async consultar(cpf: string) {
-    const { data } = await publicApi.post<DataResponse<SituacaoRecadastro>>(
+    const { data } = await publicApi.post<CodigoAcessoEnviado>(
       API_ENDPOINTS.RECADASTRO.CONSULTA,
       { cpf },
+    );
+    return data;
+  },
+  async verificarConsulta(cpf: string, codigo: string) {
+    const { data } = await publicApi.post<DataResponse<SituacaoRecadastro>>(
+      API_ENDPOINTS.RECADASTRO.CONSULTA_VERIFICAR,
+      { cpf, codigo },
     );
     return data;
   },
@@ -84,12 +102,26 @@ export const recadastroService = {
     return data;
   },
 
-  listSolicitacoes: sharePendingRequest(async () => {
-    const { data } = await api.get<CollectionResponse<SolicitacaoRecadastro>>(
-      API_ENDPOINTS.RECADASTRO.SOLICITACOES,
-    );
-    return unwrapCollection(data);
-  }),
+  listSolicitacoes: sharePendingRequest(
+    async (params: SolicitacoesRecadastroParams = {}) => {
+      const { data } = await api.get<
+        PaginatedSolicitacoesRecadastro | { message: string }
+      >(API_ENDPOINTS.RECADASTRO.SOLICITACOES, { params });
+      return "data" in data
+        ? data
+        : {
+            data: [],
+            meta: {
+              current_page: 1,
+              from: null,
+              last_page: 1,
+              per_page: 10,
+              to: null,
+              total: 0,
+            },
+          };
+    },
+  ),
 
   async analisar(id: number, payload: AnaliseRecadastroPayload) {
     const { data } = await api.put<DataResponse<SolicitacaoRecadastro>>(

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import type { ReactNode } from "react";
 
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import AuthProvider from "@/contexts/auth-provider";
 
 import "./globals.css";
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={`${montserrat.variable} antialiased`}>
         <AuthProvider>{children}</AuthProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

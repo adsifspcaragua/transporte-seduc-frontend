@@ -163,7 +163,9 @@ export type PortalCodigoPresenca =
   | "CHALLENGE_EXPIRED"
   | "CHALLENGE_ALREADY_USED"
   | "ATTENDANCE_ALREADY_RECORDED"
-  | "MANUAL_REVIEW_REQUIRED";
+  | "MANUAL_REVIEW_REQUIRED"
+  | "OFFLINE_PROOF_EXPIRED"
+  | "OFFLINE_CLOCK_INVALID";
 export type PortalTentativa = {
   id: number;
   estudante_id: number;
@@ -172,8 +174,12 @@ export type PortalTentativa = {
   veiculo?: { id: number; identificacao: string } | null;
   dispositivo_id: string | null;
   presenca_id: number | null;
-  etapa: "resolver_qr" | "desafio" | "confirmacao";
-  resultado: "Negada" | "Registrada";
+  etapa: "resolver_qr" | "desafio" | "confirmacao" | "offline";
+  /** "Em revisao": comprovante feito sem conexão, aguardando a gestão. */
+  resultado: "Negada" | "Registrada" | "Em revisao";
+  /** Só nos comprovantes sem conexão: horário do celular na leitura. */
+  capturado_em?: string | null;
+  comprovante_id?: string | null;
   codigo: PortalCodigoPresenca | null;
   mensagem: string | null;
   distancia_metros: number | null;
