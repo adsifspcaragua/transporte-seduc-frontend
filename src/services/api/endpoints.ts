@@ -72,21 +72,6 @@ export const API_ENDPOINTS = {
     BY_ID: (id: number | string) => `/linha/${id}`,
     ESTUDANTES: (id: number | string) => `/linha/${id}/estudantes`,
   },
-  FREQUENCIAS: {
-    LINHAS: "/frequencias/linhas",
-    CHAMADAS: "/frequencias/chamadas",
-    CHAMADA_BY_ID: (id: number | string) => `/frequencias/chamadas/${id}`,
-    FECHAR: (id: number | string) => `/frequencias/chamadas/${id}/fechar`,
-    REABRIR: (id: number | string) => `/frequencias/chamadas/${id}/reabrir`,
-    JUSTIFICATIVAS: "/frequencias/justificativas",
-    JUSTIFICATIVA_BY_ID: (id: number | string) =>
-      `/frequencias/justificativas/${id}`,
-    ANALISAR_JUSTIFICATIVA: (id: number | string) =>
-      `/frequencias/justificativas/${id}/analise`,
-    RELATORIO: "/frequencias/relatorio",
-    RELATORIO_ESTUDANTE: (id: number | string) =>
-      `/frequencias/estudantes/${id}/relatorio`,
-  },
   ESTUDANTES: {
     BASE: "/estudantes",
     COUNT: "/contar-estudantes",

@@ -52,8 +52,4 @@ test("nega acesso direto a rota protegida sem permissao", () => {
   const { hasRouteAccess } = loadAuthz();
 
   assert.equal(hasRouteAccess("/usuarios", ["linhas.view"]), false);
-  assert.equal(
-    hasRouteAccess("/frequencias/justificativas", ["frequencias.view"]),
-    false,
-  );
 });

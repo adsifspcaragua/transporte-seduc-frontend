@@ -1,5 +1,4 @@
 import { estudanteService } from "@/services/api/modules/estudante";
-import { frequenciaService } from "@/services/api/modules/frequencia";
 import { inscricaoService } from "@/services/api/modules/inscricao";
 import { linhaService } from "@/services/api/modules/linha";
 import { recadastroService } from "@/services/api/modules/recadastro";
@@ -59,13 +58,3 @@ export const recadastroQuery = createCachedQuery(
     };
   },
 );
-
-// O endpoint contém chamada_hoje: uma nova data nunca reutiliza o dia anterior.
-export const frequenciaLinhasQuery = createCachedQuery(async (_today: string) =>
-  frequenciaService.listLinhas(),
-);
-export const chamadasQuery = createCachedQuery(frequenciaService.list);
-export const justificativasQuery = createCachedQuery(
-  frequenciaService.listJustificativas,
-);
-export const relatorioQuery = createCachedQuery(frequenciaService.report);

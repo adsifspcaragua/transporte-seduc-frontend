@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-import { getFrequencyLandingPath } from "@/components/ui/frequencias/frequenciaNavigation";
 import { useAuthz } from "@/hooks/use-authz";
 import { sidebarItems } from "@/services/navigation/sidebar-items";
 import { cn } from "@/utils/cn";
@@ -34,7 +33,7 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const pathname = usePathname();
   const mobileDialogRef = useRef<HTMLDialogElement>(null);
-  const { canAny, permissions } = useAuthz();
+  const { canAny } = useAuthz();
   const visibleItems = sidebarItems.filter(
     (item) => !item.permissions || canAny(item.permissions),
   );
@@ -74,10 +73,6 @@ export function AppSidebar({
         <div className="space-y-1">
           {visibleItems.map((item) => {
             const Icon = item.icon;
-            const href =
-              item.href === "/frequencias"
-                ? getFrequencyLandingPath(permissions)
-                : item.href;
             const isActive = isPathActive(pathname, item.href, item.exact);
 
             return (
@@ -89,7 +84,7 @@ export function AppSidebar({
                   !expanded && "justify-center px-0",
                   isActive && "bg-brand-700",
                 )}
-                href={href}
+                href={item.href}
                 key={item.label}
                 onClick={onNavigate}
                 title={expanded ? undefined : item.label}

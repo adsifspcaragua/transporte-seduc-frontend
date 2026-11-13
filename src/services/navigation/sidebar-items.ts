@@ -1,6 +1,5 @@
 import {
   BusFront,
-  ClipboardCheck,
   ClipboardEdit,
   GraduationCap,
   LayoutDashboard,
@@ -29,12 +28,6 @@ export const sidebarItems: SidebarItem[] = [
     icon: MapIcon,
     href: "/linhas",
     permissions: ["linhas.view"],
-  },
-  {
-    label: "Frequência",
-    icon: ClipboardCheck,
-    href: "/frequencias",
-    permissions: ["frequencias.view", "justificativas.view"],
   },
   {
     label: "Solicitações",

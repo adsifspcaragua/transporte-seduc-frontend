@@ -223,7 +223,7 @@ test("atualizacao explicita ignora validade, notifica consumidores e aceita nova
   unsubscribe();
 });
 
-test("consultas das seis paginas reutilizam servicos e opcoes sem requisicoes redundantes", async () => {
+test("consultas das paginas atuais reutilizam servicos e opcoes sem requisicoes redundantes", async () => {
   const calls = [];
   const { load } = setup({
     get: async (url) => {
@@ -242,7 +242,6 @@ test("consultas das seis paginas reutilizam servicos e opcoes sem requisicoes re
       queries.studentsQuery.fetch(1, 10),
       queries.solicitacoesQuery.fetch(),
       queries.recadastroQuery.fetch(true, true),
-      queries.frequenciaLinhasQuery.fetch("2026-10-30"),
     ]);
   await visitAll();
   const initialCalls = calls.length;
@@ -271,17 +270,6 @@ test("recadastro e motoristas consultam somente colecoes autorizadas", async () 
     "/reecadastro/periodos",
     "/reecadastro/solicitacoes",
   ]);
-});
-
-test("linhas de frequencia nao reutilizam chamada_hoje em outra data", async () => {
-  let calls = 0;
-  const { load } = setup({
-    get: async () => ({ data: { data: [{ id: ++calls }] } }),
-  });
-  const { frequenciaLinhasQuery } = load("@/services/api/page-queries");
-  await frequenciaLinhasQuery.fetch("2026-10-30");
-  await frequenciaLinhasQuery.fetch("2026-10-31");
-  assert.equal(calls, 2);
 });
 
 test("falha ao atualizar linhas opcionais preserva opcoes de filtro carregadas", async () => {

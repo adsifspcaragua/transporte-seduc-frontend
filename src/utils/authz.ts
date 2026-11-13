@@ -21,11 +21,6 @@ const routePermissions: RoutePermission[] = [
   },
   { prefix: "/portal-estudante", permissions: ["presencas.registrar"] },
   { prefix: "/presenca/scan", permissions: ["presencas.registrar"] },
-  {
-    prefix: "/frequencias/justificativas",
-    permissions: ["justificativas.view"],
-  },
-  { prefix: "/frequencias", permissions: ["frequencias.view"] },
   { prefix: "/estudantes", permissions: ["estudantes.view"] },
   { prefix: "/linhas", permissions: ["linhas.view"] },
   { prefix: "/solicitacoes", permissions: ["inscricoes.view"] },
