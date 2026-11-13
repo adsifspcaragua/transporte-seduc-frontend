@@ -17,6 +17,8 @@ import { PENDING_PRESENCE_QR_KEY } from "@/services/navigation/account-navigatio
 import {
   createOfflineProof,
   isConnectionError,
+  OFFLINE_SYNC_EVENT,
+  type OfflineSyncResult,
 } from "@/services/offline-presence";
 import {
   deviceScope,
@@ -88,12 +90,35 @@ export function PortalPresencaWorkspace() {
   const [reviewable, setReviewable] = useState(false);
   const busy = useRef(false);
   const viewVersion = useRef(0);
+  const queuedProof = useRef<string | null>(null);
   useEffect(
     () => () => {
       viewVersion.current++;
     },
     [],
   );
+  // Quando o registro guardado sai (ou é recusado), quem avisa é a faixa do
+  // portal; a mensagem de "guardado neste celular" deixa de valer.
+  useEffect(() => {
+    const onSync = (event: Event) => {
+      const { sent, rejected } = (event as CustomEvent<OfflineSyncResult>)
+        .detail;
+      const id = queuedProof.current;
+      if (
+        !id ||
+        !(
+          sent.some((tentativa) => tentativa.comprovante_id === id) ||
+          rejected.some((item) => item.proof.id === id)
+        )
+      )
+        return;
+      queuedProof.current = null;
+      setFeedback("");
+      setPhase("idle");
+    };
+    window.addEventListener(OFFLINE_SYNC_EVENT, onSync);
+    return () => window.removeEventListener(OFFLINE_SYNC_EVENT, onSync);
+  }, []);
   useEffect(() => {
     const url = new URL(window.location.href);
     const token =
@@ -125,6 +150,7 @@ export function PortalPresencaWorkspace() {
       token,
       location ?? (await currentLocation()),
     );
+    queuedProof.current = proof.id;
     setFeedback(
       `Sem conexão com a internet. O registro de ${portalDate(new Date(proof.capturadoEm).toISOString(), true)} foi guardado neste celular e será enviado quando a conexão voltar; depois a gestão confirma a sua presença.`,
     );
@@ -138,6 +164,7 @@ export function PortalPresencaWorkspace() {
     camera.stop();
     setPhase("resolving");
     setFeedback("");
+    queuedProof.current = null;
     setAlready(false);
     setReviewable(false);
     setPresence(null);
