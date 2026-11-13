@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/linhas/LinhasSkeleton";
 import {
   buildLinhaPayload,
-  getAvailableDrivers,
   horaParaInput,
   type LinhasViewMode,
   ocupacaoDe,
@@ -23,7 +22,7 @@ import {
 import { useAuthz } from "@/hooks/use-authz";
 import { useCachedQuery } from "@/hooks/use-cached-query";
 import { linhaService } from "@/services/api/modules/linha";
-import { driversQuery, linhasQuery } from "@/services/api/page-queries";
+import { linhasQuery } from "@/services/api/page-queries";
 import type { Linha } from "@/types/inscricao";
 import { hasRouteAccess } from "@/utils/authz";
 import { cn } from "@/utils/cn";
@@ -50,7 +49,6 @@ const formInicial = {
   departure_time: "",
   return_time: "",
   max_capacity: "",
-  motorista_id: "",
 };
 
 type LinhaFormField = keyof typeof formInicial;
@@ -63,16 +61,11 @@ export function LinhasWorkspace() {
   const [viewMode, setViewMode] = useState<LinhasViewMode>("grid");
   const [detalhes, setDetalhes] = useState<Linha | null>(null);
   const linhasResult = useCachedQuery(linhasQuery);
-  const driversResult = useCachedQuery(driversQuery, canWrite);
   const linhas = linhasResult.data ?? [];
-  const drivers = driversResult.data ?? [];
   const loading = linhasResult.isLoading;
   const carregar = linhasResult.refresh;
   const [actionLoading, setActionLoading] = useState(false);
   const loadError = linhasResult.error ? errorMessage(linhasResult.error) : "";
-  const driversError = driversResult.error
-    ? "A lista de motoristas não está disponível para este usuário."
-    : "";
   const [formError, setFormError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<LinhaFieldErrors>({});
@@ -100,7 +93,6 @@ export function LinhasWorkspace() {
       departure_time: horaParaInput(linha.departure_time),
       return_time: horaParaInput(linha.return_time),
       max_capacity: String(linha.max_capacity ?? ""),
-      motorista_id: String(linha.motorista_id ?? linha.motorista?.id ?? ""),
     });
     setFormError("");
     setFieldErrors({});
@@ -195,7 +187,6 @@ export function LinhasWorkspace() {
     }
   }
 
-  const availableDrivers = getAvailableDrivers(drivers, editando?.motorista);
 
   if (showPageSkeleton) {
     return <LinhasPageSkeleton />;
@@ -331,8 +322,6 @@ export function LinhasWorkspace() {
             values={form}
             errors={fieldErrors}
             onChange={setField}
-            drivers={availableDrivers}
-            driversError={driversError}
           />
           {editando && (
             <p className="text-sm text-content-muted">

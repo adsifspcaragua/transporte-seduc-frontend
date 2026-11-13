@@ -284,19 +284,3 @@ test("falha da leitura após escrita aceita exige reconciliação mesmo se for 4
   assert.equal(shouldReconcileGuidedFailure(true, false), true);
   assert.equal(shouldReconcileGuidedFailure(false, false), false);
 });
-
-test("vínculo de motorista envia só responsável e capacidade recém-consultada, sem sobrescrever nome", () => {
-  const { buildMotoristaUpdate } = presentation();
-  assert.deepEqual(
-    plain(
-      buildMotoristaUpdate(
-        { id: 1, name: "Renomeada por outra pessoa", max_capacity: 45 },
-        6,
-      ),
-    ),
-    { max_capacity: 45, motorista_id: 6 },
-  );
-  assert.throws(() =>
-    buildMotoristaUpdate({ id: 1, name: "Sem capacidade" }, null),
-  );
-});

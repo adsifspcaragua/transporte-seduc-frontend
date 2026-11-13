@@ -1,8 +1,3 @@
-export type DriverOption = {
-  id: number;
-  name: string;
-};
-
 export type UserRole =
   | "admin"
   | "gestor"

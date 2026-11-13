@@ -51,7 +51,6 @@ export function TransporteLinhaStep({
     departure_time: "",
     return_time: "",
     max_capacity: "",
-    motorista_id: "",
   });
   const [errors, setErrors] = useState<LinhaFormErrors>({});
   const [error, setError] = useState("");

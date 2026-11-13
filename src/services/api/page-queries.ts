@@ -8,9 +8,6 @@ import type { PaginatedEstudantes } from "@/types/estudante";
 import type { SolicitacoesRecadastroParams } from "@/types/recadastro";
 
 export const linhasQuery = createCachedQuery(linhaService.list);
-export const driversQuery = createCachedQuery(async (canWrite: boolean) =>
-  canWrite ? userService.listDrivers() : [],
-);
 export const usersQuery = createCachedQuery(userService.list);
 export const studentsQuery = createCachedQuery(
   (page: number = 1, perPage: number = 10): Promise<PaginatedEstudantes> =>

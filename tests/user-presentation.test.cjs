@@ -67,7 +67,7 @@ test("normaliza o payload de criacao", () => {
           cpf: "123.456.789-01",
           matricula: "1024",
           data_nascimento: "1990-05-10",
-          role: "motorista",
+          role: "operador",
         },
         "create",
       ),
@@ -79,7 +79,7 @@ test("normaliza o payload de criacao", () => {
       cpf: "12345678901",
       matricula: 1024,
       data_nascimento: "1990-05-10",
-      role: "motorista",
+      role: "operador",
     },
   );
 });
@@ -137,7 +137,6 @@ test("oferece somente papeis administrativos existentes", () => {
     "admin",
     "gestor",
     "operador",
-    "motorista",
   ]);
 });
 

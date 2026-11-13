@@ -211,15 +211,6 @@ let failPointDetail = false;
       }
       if (p === "/linha/1") {
         Object.assign(lines[0], payload);
-        lines[0].motorista = payload.motorista_id
-          ? {
-              id: payload.motorista_id,
-              name:
-                payload.motorista_id === 6
-                  ? "Motorista Alternativo"
-                  : "Motorista Simulado",
-            }
-          : null;
         return send({ data: lines[0] });
       }
       if (p === "/pontos-embarque") {
@@ -233,13 +224,6 @@ let failPointDetail = false;
       return failLineRead
         ? send({ message: "Limite de consulta" }, 429)
         : send({ data: lines });
-    if (p === "/users/motoristas")
-      return send({
-        data: [
-          { id: 5, name: "Motorista Simulado" },
-          { id: 6, name: "Motorista Alternativo" },
-        ],
-      });
     if (p === "/veiculos/atribuicoes") return send({ data: assignments });
     if (p === "/veiculos") return send({ data: vehicles });
     if (p === "/horarios-viagem") return send({ data: schedules });
@@ -285,37 +269,13 @@ let failPointDetail = false;
     .click();
   await choose(page, /^Linha/, "Linha Simulada");
   await page.getByRole("button", { name: "Continuar", exact: true }).click();
-  await choose(page, /^Motorista$/, "Motorista Alternativo");
   await page.getByRole("button", { name: "3. Horários", exact: true }).click();
   await page
-    .getByRole("button", { name: "2. Veículo e motorista", exact: true })
+    .getByRole("button", { name: "2. Veículo", exact: true })
     .click();
-  await expect(page.getByLabel("Motorista", { exact: true })).toHaveText(
-    "Motorista Alternativo",
-  );
-  assert.equal(writes.length, 0, "unconfirmed selection must not write");
+  assert.equal(writes.length, 0, "navigation must not write");
   lines[0].name = "Linha atualizada por outro servidor";
   lines[0].max_capacity = 45;
-  await page
-    .getByLabel(
-      "Quero gravar agora o responsável da linha e alterar seu acesso à chamada.",
-    )
-    .press("Space");
-  await page
-    .getByRole("button", { name: "Gravar responsável", exact: true })
-    .click();
-  await expect(
-    page
-      .getByText(
-        "Motorista responsável da linha: alteração conferida no servidor.",
-        { exact: true },
-      )
-      .last(),
-  ).toBeVisible();
-  assert.deepEqual(writes.find((w) => w.path === "/linha/1").payload, {
-    max_capacity: 45,
-    motorista_id: 6,
-  });
   await page.getByRole("button", { name: "3. Horários", exact: true }).click();
   await page.getByRole("button", { name: "Cadastrar", exact: true }).click();
   let dialog = page.getByRole("dialog");
@@ -447,9 +407,8 @@ let failPointDetail = false;
     .getByRole("button", { name: "Cancelar", exact: true })
     .click();
   await edge
-    .getByRole("button", { name: "2. Veículo e motorista", exact: true })
+    .getByRole("button", { name: "2. Veículo", exact: true })
     .click();
-  await choose(edge, /^Motorista$/, "Motorista Simulado");
   failLineRead = true;
   await edge.getByRole("button", { name: "6. Revisão", exact: true }).click();
   await edge
@@ -462,14 +421,8 @@ let failPointDetail = false;
     edge.getByText(/Não foi possível conferir os dados atuais da linha/),
   ).toBeVisible();
   await edge
-    .getByRole("button", { name: "2. Veículo e motorista", exact: true })
+    .getByRole("button", { name: "2. Veículo", exact: true })
     .click();
-  await expect(
-    edge.getByRole("button", { name: "Motorista", exact: true }),
-  ).toHaveText("Motorista Simulado");
-  await expect(
-    edge.getByRole("button", { name: "Motorista", exact: true }),
-  ).toBeDisabled();
   failLineRead = false;
   await edge.close();
   const lost = await context.newPage();

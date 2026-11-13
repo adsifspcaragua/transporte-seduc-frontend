@@ -112,15 +112,6 @@ export function shouldReconcileGuidedFailure(
   return sent && (accepted || status == null || status >= 500);
 }
 
-export function buildMotoristaUpdate(
-  latest: Linha,
-  motoristaId: number | null,
-) {
-  if (!latest.max_capacity || !Number.isInteger(latest.max_capacity))
-    throw new Error("Não foi possível conferir a capacidade atual da linha.");
-  return { max_capacity: latest.max_capacity, motorista_id: motoristaId };
-}
-
 export function guidedDuplicate(
   resource: string,
   payload: Record<string, unknown>,
@@ -277,8 +268,6 @@ export function summarizeLinha(
         ),
       )
     : [];
-  if (!linha.motorista_id && !linha.motorista)
-    issues.push({ text: "Motorista responsável não informado.", step: 1 });
   if (
     snapshot.horarios.data &&
     !horarios.some((h) => dates.some((day) => scheduleOperates(h, day)))

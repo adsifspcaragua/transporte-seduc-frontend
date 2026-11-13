@@ -3,10 +3,8 @@
 import {
   Input,
   NumberInput,
-  Select,
   TimeInput,
 } from "@/components/form/inputs";
-import type { DriverOption } from "@/types/user";
 
 export type LinhaFormValues = {
   name: string;
@@ -14,7 +12,6 @@ export type LinhaFormValues = {
   departure_time: string;
   return_time: string;
   max_capacity: string;
-  motorista_id: string;
 };
 export type LinhaFormErrors = Partial<Record<keyof LinhaFormValues, string>>;
 
@@ -22,15 +19,11 @@ export function LinhaFormFields({
   values,
   errors,
   onChange,
-  drivers = [],
-  driversError,
   basic = false,
 }: {
   values: LinhaFormValues;
   errors: LinhaFormErrors;
   onChange: (field: keyof LinhaFormValues, value: string) => void;
-  drivers?: DriverOption[];
-  driversError?: string;
   basic?: boolean;
 }) {
   return (
@@ -78,20 +71,6 @@ export function LinhaFormFields({
         aria-invalid={Boolean(errors.max_capacity)}
         onChange={(e) => onChange("max_capacity", e.target.value)}
       />
-      {!basic && (
-        <Select
-          label="Motorista responsável"
-          value={values.motorista_id}
-          error={errors.motorista_id}
-          aria-invalid={Boolean(errors.motorista_id)}
-          hint={driversError}
-          onChange={(e) => onChange("motorista_id", e.target.value)}
-          options={[
-            { value: "", label: "Nenhum motorista vinculado" },
-            ...drivers.map((d) => ({ value: String(d.id), label: d.name })),
-          ]}
-        />
-      )}
     </>
   );
 }

@@ -48,13 +48,6 @@ export function TransporteLinhaResumo({
       </p>
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
         <div>
-          <dt className="text-content-muted">Motorista responsável</dt>
-          <dd>
-            {linha.motorista?.name ??
-              (linha.motorista_id ? "Nome não disponível" : "Não informado")}
-          </dd>
-        </div>
-        <div>
           <dt className="text-content-muted">
             Capacidade da linha / estudantes ativos
           </dt>
@@ -264,8 +257,7 @@ export function TransporteLinhaResumo({
       <p className="text-xs leading-5 text-content-muted">
         Conferência dos cadastros no período consultado. Não comprova
         circulação, QR afixado, compatibilidade de todos os pontos, credenciais
-        dos estudantes ou disponibilidade física de frota. A chamada diária
-        permanece separada do QR.
+        dos estudantes ou disponibilidade física de frota.
       </p>
     </div>
   );

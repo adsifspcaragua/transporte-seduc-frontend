@@ -237,7 +237,6 @@ test("consultas das paginas atuais reutilizam servicos e opcoes sem requisicoes 
   const visitAll = () =>
     Promise.all([
       queries.linhasQuery.fetch(),
-      queries.driversQuery.fetch(true),
       queries.usersQuery.fetch(),
       queries.studentsQuery.fetch(1, 10),
       queries.solicitacoesQuery.fetch(),
@@ -252,7 +251,7 @@ test("consultas das paginas atuais reutilizam servicos e opcoes sem requisicoes 
   assert.equal(queries.usersQuery.getSnapshot().data.length, 0);
 });
 
-test("recadastro e motoristas consultam somente colecoes autorizadas", async () => {
+test("recadastro consulta somente colecoes autorizadas", async () => {
   const calls = [];
   const { load } = setup({
     get: async (url) => {
@@ -260,11 +259,9 @@ test("recadastro e motoristas consultam somente colecoes autorizadas", async () 
       return { data: { data: [] } };
     },
   });
-  const { recadastroQuery, driversQuery } = load("@/services/api/page-queries");
+  const { recadastroQuery } = load("@/services/api/page-queries");
   await recadastroQuery.fetch(true, false);
   assert.deepEqual(calls, ["/reecadastro/periodos"]);
-  await driversQuery.fetch(false);
-  assert.equal(calls.length, 1);
   await recadastroQuery.fetch(false, true);
   assert.deepEqual(calls, [
     "/reecadastro/periodos",

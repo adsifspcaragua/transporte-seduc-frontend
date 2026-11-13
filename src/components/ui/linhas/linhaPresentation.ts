@@ -1,5 +1,4 @@
 import type { Linha } from "@/types/inscricao";
-import type { DriverOption } from "@/types/user";
 import type { LinhaFormErrors, LinhaFormValues } from "./LinhaFormFields";
 
 export function validateLinhaForm(form: LinhaFormValues): LinhaFormErrors {
@@ -32,7 +31,6 @@ export function buildLinhaPayload(form: LinhaFormValues) {
       : {}),
     ...(form.departure_time ? { departure_time: form.departure_time } : {}),
     ...(form.return_time ? { return_time: form.return_time } : {}),
-    motorista_id: form.motorista_id ? Number(form.motorista_id) : null,
   };
 }
 
@@ -62,22 +60,4 @@ export function ocupacaoDe(linha: Linha) {
     lotada: capacidade > 0 && ocupacao >= capacidade,
     proporcao: Math.min(1, proporcao),
   };
-}
-
-export function getAvailableDrivers(
-  availableDrivers: DriverOption[],
-  currentDriver?: DriverOption | null,
-) {
-  const drivers = [...availableDrivers];
-
-  if (
-    currentDriver &&
-    !drivers.some((driver) => driver.id === currentDriver.id)
-  ) {
-    drivers.push(currentDriver);
-  }
-
-  return drivers.sort((first, second) =>
-    first.name.localeCompare(second.name, "pt-BR"),
-  );
 }

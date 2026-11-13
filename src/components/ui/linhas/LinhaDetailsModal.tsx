@@ -191,10 +191,6 @@ export function LinhaDetailsModal({
               value: horaParaInput(linha.return_time) || "Não informado",
             },
             {
-              label: "Motorista",
-              value: linha.motorista?.name || "Não vinculado",
-            },
-            {
               label: "Ocupação ativa",
               value: `${ocupacao} de ${capacidade} lugares`,
             },

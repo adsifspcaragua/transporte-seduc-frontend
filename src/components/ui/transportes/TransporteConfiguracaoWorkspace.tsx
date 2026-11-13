@@ -15,14 +15,13 @@ import type {
 } from "@/types/transporte-operacao";
 import { TransporteLinhaResumo } from "./TransporteLinhaResumo";
 import { TransporteLinhaStep } from "./TransporteLinhaStep";
-import { TransporteMotoristaStep } from "./TransporteMotoristaStep";
 import { TransporteResourcePanel } from "./TransporteResourcePanel";
 import { transporteConfigs } from "./transporteConfig";
 import { formatTransporteValue } from "./transportePresentation";
 
 const steps = [
   "Linha",
-  "Veículo e motorista",
+  "Veículo",
   "Horários",
   "Pontos de embarque",
   "Calendário e viagens",
@@ -30,7 +29,7 @@ const steps = [
 ];
 const instructions = [
   "Selecione uma linha existente ou cadastre um atendimento novo.",
-  "Confira qual veículo atende a linha em cada período e quem será o responsável.",
+  "Confira qual veículo atende a linha em cada período.",
   "Organize os dias, os sentidos e as saídas recorrentes. Os horários existentes podem ser usados como estão.",
   "Selecione os locais de embarque para cada sentido. Reutilize os pontos existentes antes de cadastrar outro.",
   "Confira o calendário. Gerar viagens é uma ação explícita e grava dados no servidor.",
@@ -223,11 +222,6 @@ export function TransporteConfiguracaoWorkspace({
             {linha && (
               <div key={linha.id} className="space-y-4">
                 <div hidden={step !== 1} className="space-y-5">
-                  <TransporteMotoristaStep
-                    linha={linha}
-                    onSaved={onSaved}
-                    readOnly={!currentLines}
-                  />
                   {panel("atribuicoes", "Veículos que atendem esta linha")}
                   <details className="rounded-lg border border-border-subtle p-4">
                     <summary className="cursor-pointer text-sm font-semibold text-brand-700">
@@ -321,8 +315,7 @@ export function TransporteConfiguracaoWorkspace({
                     )}
                     <p className="text-sm text-content-muted">
                       Campos ainda abertos e seleções não confirmadas não foram
-                      gravados. Cadastro de motorista e vínculo à linha são
-                      ações separadas. Atualize a consulta antes de encerrar a
+                      gravados. Atualize a consulta antes de encerrar a
                       conferência.
                     </p>
                     <Button
