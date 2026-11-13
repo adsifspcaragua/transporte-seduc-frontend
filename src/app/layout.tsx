@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import type { ReactNode } from "react";
 
@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "UNIBUS - SEDUC",
   description:
     "Sistema de Transporte Universitário - Secretaria de Educação de Caraguatatuba",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#084e80",
 };
 
 export default function RootLayout({
