@@ -120,11 +120,13 @@ export function TransporteResourcePanel({
   const { can, canAny } = useAuthz();
   const canWrite = Boolean(config.write && can(config.write));
   const canRemove = Boolean(config.remove && can(config.remove));
+  // Começa no que pede decisão: negativas com pedido de revisão e
+  // comprovantes feitos sem conexão.
   const [filters, setFilters] = useState<TransporteFiltros>(
-    config.key === "tentativas" ? { resultado: "Negada" } : {},
+    config.key === "tentativas" ? { revisao_status: "Pendente" } : {},
   );
   const [filterValues, setFilterValues] = useState<TransporteFormValues>(
-    config.key === "tentativas" ? { resultado: "Negada" } : {},
+    config.key === "tentativas" ? { revisao_status: "Pendente" } : {},
   );
   const [page, setPage] = useState(1);
   const [filterReset, setFilterReset] = useState(0);

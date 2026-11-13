@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/buttons";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/utils/cn";
+import { PresencaOfflineAviso } from "./PresencaOfflineAviso";
 
 const navigation = [
   { href: "/portal-estudante", label: "Início", icon: House },
@@ -111,7 +112,10 @@ export function PortalEstudanteLayout({ children }: { children: ReactNode }) {
                 ))}
               </div>
             </nav>
-            <main className="space-y-5">{children}</main>
+            <main className="space-y-5">
+              {user && <PresencaOfflineAviso userId={user.id} />}
+              {children}
+            </main>
           </>
         ) : (
           <main className="rounded-lg bg-white p-5 shadow-sm">

@@ -34,6 +34,7 @@ export const API_ENDPOINTS = {
   },
   RECADASTRO: {
     CONSULTA: "/reecadastro/consulta",
+    CONSULTA_VERIFICAR: "/reecadastro/consulta/verificar",
     SOLICITACOES: "/reecadastro/solicitacoes",
     SOLICITACAO_BY_ID: (id: number | string) =>
       `/reecadastro/solicitacoes/${id}`,
@@ -57,7 +58,7 @@ export const API_ENDPOINTS = {
   },
   AREA_ESTUDANTE: {
     ACESSO: "/area-estudante/acesso",
-    VERIFICAR: "/area-estudante/acesso/verificar",
+    ACESSO_VERIFICAR: "/area-estudante/acesso/verificar",
   },
   INSTITUICOES: {
     BASE: "/instituicao",

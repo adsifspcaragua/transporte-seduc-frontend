@@ -2,6 +2,8 @@
 
 Auditoria estática em 13/11/2026. Fonte dos contratos: `../transporte-seduc-backend/routes/api.php`, Controllers, FormRequests, Resources e Services do backend local. Fonte do consumo: `src/services/api`, `src/types`, `src/components/ui`, `src/app` e navegação do frontend. Não foram consultados banco ou APIs em execução, nem alterados arquivos do backend. As permissões efetivas dependem dos papéis atribuídos no banco.
 
+**Atualização após sincronização com `origin/main`:** o relatório abaixo registra o estado da auditoria no commit `798b179`. A integração posterior incorporou o fluxo remoto de código por e-mail com espera para reenvio, os métodos `consultar`/`verificarConsulta` com as respostas corretas e o suporte a presença sem internet. Portanto, as referências abaixo à ausência do fluxo offline e à remoção do método `consultar` descrevem o estado anterior à sincronização. As correções de paginação do recadastro e de instituições foram preservadas. Após resolver os conflitos, os 128 testes, o TypeScript e o build passaram novamente.
+
 ## A. Inventário das integrações
 
 Todos os caminhos abaixo são relativos a `/api`. `api` usa sessão Sanctum e CSRF; `publicApi` é usado nas escritas públicas sem sessão. As operações administrativas exigem `auth:sanctum`, conta ativa e as permissões indicadas em `routes/api.php`.

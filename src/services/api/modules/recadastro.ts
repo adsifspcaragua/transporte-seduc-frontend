@@ -6,6 +6,7 @@ import type {
   AnaliseRecadastroPayload,
   AusentesRecadastro,
   CadastroRecadastro,
+  CodigoAcessoEnviado,
   DocumentoRecadastroTipo,
   FinalizarRecadastroPayload,
   PaginatedSolicitacoesRecadastro,
@@ -28,19 +29,36 @@ function unwrapCollection<T>(payload: CollectionResponse<T>) {
 }
 
 export const recadastroService = {
+  /** Primeira etapa: CPF novo segue para a inscricao; com cadastro, so envia o codigo. */
   async acessar(cpf: string) {
+    const { data } = await publicApi.post<
+      AcessoEstudanteResponse | CodigoAcessoEnviado
+    >(API_ENDPOINTS.AREA_ESTUDANTE.ACESSO, { cpf });
+    return data;
+  },
+  /** Segunda etapa: com o codigo do e-mail, devolve o fluxo e os dados. */
+  async verificarAcesso(cpf: string, codigo: string) {
     const { data } = await publicApi.post<AcessoEstudanteResponse>(
-      API_ENDPOINTS.AREA_ESTUDANTE.ACESSO,
+      API_ENDPOINTS.AREA_ESTUDANTE.ACESSO_VERIFICAR,
+      { cpf, codigo },
+    );
+    return data;
+  },
+  async consultar(cpf: string) {
+    const { data } = await publicApi.post<CodigoAcessoEnviado>(
+      API_ENDPOINTS.RECADASTRO.CONSULTA,
       { cpf },
     );
     return data;
   },
-  async verificarAcesso(cpf: string, codigo: string) {
-    const { data } = await publicApi.post<
-      Exclude<AcessoEstudanteResponse, { fluxo: "verificacao" }>
-    >(API_ENDPOINTS.AREA_ESTUDANTE.VERIFICAR, { cpf, codigo });
+  async verificarConsulta(cpf: string, codigo: string) {
+    const { data } = await publicApi.post<DataResponse<SituacaoRecadastro>>(
+      API_ENDPOINTS.RECADASTRO.CONSULTA_VERIFICAR,
+      { cpf, codigo },
+    );
     return data;
   },
+
   async enviarDocumento(
     solicitacaoId: number,
     token: string,

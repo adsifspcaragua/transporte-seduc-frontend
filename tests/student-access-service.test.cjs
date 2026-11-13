@@ -45,7 +45,7 @@ test("access requests a code before resolving an existing student's flow", async
             API_ENDPOINTS: {
               AREA_ESTUDANTE: {
                 ACESSO: "/area-estudante/acesso",
-                VERIFICAR: "/area-estudante/acesso/verificar",
+                ACESSO_VERIFICAR: "/area-estudante/acesso/verificar",
               },
             },
           };
