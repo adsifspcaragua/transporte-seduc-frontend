@@ -1,13 +1,15 @@
 "use client";
 
 import { CheckCircle2, Clock3, FileSearch } from "lucide-react";
-import { useMemo, useState } from "react";
-
 import { Button } from "@/components/buttons";
 import { SearchInput, Select } from "@/components/form/inputs";
-import type { SolicitacaoRecadastro } from "@/types/recadastro";
+import { Pagination } from "@/components/pagination";
+import type {
+  PaginatedSolicitacoesRecadastro,
+  PeriodoRecadastro,
+  SolicitacaoRecadastro,
+} from "@/types/recadastro";
 import {
-  filterSolicitacoes,
   formatRecadastroDateTime,
   getRecadastroBadgeClass,
   getRecadastroStatusLabel,
@@ -17,6 +19,16 @@ type RecadastroSolicitacoesSectionProps = {
   canAnalyze: boolean;
   loading: boolean;
   solicitacoes: SolicitacaoRecadastro[];
+  meta: PaginatedSolicitacoesRecadastro["meta"] | null;
+  periodos: PeriodoRecadastro[];
+  page: number;
+  search: string;
+  status: string;
+  periodoId: string;
+  onPageChange: (page: number) => void;
+  onSearchChange: (search: string) => void;
+  onStatusChange: (status: string) => void;
+  onPeriodoChange: (id: string) => void;
   onAnalyze: (solicitacao: SolicitacaoRecadastro) => void;
 };
 
@@ -42,15 +54,18 @@ export function RecadastroSolicitacoesSection({
   canAnalyze,
   loading,
   solicitacoes,
+  meta,
+  periodos,
+  page,
+  search,
+  status,
+  periodoId,
+  onPageChange,
+  onSearchChange,
+  onStatusChange,
+  onPeriodoChange,
   onAnalyze,
 }: RecadastroSolicitacoesSectionProps) {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("todos");
-  const filteredSolicitacoes = useMemo(
-    () => filterSolicitacoes(solicitacoes, search, status),
-    [search, solicitacoes, status],
-  );
-
   return (
     <section className="@container/solicitacoes min-w-0 rounded-xl border border-border-subtle bg-white p-5 shadow-sm lg:p-6">
       <div className="flex min-w-0 flex-col gap-5 @min-[68rem]/solicitacoes:flex-row @min-[68rem]/solicitacoes:items-start @min-[68rem]/solicitacoes:justify-between">
@@ -68,25 +83,39 @@ export function RecadastroSolicitacoesSection({
           </div>
         </div>
 
-        <div className="grid w-full min-w-0 gap-3 @min-[40rem]/solicitacoes:grid-cols-[minmax(0,1fr)_minmax(12rem,0.5fr)] @min-[68rem]/solicitacoes:max-w-xl">
+        <div className="grid w-full min-w-0 gap-3 @min-[40rem]/solicitacoes:grid-cols-2 @min-[68rem]/solicitacoes:max-w-xl">
           <SearchInput
-            aria-label="Buscar por estudante, CPF ou período"
-            onChange={(event) => setSearch(event.target.value)}
-            onClear={() => setSearch("")}
-            placeholder="Estudante, CPF ou período"
+            aria-label="Buscar por estudante ou CPF"
+            onChange={(event) => onSearchChange(event.target.value)}
+            onClear={() => onSearchChange("")}
+            placeholder="Estudante ou CPF"
             value={search}
           />
           <Select
             aria-label="Filtrar solicitações por status"
-            onChange={(event) => setStatus(event.target.value)}
+            onChange={(event) => onStatusChange(event.target.value)}
             options={STATUS_OPTIONS}
             value={status}
           />
+          {periodos.length > 0 && (
+            <Select
+              aria-label="Filtrar solicitações por período"
+              onChange={(event) => onPeriodoChange(event.target.value)}
+              options={[
+                { label: "Todos os períodos", value: "" },
+                ...periodos.map((periodo) => ({
+                  label: periodo.referencia,
+                  value: String(periodo.id),
+                })),
+              ]}
+              value={periodoId}
+            />
+          )}
         </div>
       </div>
 
       <div className="mt-5 min-w-0 rounded-xl border border-border-subtle">
-        {filteredSolicitacoes.length === 0 && !loading ? (
+        {solicitacoes.length === 0 && !loading ? (
           <div className="flex flex-col items-center px-5 py-12 text-center">
             <FileSearch className="size-8 text-content-disabled" />
             <p className="mt-3 font-semibold text-content-secondary">
@@ -97,7 +126,7 @@ export function RecadastroSolicitacoesSection({
             </p>
           </div>
         ) : (
-          filteredSolicitacoes.map((solicitacao) => (
+          solicitacoes.map((solicitacao) => (
             <article
               className="flex min-w-0 flex-col gap-4 border-b border-border-subtle px-4 py-4 last:border-b-0 @min-[56rem]/solicitacoes:flex-row @min-[56rem]/solicitacoes:items-center @min-[56rem]/solicitacoes:justify-between"
               key={solicitacao.id}
@@ -149,11 +178,19 @@ export function RecadastroSolicitacoesSection({
         )}
       </div>
 
-      {!loading && solicitacoes.length > 0 && (
-        <p className="mt-3 text-right text-xs text-content-muted">
-          Exibindo {filteredSolicitacoes.length} de {solicitacoes.length}{" "}
-          solicitação(ões)
-        </p>
+      {meta && (
+        <Pagination
+          currentPage={meta.current_page || page}
+          disabled={loading}
+          from={meta.from}
+          lastPage={meta.last_page}
+          onPageChange={onPageChange}
+          onPerPageChange={() => {}}
+          perPage={10}
+          perPageOptions={[10]}
+          to={meta.to}
+          total={meta.total}
+        />
       )}
     </section>
   );

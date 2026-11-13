@@ -57,6 +57,7 @@ export const API_ENDPOINTS = {
   },
   AREA_ESTUDANTE: {
     ACESSO: "/area-estudante/acesso",
+    VERIFICAR: "/area-estudante/acesso/verificar",
   },
   INSTITUICOES: {
     BASE: "/instituicao",

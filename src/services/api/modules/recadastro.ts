@@ -8,10 +8,12 @@ import type {
   CadastroRecadastro,
   DocumentoRecadastroTipo,
   FinalizarRecadastroPayload,
+  PaginatedSolicitacoesRecadastro,
   PeriodoRecadastro,
   PeriodoRecadastroPayload,
   SituacaoRecadastro,
   SolicitacaoRecadastro,
+  SolicitacoesRecadastroParams,
 } from "@/types/recadastro";
 
 type DataResponse<T> = { data: T; message?: string };
@@ -33,14 +35,12 @@ export const recadastroService = {
     );
     return data;
   },
-  async consultar(cpf: string) {
-    const { data } = await publicApi.post<DataResponse<SituacaoRecadastro>>(
-      API_ENDPOINTS.RECADASTRO.CONSULTA,
-      { cpf },
-    );
+  async verificarAcesso(cpf: string, codigo: string) {
+    const { data } = await publicApi.post<
+      Exclude<AcessoEstudanteResponse, { fluxo: "verificacao" }>
+    >(API_ENDPOINTS.AREA_ESTUDANTE.VERIFICAR, { cpf, codigo });
     return data;
   },
-
   async enviarDocumento(
     solicitacaoId: number,
     token: string,
@@ -84,12 +84,26 @@ export const recadastroService = {
     return data;
   },
 
-  listSolicitacoes: sharePendingRequest(async () => {
-    const { data } = await api.get<CollectionResponse<SolicitacaoRecadastro>>(
-      API_ENDPOINTS.RECADASTRO.SOLICITACOES,
-    );
-    return unwrapCollection(data);
-  }),
+  listSolicitacoes: sharePendingRequest(
+    async (params: SolicitacoesRecadastroParams = {}) => {
+      const { data } = await api.get<
+        PaginatedSolicitacoesRecadastro | { message: string }
+      >(API_ENDPOINTS.RECADASTRO.SOLICITACOES, { params });
+      return "data" in data
+        ? data
+        : {
+            data: [],
+            meta: {
+              current_page: 1,
+              from: null,
+              last_page: 1,
+              per_page: 10,
+              to: null,
+              total: 0,
+            },
+          };
+    },
+  ),
 
   async analisar(id: number, payload: AnaliseRecadastroPayload) {
     const { data } = await api.put<DataResponse<SolicitacaoRecadastro>>(

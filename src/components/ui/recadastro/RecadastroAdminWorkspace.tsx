@@ -102,10 +102,26 @@ export function RecadastroAdminWorkspace() {
   const canWritePeriodos = can("periodos.write");
   const canViewSolicitacoes = can("solicitacoes.view");
   const canAnalyzeSolicitacoes = can("solicitacoes.analise");
+  const [solicitacoesPage, setSolicitacoesPage] = useState(1);
+  const [solicitacoesSearch, setSolicitacoesSearch] = useState("");
+  const [solicitacoesStatus, setSolicitacoesStatus] = useState("todos");
+  const [solicitacoesPeriodoId, setSolicitacoesPeriodoId] = useState("");
   const result = useCachedQuery(
     recadastroQuery,
     canViewPeriodos,
     canViewSolicitacoes,
+    {
+      page: solicitacoesPage,
+      ...(solicitacoesSearch.trim()
+        ? { busca: solicitacoesSearch.trim() }
+        : {}),
+      ...(solicitacoesStatus !== "todos"
+        ? { status: solicitacoesStatus as SolicitacaoRecadastro["status"] }
+        : {}),
+      ...(solicitacoesPeriodoId
+        ? { periodo_id: Number(solicitacoesPeriodoId) }
+        : {}),
+    },
   );
   const periodos = result.data?.periodos ?? [];
   const solicitacoes = result.data?.solicitacoes ?? [];
@@ -455,6 +471,25 @@ export function RecadastroAdminWorkspace() {
           <RecadastroSolicitacoesSection
             canAnalyze={canAnalyzeSolicitacoes}
             loading={loading}
+            meta={result.data?.solicitacoesMeta ?? null}
+            page={solicitacoesPage}
+            periodos={periodos}
+            periodoId={solicitacoesPeriodoId}
+            search={solicitacoesSearch}
+            status={solicitacoesStatus}
+            onPageChange={setSolicitacoesPage}
+            onPeriodoChange={(id) => {
+              setSolicitacoesPeriodoId(id);
+              setSolicitacoesPage(1);
+            }}
+            onSearchChange={(value) => {
+              setSolicitacoesSearch(value);
+              setSolicitacoesPage(1);
+            }}
+            onStatusChange={(value) => {
+              setSolicitacoesStatus(value);
+              setSolicitacoesPage(1);
+            }}
             onAnalyze={setSelected}
             solicitacoes={solicitacoes}
           />

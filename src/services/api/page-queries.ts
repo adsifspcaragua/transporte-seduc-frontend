@@ -6,6 +6,7 @@ import { recadastroService } from "@/services/api/modules/recadastro";
 import { userService } from "@/services/api/modules/user";
 import { createCachedQuery } from "@/services/api/query-cache";
 import type { PaginatedEstudantes } from "@/types/estudante";
+import type { SolicitacoesRecadastroParams } from "@/types/recadastro";
 
 export const linhasQuery = createCachedQuery(linhaService.list);
 export const driversQuery = createCachedQuery(async (canWrite: boolean) =>
@@ -42,12 +43,20 @@ export const solicitacoesQuery = createCachedQuery(async () => {
 
 // As permissões fazem parte da chave; não solicitamos coleções sem autorização.
 export const recadastroQuery = createCachedQuery(
-  async (canViewPeriodos: boolean, canViewSolicitacoes: boolean) => {
+  async (
+    canViewPeriodos: boolean,
+    canViewSolicitacoes: boolean,
+    filters: SolicitacoesRecadastroParams = {},
+  ) => {
     const [periodos, solicitacoes] = await Promise.all([
       canViewPeriodos ? recadastroService.listPeriodos() : [],
-      canViewSolicitacoes ? recadastroService.listSolicitacoes() : [],
+      canViewSolicitacoes ? recadastroService.listSolicitacoes(filters) : null,
     ]);
-    return { periodos, solicitacoes };
+    return {
+      periodos,
+      solicitacoes: solicitacoes?.data ?? [],
+      solicitacoesMeta: solicitacoes?.meta ?? null,
+    };
   },
 );
 

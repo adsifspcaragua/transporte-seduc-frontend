@@ -7,20 +7,38 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/buttons";
-import { CpfInput } from "@/components/form/inputs";
+import { CpfInput, Input } from "@/components/form/inputs";
 import { recadastroService } from "@/services/api/modules/recadastro";
+import type { AcessoEstudanteResponse } from "@/types/recadastro";
 import { cleanCpf, isValidCpf } from "@/utils/cpf";
 
 export const STUDENT_ACCESS_STORAGE_KEY = "transporte-seduc:student-access";
 const REGISTRATION_DRAFT_STORAGE_KEY = "transporte-seduc:registration-draft";
 
-type ApiError = { message?: string; errors?: { cpf?: string[] } };
+type ApiError = {
+  message?: string;
+  errors?: { cpf?: string[]; codigo?: string[] };
+};
+type Verification = Extract<AcessoEstudanteResponse, { fluxo: "verificacao" }>;
 
 export function AreaEstudanteWorkspace() {
   const router = useRouter();
   const [cpf, setCpf] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verification, setVerification] = useState<Verification | null>(null);
+  const [codigo, setCodigo] = useState("");
+
+  function continueWithAccess(
+    access: Exclude<AcessoEstudanteResponse, Verification>,
+  ) {
+    window.sessionStorage.removeItem(REGISTRATION_DRAFT_STORAGE_KEY);
+    window.sessionStorage.setItem(
+      STUDENT_ACCESS_STORAGE_KEY,
+      JSON.stringify(access),
+    );
+    router.push("/registro");
+  }
 
   async function handleContinue(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,23 +52,51 @@ export function AreaEstudanteWorkspace() {
     try {
       setLoading(true);
       setError("");
-      const access = await recadastroService.acessar(value);
-      window.sessionStorage.removeItem(REGISTRATION_DRAFT_STORAGE_KEY);
-      window.sessionStorage.setItem(
-        STUDENT_ACCESS_STORAGE_KEY,
-        JSON.stringify(access),
-      );
-      router.push("/registro");
+      if (verification) {
+        if (!/^\d{6}$/.test(codigo)) {
+          setError("Informe o código de 6 dígitos enviado por e-mail.");
+          return;
+        }
+        continueWithAccess(
+          await recadastroService.verificarAcesso(value, codigo),
+        );
+      } else {
+        const access = await recadastroService.acessar(value);
+        if (access.fluxo === "verificacao") {
+          setVerification(access);
+        } else {
+          continueWithAccess(access);
+        }
+      }
     } catch (currentError) {
       if (axios.isAxiosError<ApiError>(currentError)) {
         setError(
-          currentError.response?.data?.errors?.cpf?.[0] ??
+          currentError.response?.data?.errors?.codigo?.[0] ??
+            currentError.response?.data?.errors?.cpf?.[0] ??
             currentError.response?.data?.message ??
             "Não foi possível consultar o CPF.",
         );
       } else {
         setError("Não foi possível consultar o CPF.");
       }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resendCode() {
+    try {
+      setLoading(true);
+      setError("");
+      const access = await recadastroService.acessar(cleanCpf(cpf));
+      if (access.fluxo === "verificacao") setVerification(access);
+    } catch (currentError) {
+      setError(
+        axios.isAxiosError<ApiError>(currentError)
+          ? (currentError.response?.data?.message ??
+              "Não foi possível reenviar o código.")
+          : "Não foi possível reenviar o código.",
+      );
     } finally {
       setLoading(false);
     }
@@ -92,14 +138,15 @@ export function AreaEstudanteWorkspace() {
                 Área do estudante
               </h1>
               <p className="text-base leading-relaxed text-content-secondary sm:text-lg">
-                Já possui uma conta? Entre no portal com seu CPF e senha. Para
-                iniciar sua inscrição, informe o CPF abaixo.
+                {verification
+                  ? `Enviamos um código para ${verification.data.email_mascarado}. Informe-o para continuar. Ele vale por ${verification.data.validade_minutos} minutos.`
+                  : "Já possui uma conta? Entre no portal com seu CPF e senha. Para iniciar sua inscrição, informe o CPF abaixo."}
               </p>
             </div>
 
             <form className="flex flex-col gap-5" onSubmit={handleContinue}>
               <CpfInput
-                error={error}
+                error={verification ? undefined : error}
                 label="CPF"
                 name="cpf"
                 onChange={(event) => {
@@ -107,11 +154,58 @@ export function AreaEstudanteWorkspace() {
                   setError("");
                 }}
                 value={cpf}
+                disabled={Boolean(verification)}
                 variant="white"
                 className="rounded-full bg-surface-primary pl-7"
                 formatGuideClassName="pl-7"
                 labelClassName="ml-3"
               />
+
+              {verification && (
+                <>
+                  <Input
+                    autoComplete="one-time-code"
+                    error={error}
+                    inputMode="numeric"
+                    label="Código de acesso"
+                    maxLength={6}
+                    onChange={(event) => {
+                      setCodigo(event.target.value.replace(/\D/g, ""));
+                      setError("");
+                    }}
+                    pattern="[0-9]{6}"
+                    required
+                    value={codigo}
+                    variant="white"
+                  />
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      fullWidth={false}
+                      disabled={loading}
+                      onClick={() => void resendCode()}
+                      size="sm"
+                      type="button"
+                      variant="secondary"
+                    >
+                      Reenviar código
+                    </Button>
+                    <Button
+                      fullWidth={false}
+                      disabled={loading}
+                      onClick={() => {
+                        setVerification(null);
+                        setCodigo("");
+                        setError("");
+                      }}
+                      size="sm"
+                      type="button"
+                      variant="secondary"
+                    >
+                      Alterar CPF
+                    </Button>
+                  </div>
+                </>
+              )}
 
               <Button
                 loading={loading}
@@ -120,7 +214,7 @@ export function AreaEstudanteWorkspace() {
                 variant="light"
                 className="rounded-full text-sm"
               >
-                Continuar
+                {verification ? "Verificar código" : "Continuar"}
               </Button>
 
               <Link

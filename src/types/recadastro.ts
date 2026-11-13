@@ -114,6 +114,15 @@ export type CadastroRecadastro = {
 export type AcessoEstudanteResponse =
   | { fluxo: "inscricao"; data: { cpf: string } }
   | {
+      fluxo: "verificacao";
+      data: {
+        email_mascarado: string;
+        validade_minutos: number;
+        reenvio_em_segundos: number;
+      };
+      message: string;
+    }
+  | {
       fluxo: "lista_espera";
       data: {
         pode_editar: boolean;
@@ -143,6 +152,25 @@ export type SolicitacaoRecadastro = {
   documentos: DocumentoRecadastro[];
   created_at?: string;
   updated_at?: string;
+};
+
+export type SolicitacoesRecadastroParams = {
+  page?: number;
+  busca?: string;
+  status?: RecadastroStatus;
+  periodo_id?: number;
+};
+
+export type PaginatedSolicitacoesRecadastro = {
+  data: SolicitacaoRecadastro[];
+  meta: {
+    current_page: number;
+    from: number | null;
+    last_page: number;
+    per_page: number;
+    to: number | null;
+    total: number;
+  };
 };
 
 export type FinalizarRecadastroPayload = {
