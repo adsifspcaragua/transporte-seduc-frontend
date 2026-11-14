@@ -4,7 +4,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   type LucideIcon,
-  MapIcon,
+  Shield,
 } from "lucide-react";
 
 export type SidebarItem = {
@@ -24,12 +24,6 @@ export const sidebarItems: SidebarItem[] = [
     permissions: ["estudantes.view"],
   },
   {
-    label: "Linhas",
-    icon: MapIcon,
-    href: "/linhas",
-    permissions: ["linhas.view"],
-  },
-  {
     label: "Solicitações",
     icon: ClipboardEdit,
     href: "/solicitacoes",
@@ -42,16 +36,27 @@ export const sidebarItems: SidebarItem[] = [
     permissions: ["periodos.view", "solicitacoes.view"],
   },
   {
-    label: "Transporte e presença",
+    label: "Gestão do transporte",
     icon: BusFront,
     href: "/transportes",
     permissions: [
+      "linhas.view",
       "veiculos.view",
       "viagens.view",
       "geocercas.view",
-      "estudantes.view",
-      "dispositivos.view",
-      "presencas.view",
+    ],
+  },
+  {
+    label: "Embarques e presenças",
+    icon: ClipboardEdit,
+    href: "/embarques",
+    permissions: ["presencas.view", "dispositivos.view"],
+  },
+  {
+    label: "Administração",
+    icon: Shield,
+    href: "/administracao",
+    permissions: [
       "auditoria.view",
       "roles.view",
       "instituicoes.write",

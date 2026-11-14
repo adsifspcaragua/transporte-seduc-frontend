@@ -301,7 +301,7 @@ export function DashboardWorkspace() {
             action={
               <Link
                 className={cn(actionLink, "inline-flex items-center gap-1.5")}
-                href="/linhas"
+                href="/transportes"
               >
                 <Settings2 className="size-3.5" />
                 Gerenciar linhas

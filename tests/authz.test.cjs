@@ -53,3 +53,18 @@ test("nega acesso direto a rota protegida sem permissao", () => {
 
   assert.equal(hasRouteAccess("/usuarios", ["linhas.view"]), false);
 });
+
+test("protege as novas áreas e preserva acesso específico", () => {
+  const { hasRouteAccess } = loadAuthz();
+  assert.equal(hasRouteAccess("/transportes/linhas/1", ["linhas.view"]), true);
+  assert.equal(
+    hasRouteAccess("/embarques/presencas", ["presencas.view"]),
+    true,
+  );
+  assert.equal(
+    hasRouteAccess("/embarques/dispositivos", ["dispositivos.view"]),
+    true,
+  );
+  assert.equal(hasRouteAccess("/administracao", ["roles.view"]), true);
+  assert.equal(hasRouteAccess("/embarques", ["linhas.view"]), false);
+});

@@ -78,7 +78,8 @@ test("sidebar identifies the current page in expanded and collapsed modes", () =
       desktopSidebar,
       /<a[^>]*aria-current="page"[^>]*href="\/recadastramento"/,
     );
-    assert.match(desktopSidebar, /aria-label="Transporte e presença"/);
+    assert.match(desktopSidebar, /aria-label="Gestão do transporte"/);
+    assert.match(desktopSidebar, /aria-label="Embarques e presenças"/);
   }
 });
 

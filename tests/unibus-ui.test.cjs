@@ -87,19 +87,28 @@ test("date fields use the administrative style and keep ISO submission with Braz
   assert.match(html, /type="hidden"[^>]*name="data"[^>]*value="2026-11-06"/);
 });
 
-test("transport navigation assigns every section once and retains indicators", () => {
-  const { transporteConfigs } = loadComponent(
-    "src/components/ui/transportes/transporteConfig.ts",
-  );
-  const { transporteGroups } = loadComponent(
-    "src/components/ui/transportes/transporteNavigation.ts",
-  );
-  const sections = transporteGroups.flatMap((group) => group.sections);
-  assert.equal(new Set(sections).size, sections.length);
-  assert.deepEqual(
-    [...sections].sort(),
-    [...transporteConfigs.map((config) => config.key), "indicadores"].sort(),
-  );
+test("transport and boarding sections have real Next.js routes", () => {
+  const routes = [
+    "transportes",
+    "transportes/calendario",
+    "transportes/recursos",
+    "transportes/linhas/nova",
+    "transportes/linhas/[id]",
+    "embarques",
+    "embarques/presencas",
+    "embarques/ocorrencias",
+    "embarques/dispositivos",
+    "administracao",
+  ];
+  for (const route of routes) {
+    assert.equal(
+      fs.existsSync(
+        path.resolve(__dirname, "../src/app/(dashboard)", route, "page.tsx"),
+      ),
+      true,
+      `${route} has a page`,
+    );
+  }
 });
 
 test("explicit dark date fields preserve their style and constraints", () => {

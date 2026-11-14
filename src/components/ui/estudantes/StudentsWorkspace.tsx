@@ -766,7 +766,11 @@ function StudentsTableSkeleton({ rows = 6 }: { rows?: number }) {
   );
 }
 
-export function StudentsWorkspace() {
+export function StudentsWorkspace({
+  initialStudentId,
+}: {
+  initialStudentId?: number;
+}) {
   const { can } = useAuthz();
   const canEdit = can("estudantes.write");
   const canDelete = can("estudantes.delete");
@@ -781,6 +785,20 @@ export function StudentsWorkspace() {
   const [selectedStudent, setSelectedStudent] = useState<Estudante | null>(
     null,
   );
+  const [studentLinkError, setStudentLinkError] = useState("");
+  useEffect(() => {
+    if (!initialStudentId || !can("estudantes.view")) return;
+    const session = getQuerySessionVersion();
+    estudanteService
+      .detail(initialStudentId)
+      .then((student) => {
+        if (session === getQuerySessionVersion()) setSelectedStudent(student);
+      })
+      .catch(() => {
+        if (session === getQuerySessionVersion())
+          setStudentLinkError("Não foi possível abrir o cadastro solicitado.");
+      });
+  }, [initialStudentId, can]);
   const [studentToEdit, setStudentToEdit] = useState<Estudante | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<Estudante | null>(
     null,
@@ -953,6 +971,11 @@ export function StudentsWorkspace() {
         <h1 className="text-2xl font-bold text-brand-600">Estudantes</h1>
         <StudentsExportDropdown />
       </div>
+      {studentLinkError && (
+        <p role="alert" className="mb-4 text-sm text-danger-600">
+          {studentLinkError}
+        </p>
+      )}
 
       <section className="mb-6 rounded-lg border border-brand-600/10 bg-white p-4 shadow-sm">
         <div className="mb-4 flex items-center gap-2 text-brand-600">

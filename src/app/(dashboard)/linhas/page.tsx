@@ -1,5 +1,5 @@
-import { LinhasWorkspace } from "@/components/ui/linhas/LinhasWorkspace";
+import { redirect } from "next/navigation";
 
 export default function LinhasPage() {
-  return <LinhasWorkspace />;
+  redirect("/transportes");
 }

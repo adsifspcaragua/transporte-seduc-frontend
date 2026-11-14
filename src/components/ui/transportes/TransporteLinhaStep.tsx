@@ -120,7 +120,7 @@ export function TransporteLinhaStep({
         invalidateQueries();
         refresh();
         setError(
-          "Resultado do envio não confirmado. Consulte as linhas atualizadas antes de repetir o cadastro na manutenção. Novo cadastro bloqueado nesta configuração.",
+          "Resultado do envio não confirmado. Consulte as linhas atualizadas antes de repetir o cadastro. Novo cadastro bloqueado nesta página.",
         );
         onSaved({
           text: "Cadastro de linha: resultado incerto; confira a lista atualizada.",

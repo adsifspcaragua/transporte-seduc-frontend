@@ -404,7 +404,7 @@ export function TransporteResourcePanel({
         setUncertain(true);
         if (issuedQr) setForm(null);
         setError(
-          "O resultado do envio não foi confirmado. A consulta dos registros foi atualizada. Para evitar duplicação, novos envios desta seção ficam bloqueados nesta configuração; confira os registros em Cadastros e manutenção.",
+          "O resultado do envio não foi confirmado. A consulta dos registros foi atualizada. Para evitar duplicação, novos envios desta seção ficam bloqueados nesta página; confira a lista antes de repetir a operação.",
         );
         guided.onSaved({
           text: `${config.label}: resultado do envio a conferir na manutenção. Não repita o cadastro sem consultar os registros.`,
